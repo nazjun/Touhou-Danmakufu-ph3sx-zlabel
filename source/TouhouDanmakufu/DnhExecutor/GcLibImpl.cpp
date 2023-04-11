@@ -402,8 +402,8 @@ bool EDirectGraphics::Initialize(const std::wstring& windowTitle) {
 	defaultWindowTitle_ = windowTitle;
 
 	DnhConfiguration* dnhConfig = DnhConfiguration::GetInstance();
-	size_t screenWidth = dnhConfig->screenWidth_;		//From th_dnh.def
-	size_t screenHeight = dnhConfig->screenHeight_;	//From th_dnh.def
+	size_t screenWidth = dnhConfig->screenWidth_;		// From th_dnh.def
+	size_t screenHeight = dnhConfig->screenHeight_;		// From th_dnh.def
 	ScreenMode screenMode = dnhConfig->modeScreen_;
 
 	size_t windowedWidth = screenWidth;
