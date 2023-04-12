@@ -8,7 +8,7 @@ constexpr const uint64_t _GAME_VERSION_RESERVED = /*e*/621;		//OWO!!!!!
 constexpr const uint64_t _GAME_VERSION_MAJOR = 1;
 constexpr const uint64_t _GAME_VERSION_SUBMAJOR = 4;
 constexpr const uint64_t _GAME_VERSION_MINOR = 0;
-constexpr const uint64_t _GAME_VERSION_REVISION = 0;
+constexpr const uint64_t _GAME_VERSION_REVISION = 1;
 
 //00000000 00000000 | 00000000 00000000 | 00000000 00000000 | 00000000 00000000
 //<-RESERVED--><----MAJOR----> <-----SUBMAJOR----> <------MINOR------> <REVIS->
