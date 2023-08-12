@@ -2152,7 +2152,7 @@ gstd::value StgStageScript::Func_GetAllShotID(gstd::script_machine* machine, int
 	case TARGET_ENEMY:typeOwner = StgShotObject::OWNER_ENEMY; break;
 	}
 
-	std::vector<int> listID = shotManager->GetShotIdInCircle(typeOwner, 0, 0, nullptr);
+	std::vector<int> listID = shotManager->GetShotIdInCircle(typeOwner, 0, 0, {});
 	return script->CreateIntArrayValue(listID);
 }
 gstd::value StgStageScript::Func_GetAllLaserID(gstd::script_machine* machine, int argc, const gstd::value* argv) {
@@ -2182,7 +2182,7 @@ gstd::value StgStageScript::Func_GetShotIdInCircleA1(gstd::script_machine* machi
 	int radius = argv[2].as_float();
 	int typeOwner = script->GetScriptType() == TYPE_PLAYER ? StgShotObject::OWNER_PLAYER : StgShotObject::OWNER_ENEMY;
 
-	std::vector<int> listID = shotManager->GetShotIdInCircle(typeOwner, px, py, &radius);
+	std::vector<int> listID = shotManager->GetShotIdInCircle(typeOwner, px, py, radius);
 	return script->CreateIntArrayValue(listID);
 }
 gstd::value StgStageScript::Func_GetShotIdInCircleA2(gstd::script_machine* machine, int argc, const gstd::value* argv) {
@@ -2202,7 +2202,7 @@ gstd::value StgStageScript::Func_GetShotIdInCircleA2(gstd::script_machine* machi
 	case TARGET_ENEMY:typeOwner = StgShotObject::OWNER_ENEMY; break;
 	}
 
-	std::vector<int> listID = shotManager->GetShotIdInCircle(typeOwner, px, py, &radius);
+	std::vector<int> listID = shotManager->GetShotIdInCircle(typeOwner, px, py, radius);
 	return script->CreateIntArrayValue(listID);
 }
 gstd::value StgStageScript::Func_GetShotIdInRegularPolygonA1(gstd::script_machine* machine, int argc, const gstd::value* argv) {
@@ -2611,7 +2611,7 @@ gstd::value StgStageScript::Func_GetItemIdInCircleA1(gstd::script_machine* machi
 	int py = argv[1].as_float();
 	int radius = argv[2].as_float();
 
-	std::vector<int> listID = itemManager->GetItemIdInCircle(px, py, &radius, nullptr);
+	std::vector<int> listID = itemManager->GetItemIdInCircle(px, py, radius, {});
 	return script->CreateIntArrayValue(listID);
 }
 gstd::value StgStageScript::Func_GetItemIdInCircleA2(gstd::script_machine* machine, int argc, const gstd::value* argv) {
@@ -2623,7 +2623,7 @@ gstd::value StgStageScript::Func_GetItemIdInCircleA2(gstd::script_machine* machi
 	int radius = argv[2].as_float();
 	int type = argv[3].as_int();
 
-	std::vector<int> listID = itemManager->GetItemIdInCircle(px, py, &radius, &type);
+	std::vector<int> listID = itemManager->GetItemIdInCircle(px, py, radius, type);
 	return script->CreateIntArrayValue(listID);
 }
 gstd::value StgStageScript::Func_SetItemAutoDeleteClip(gstd::script_machine* machine, int argc, const gstd::value* argv) {

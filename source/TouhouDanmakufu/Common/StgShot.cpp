@@ -180,14 +180,8 @@ size_t StgShotManager::DeleteInCircle(int typeDelete, int typeTo, int typeOwner,
 		int sx = obj->GetPositionX();
 		int sy = obj->GetPositionY();
 
-		if (radius == nullptr || (rcBox.IsPointIntersected(sx, sy) && Math::HypotSq<int64_t>(cx - sx, cy - sy) <= rr)) {
-			if (obj->GetObjectType() == TypeObject::Shot)
-				++res;
-			else {
-				StgLaserObject* laser = dynamic_cast<StgLaserObject*>(obj.get());
-				res += floor(laser->GetLength() / laser->GetItemDistance());
-			}
-
+		bool bInRadius = rcBox.IsPointIntersected(sx, sy) && Math::HypotSq<int64_t>(cx - sx, cy - sy) <= rr;
+		if (!radius.has_value() || bInRadius) {
 			if (typeTo == TO_TYPE_IMMEDIATE)
 				obj->DeleteImmediate();
 			else if (typeTo == TO_TYPE_FADE)
@@ -269,7 +263,8 @@ std::vector<int> StgShotManager::GetShotIdInCircle(int typeOwner, int cx, int cy
 		int sx = obj->GetPositionX();
 		int sy = obj->GetPositionY();
 
-		if (radius == nullptr || (rcBox.IsPointIntersected(sx, sy) && Math::HypotSq<int64_t>(cx - sx, cy - sy) <= rr)) {
+		bool bInRadius = rcBox.IsPointIntersected(sx, sy) && Math::HypotSq<int64_t>(cx - sx, cy - sy) <= rr;
+		if (!radius.has_value() || bInRadius) {
 			res.push_back(obj->GetObjectID());
 		}
 	}
