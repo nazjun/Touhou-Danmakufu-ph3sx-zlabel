@@ -2071,8 +2071,19 @@ void DxMeshManager::CallFromLoadThread(shared_ptr<FileManager::LoadThreadEvent> 
 //DxMeshInfoPanel
 DxMeshInfoPanel::DxMeshInfoPanel() {
 }
-DxMeshInfoPanel::~DxMeshInfoPanel() {
+
+void DxMeshInfoPanel::Initialize(const std::string& name) {
+	ILoggerPanel::Initialize(name);
 }
+
+void DxMeshInfoPanel::Update() {
+
+}
+void DxMeshInfoPanel::ProcessGui() {
+
+}
+
+/*
 bool DxMeshInfoPanel::_AddedLogger(HWND hTab) {
 	Create(hTab);
 
@@ -2142,5 +2153,4 @@ void DxMeshInfoPanel::PanelUpdate() {
 			wndListView_.DeleteRow(iRow);
 	}
 }
-
-
+*/
