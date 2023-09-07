@@ -417,6 +417,7 @@ bool EApplication::_Finalize() {
 
 	ELogger* logger = ELogger::GetInstance();
 	logger->SaveState();
+	logger->Close();
 
 	Logger::WriteTop("Application finalized.");
 	return true;
