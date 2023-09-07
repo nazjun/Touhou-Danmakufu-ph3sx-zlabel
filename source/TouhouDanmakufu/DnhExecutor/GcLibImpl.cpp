@@ -77,7 +77,7 @@ bool EApplication::_Initialize() {
 
 	{
 		{
-			auto infoPanel = logger->GetInfoLog();
+			auto infoPanel = logger->GetInfoPanel();
 			logger->EAddPanelUpdateData(infoPanel, 50);
 		}
 
@@ -194,7 +194,7 @@ bool EApplication::_Loop() {
 			taskManager->SetWorkTime(taskManager->GetTimeSpentOnLastFuncCall());
 
 			if (logger->IsWindowVisible()) {
-				if (auto infoLog = logger->GetInfoLog()) {
+				if (auto infoLog = logger->GetInfoPanel()) {
 					std::string fps = StringUtility::Format("Logic: %.2ffps, Render: %.2ffps",
 						fpsController->GetCurrentWorkFps(),
 						fpsController->GetCurrentRenderFps());
