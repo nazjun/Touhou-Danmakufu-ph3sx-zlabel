@@ -9,9 +9,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 	HWND handleWindow = nullptr;
 
 	try {
-		std::setlocale(LC_ALL, "");
-		std::setlocale(LC_NUMERIC, "C");
-		
+		gstd::SystemUtility::InitializeCOM();
 		gstd::SystemUtility::TestCpuSupportSIMD();
 
 		directx::EDirect3D9::CreateInstance();
@@ -54,6 +52,7 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 	DnhConfiguration::DeleteInstance();
 	directx::EDirect3D9::DeleteInstance();
 
+	gstd::SystemUtility::UninitializeCOM();
 	gstd::DebugUtility::DumpMemoryLeaksOnExit();
 
 	return 0;
