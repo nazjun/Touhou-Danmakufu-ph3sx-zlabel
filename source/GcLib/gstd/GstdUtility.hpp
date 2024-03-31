@@ -846,7 +846,7 @@ namespace gstd {
 		};
 
 	protected:
-		gstd::ref_count_ptr<Scanner> scan_;
+		Scanner scan_;
 
 		void _RaiseError(const std::wstring& message) {
 			throw gstd::wexception(message);
