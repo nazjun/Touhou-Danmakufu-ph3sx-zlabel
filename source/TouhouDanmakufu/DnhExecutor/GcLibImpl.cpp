@@ -85,6 +85,7 @@ bool EApplication::_Initialize() {
 			logger->EAddPanelUpdateData(infoPanel, 50);
 		}
 
+		/*
 		{
 			shared_ptr<gstd::TaskInfoPanel> panelTask(new gstd::TaskInfoPanel());
 			panelTask->SetDisplayName("Thread");
@@ -92,6 +93,13 @@ bool EApplication::_Initialize() {
 			// Updated in TaskManager
 			if (logger->EAddPanelNoUpdate(panelTask, L"Thread"))
 				taskManager->SetInfoPanel(panelTask);
+		}
+		*/
+		{
+			shared_ptr<directx::SystemInfoPanel> panelSys(new directx::SystemInfoPanel());
+			panelSys->SetDisplayName("System");
+			if (logger->EAddPanel(panelSys, L"System", 100))
+				graphics->SetSystemPanel(panelSys);
 		}
 
 		{
