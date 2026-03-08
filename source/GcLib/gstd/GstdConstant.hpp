@@ -2,7 +2,7 @@
 #include "../pch.h"
 
 const std::wstring DNH_EXE_NAME = L"th_dnh_ph3sx-zlabel.exe";
-const std::wstring DNH_VERSION = L"v1.33a-pre";
+const std::wstring DNH_VERSION = L"v1.33a-pre2";
 
 constexpr const uint64_t _GAME_VERSION_RESERVED = /*e*/621;		//OWO!!!!!
 constexpr const uint64_t _GAME_VERSION_MAJOR = 1;
