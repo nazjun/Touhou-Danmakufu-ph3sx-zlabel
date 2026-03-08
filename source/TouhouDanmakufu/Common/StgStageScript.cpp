@@ -1569,7 +1569,7 @@ gstd::value StgStageScript::Func_DeleteShotAll(gstd::script_machine* machine, in
 	case TYPE_ITEM:typeTo = StgShotManager::TO_TYPE_ITEM; break;
 	}
 
-	size_t res = stageController->GetShotManager()->DeleteInCircle(typeDel, typeTo, StgShotObject::OWNER_ENEMY, 0, 0, nullptr);
+	size_t res = stageController->GetShotManager()->DeleteInCircle(typeDel, typeTo, StgShotObject::OWNER_ENEMY, 0, 0, {});
 
 	return script->CreateIntValue(res);
 }
@@ -1595,7 +1595,7 @@ gstd::value StgStageScript::Func_DeleteShotInCircle(gstd::script_machine* machin
 	case TYPE_ITEM:typeTo = StgShotManager::TO_TYPE_ITEM; break;
 	}
 
-	size_t res = stageController->GetShotManager()->DeleteInCircle(typeDel, typeTo, StgShotObject::OWNER_ENEMY, posX, posY, &radius);
+	size_t res = stageController->GetShotManager()->DeleteInCircle(typeDel, typeTo, StgShotObject::OWNER_ENEMY, posX, posY, radius);
 
 	return script->CreateIntValue(res);
 }
@@ -1623,7 +1623,7 @@ gstd::value StgStageScript::Func_DeleteShotInRegularPolygon(gstd::script_machine
 	case TYPE_ITEM:typeTo = StgShotManager::TO_TYPE_ITEM; break;
 	}
 
-	size_t res = stageController->GetShotManager()->DeleteInRegularPolygon(typeDel, typeTo, StgShotObject::OWNER_ENEMY, posX, posY, &radius, edges, angle);
+	size_t res = stageController->GetShotManager()->DeleteInRegularPolygon(typeDel, typeTo, StgShotObject::OWNER_ENEMY, posX, posY, radius, edges, angle);
 
 	return script->CreateIntValue(res);
 }
@@ -2217,7 +2217,7 @@ gstd::value StgStageScript::Func_GetShotIdInRegularPolygonA1(gstd::script_machin
 	double angle = argv[4].as_float();
 	int typeOwner = script->GetScriptType() == TYPE_PLAYER ? StgShotObject::OWNER_PLAYER : StgShotObject::OWNER_ENEMY;
 
-	std::vector<int> listID = shotManager->GetShotIdInRegularPolygon(typeOwner, px, py, &radius, edges, angle);
+	std::vector<int> listID = shotManager->GetShotIdInRegularPolygon(typeOwner, px, py, radius, edges, angle);
 	return script->CreateIntArrayValue(listID);
 }
 gstd::value StgStageScript::Func_GetShotIdInRegularPolygonA2(gstd::script_machine* machine, int argc, const gstd::value* argv) {
@@ -2239,7 +2239,7 @@ gstd::value StgStageScript::Func_GetShotIdInRegularPolygonA2(gstd::script_machin
 	case TARGET_ENEMY:typeOwner = StgShotObject::OWNER_ENEMY; break;
 	}
 
-	std::vector<int> listID = shotManager->GetShotIdInRegularPolygon(typeOwner, px, py, &radius, edges, angle);
+	std::vector<int> listID = shotManager->GetShotIdInRegularPolygon(typeOwner, px, py, radius, edges, angle);
 	return script->CreateIntArrayValue(listID);
 }
 gstd::value StgStageScript::Func_GetShotCount(gstd::script_machine* machine, int argc, const gstd::value* argv) {
@@ -2600,7 +2600,7 @@ gstd::value StgStageScript::Func_GetAllItemID(gstd::script_machine* machine, int
 	StgStageScript* script = (StgStageScript*)machine->data;
 	StgItemManager* itemManager = script->stageController_->GetItemManager();
 
-	std::vector<int> listID = itemManager->GetItemIdInCircle(0, 0, nullptr, nullptr);
+	std::vector<int> listID = itemManager->GetItemIdInCircle(0, 0, {}, {});
 	return script->CreateIntArrayValue(listID);
 }
 gstd::value StgStageScript::Func_GetItemIdInCircleA1(gstd::script_machine* machine, int argc, const gstd::value* argv) {
