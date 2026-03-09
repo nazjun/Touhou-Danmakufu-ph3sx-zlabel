@@ -2080,7 +2080,7 @@ value ScriptClientBase::Func_GetCurrentScriptDirectory(script_machine* machine, 
 value ScriptClientBase::Func_GetCurrentScriptPath(script_machine* machine, int argc, const value* argv) {
 	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
 	int line = machine->get_current_line();
-	std::wstring& res = script->GetEngine()->GetScriptFileLineMap()->GetPath(line);
+	std::wstring& res = script->GetEngineData()->GetScriptFileLineMap()->GetPath(line);
 	return script->CreateStringValue(res);
 }
 value ScriptClientBase::Func_GetFilePathList(script_machine* machine, int argc, const value* argv) {

@@ -9,6 +9,9 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 	HWND handleWindow = nullptr;
 
 	try {
+		//std::setlocale(LC_ALL, "");
+		//std::setlocale(LC_NUMERIC, "C");
+
 		gstd::SystemUtility::InitializeCOM();
 		gstd::SystemUtility::TestCpuSupportSIMD();
 
