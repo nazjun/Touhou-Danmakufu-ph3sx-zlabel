@@ -3799,7 +3799,7 @@ gstd::value StgStageScript::Func_ObjMoveParent_Create(gstd::script_machine* mach
 	script->CheckRunInMainThread();
 	StgStageController* stageController = script->stageController_;
 
-	ref_unsync_ptr<StgMoveParent> obj = new StgMoveParent(stageController);
+	ref_unsync_ptr<StgMoveParent> obj(new StgMoveParent(stageController));
 
 	int id = script->AddObject(obj);
 	return script->CreateIntValue(id);

@@ -2840,7 +2840,7 @@ value DxScript::Func_ObjSpline_Create(gstd::script_machine* machine, int argc, c
 	DxScript* script = (DxScript*)machine->data;
 	script->CheckRunInMainThread();
 
-	ref_unsync_ptr<DxSplineObject> obj = new DxSplineObject();
+	ref_unsync_ptr<DxSplineObject> obj(new DxSplineObject());
 
 	int id = ID_INVALID;
 	if (obj) {
@@ -2953,7 +2953,7 @@ value DxScript::Func_ObjSpring_Create(gstd::script_machine* machine, int argc, c
 	DxScript* script = (DxScript*)machine->data;
 	script->CheckRunInMainThread();
 
-	ref_unsync_ptr<DxSpringMassSystemObject> obj = new DxSpringMassSystemObject();
+	ref_unsync_ptr<DxSpringMassSystemObject> obj(new DxSpringMassSystemObject());
 
 	int id = ID_INVALID;
 	if (obj) {
