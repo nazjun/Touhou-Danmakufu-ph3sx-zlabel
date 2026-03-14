@@ -428,25 +428,20 @@ void SoundInfoPanel::Update(DirectSoundManager* manager) {
 	}
 
 	{
-		// Lock lock(Logger::GetTop()->GetLock());
 		Lock lock(manager->GetLock());
 
-		auto& mapData = manager->mapSoundSource_;
-		listDisplay_.resize(mapData.size());
+		listDisplay_.clear();
 
 		int iTex = 0;
-		for (auto itrMap = mapData.begin(); itrMap != mapData.end(); ++itrMap, ++iTex) {
-			const std::wstring& path = itrMap->first;
-			SoundSourceData* data = (itrMap->second).get();
-
-			int countRef = (itrMap->second).use_count();
+		for (auto& [path, data] : manager->mapSoundSource_) {
+			int countRef = data.use_count();
 
 			std::wstring fileName = PathProperty::GetFileName(path);
 			std::wstring pathReduce = PathProperty::ReduceModuleDirectory(path);
 
 			SoundDisplay displayData = {
-				(uintptr_t)data,
-				StringUtility::FromAddress((uintptr_t)data),
+				(uintptr_t)data.get(),
+				StringUtility::FromAddress((uintptr_t)data.get()),
 				STR_MULTI(fileName),
 				STR_MULTI(pathReduce),
 				countRef,
@@ -455,14 +450,14 @@ void SoundInfoPanel::Update(DirectSoundManager* manager) {
 				data->formatWave_
 			};
 
-			listDisplay_[iTex] = displayData;
+			listDisplay_.push_back(displayData);
 		}
+	}
 
-		// Sort new data as well
-		if (SoundDisplay::imguiSortSpecs) {
-			if (listDisplay_.size() > 1) {
-				std::sort(listDisplay_.begin(), listDisplay_.end(), SoundDisplay::Compare);
-			}
+	// Sort new data as well
+	if (SoundDisplay::imguiSortSpecs) {
+		if (listDisplay_.size() > 1) {
+			std::sort(listDisplay_.begin(), listDisplay_.end(), SoundDisplay::Compare);
 		}
 	}
 
