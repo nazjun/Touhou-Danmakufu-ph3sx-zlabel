@@ -36,6 +36,7 @@ namespace directx {
 		bool useNonPowerOfTwo_;
 
 		IDirect3DTexture9* pTexture_;
+		IDirect3DTexture9* vTexture_; // for use in vertex shaders, such as when using tex2Dlod
 		IDirect3DSurface9* lpRenderSurface_;
 		IDirect3DSurface9* lpRenderZ_;
 	public:
@@ -46,6 +47,7 @@ namespace directx {
 		D3DXIMAGE_INFO* GetImageInfo() { return &infoImage_; }
 
 		IDirect3DTexture9* GetD3DTexture() { return pTexture_; }
+		IDirect3DTexture9* GetD3DVTexture() { return vTexture_; }
 		IDirect3DSurface9* GetD3DSurface() { return lpRenderSurface_; }
 		IDirect3DSurface9* GetD3DZBuffer() { return lpRenderZ_; }
 
@@ -70,12 +72,13 @@ namespace directx {
 		std::wstring GetName();
 		bool CreateFromData(const std::wstring& name);
 		bool CreateFromData(shared_ptr<TextureData> data);
-		bool CreateFromFile(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo);
+		bool CreateFromFile(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool makeFloatCopy = false);
 		bool CreateRenderTarget(const std::wstring& name, size_t width = 0U, size_t height = 0U);
 		bool CreateFromFileInLoadThread(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool bLoadImageInfo = false);
 
 		void SetTexture(IDirect3DTexture9 *pTexture);
 		IDirect3DTexture9* GetD3DTexture();
+		IDirect3DTexture9* GetD3DVTexture();
 		IDirect3DSurface9* GetD3DSurface();
 		IDirect3DSurface9* GetD3DZBuffer();
 
@@ -109,8 +112,8 @@ namespace directx {
 		void _ReleaseTextureData(const std::wstring& name);
 		void _ReleaseTextureData(std::map<std::wstring, shared_ptr<TextureData>>::iterator itr);
 
-		void __CreateFromFile(shared_ptr<TextureData>& dst, const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo);
-		bool _CreateFromFile(shared_ptr<TextureData>& dst, const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo);
+		void __CreateFromFile(shared_ptr<TextureData>& dst, const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool makeFloatCopy = false);
+		bool _CreateFromFile(shared_ptr<TextureData>& dst, const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool makeFloatCopy = false);
 		bool _CreateRenderTarget(shared_ptr<TextureData>& dst, const std::wstring& name, 
 			size_t width = 0U, size_t height = 0U, bool bManaged = true);
 		bool _CreateRenderTarget_Unmanaged(shared_ptr<TextureData>& dst, const std::wstring& name, 
@@ -140,7 +143,7 @@ namespace directx {
 		shared_ptr<TextureData> GetTextureData(const std::wstring& name);
 		shared_ptr<Texture> GetTexture(const std::wstring& name);
 		
-		shared_ptr<Texture> CreateFromFile(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo);
+		shared_ptr<Texture> CreateFromFile(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool makeFloatCopy = false);
 		shared_ptr<Texture> CreateRenderTarget(const std::wstring& name, size_t width = 0U, size_t height = 0U);
 		
 		shared_ptr<Texture> CreateFromFileInLoadThread(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool bLoadImageInfo = false);

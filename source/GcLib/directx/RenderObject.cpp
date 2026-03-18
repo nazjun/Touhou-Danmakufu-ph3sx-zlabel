@@ -846,6 +846,14 @@ void RenderObjectNX::Render(D3DXMATRIX* matTransform) {
 		else graphics->SetRenderTarget(nullptr);
 	}
 
+	if (bVertexShaderMode_) {
+		device->SetTexture(D3DVERTEXTEXTURESAMPLER0, texture_ ? texture_->GetD3DVTexture() : nullptr);
+
+		device->SetSamplerState(D3DVERTEXTEXTURESAMPLER0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+		device->SetSamplerState(D3DVERTEXTEXTURESAMPLER0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+		device->SetSamplerState(D3DVERTEXTEXTURESAMPLER0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+	}
+
 	device->SetTexture(0, texture_ ? texture_->GetD3DTexture() : nullptr);
 	device->SetFVF(VERTEX_NX::fvf);
 

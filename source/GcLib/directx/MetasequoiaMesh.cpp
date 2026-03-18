@@ -114,7 +114,7 @@ void MetasequoiaMeshData::_ReadMaterial(gstd::Scanner& scanner) {
 			std::wstring wPathTexture = tok.GetString();
 			std::wstring path = PathProperty::GetFileDirectory(path_) + wPathTexture;
 			mat->texture_ = std::make_shared<Texture>();
-			mat->texture_->CreateFromFile(PathProperty::GetUnique(path), false, false);
+			mat->texture_->CreateFromFile(PathProperty::GetUnique(path), false, false, true);
 			scanner.CheckType(scanner.Next(), Token::Type::TK_CLOSEP);
 		}
 	}

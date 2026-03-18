@@ -13,6 +13,7 @@ TextureData::TextureData() {
 	manager_ = nullptr;
 
 	pTexture_ = nullptr;
+	vTexture_ = nullptr;
 	lpRenderSurface_ = nullptr;
 	lpRenderZ_ = nullptr;
 
@@ -28,6 +29,7 @@ TextureData::TextureData() {
 }
 TextureData::~TextureData() {
 	ptr_release(pTexture_);
+	ptr_release(vTexture_);
 	ptr_release(lpRenderSurface_);
 	ptr_release(lpRenderZ_);
 }
@@ -98,12 +100,12 @@ bool Texture::CreateFromData(shared_ptr<TextureData> data) {
 	if (data) data_ = data;
 	return data_ != nullptr;
 }
-bool Texture::CreateFromFile(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo) {
+bool Texture::CreateFromFile(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool makeFloatCopy) {
 	//path = PathProperty::GetUnique(path);
 	if (data_) Release();
 
 	TextureManager* manager = TextureManager::GetBase();
-	shared_ptr<Texture> texture = manager->CreateFromFile(path, genMipmap, flgNonPowerOfTwo);
+	shared_ptr<Texture> texture = manager->CreateFromFile(path, genMipmap, flgNonPowerOfTwo, makeFloatCopy);
 	if (texture) data_ = texture->data_;
 	return data_ != nullptr;
 }
@@ -158,6 +160,28 @@ IDirect3DTexture9* Texture::GetD3DTexture() {
 			else if (SystemUtility::GetCpuTime2() - timeOrg > 200) {		//0.2 second timer
 				const std::wstring& path = data_->GetName();
 				Logger::WriteTop(StringUtility::Format(L"GetTexture timed out. (%s)", 
+					PathProperty::ReduceModuleDirectory(path).c_str()));
+				break;
+			}
+			::Sleep(10);
+		}
+	}
+	return res;
+}
+IDirect3DTexture9* Texture::GetD3DVTexture() {
+	IDirect3DTexture9* res = nullptr;
+	if (data_) {
+		Lock lock(TextureManager::GetBase()->GetLock());
+
+		uint64_t timeOrg = SystemUtility::GetCpuTime2();
+		while (true) {
+			if (data_->bReady_) {
+				res = data_->GetD3DVTexture();
+				break;
+			}
+			else if (SystemUtility::GetCpuTime2() - timeOrg > 200) {		//0.2 second timer
+				const std::wstring& path = data_->GetName();
+				Logger::WriteTop(StringUtility::Format(L"GetTexture timed out. (%s)",
 					PathProperty::ReduceModuleDirectory(path).c_str()));
 				break;
 			}
@@ -348,6 +372,7 @@ void TextureManager::ReleaseDxResource() {
 				}
 
 				ptr_release(data->pTexture_);
+				ptr_release(data->vTexture_);
 				ptr_release(data->lpRenderSurface_);
 				ptr_release(data->lpRenderZ_);
 			}
@@ -425,7 +450,7 @@ void TextureManager::RestoreDxResource() {
 	}
 }
 
-void TextureManager::__CreateFromFile(shared_ptr<TextureData>& dst, const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo) {
+void TextureManager::__CreateFromFile(shared_ptr<TextureData>& dst, const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool makeFloatCopy) {
 	DirectGraphics* graphics = DirectGraphics::GetBase();
 
 	shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(path);
@@ -450,13 +475,30 @@ void TextureManager::__CreateFromFile(shared_ptr<TextureData>& dst, const std::w
 	hr = D3DXGetImageInfoFromFileInMemory(source.c_str(), source.size(), &dst->infoImage_);
 	if (FAILED(hr))
 		throw wexception("D3DXGetImageInfoFromFileInMemory failure.");
+
+	if (makeFloatCopy) {
+		HRESULT vhr = D3DXCreateTextureFromFileInMemoryEx(DirectGraphics::GetBase()->GetDevice(),
+			source.c_str(), source.size(),
+			dst->useNonPowerOfTwo_ ? D3DX_DEFAULT_NONPOW2 : D3DX_DEFAULT,
+			dst->useNonPowerOfTwo_ ? D3DX_DEFAULT_NONPOW2 : D3DX_DEFAULT,
+			dst->useMipMap_ ? D3DX_DEFAULT : 1, 0,
+			D3DFMT_A16B16G16R16, D3DPOOL_MANAGED, D3DX_FILTER_BOX, D3DX_DEFAULT, 0x00000000,
+			nullptr, nullptr, &(dst->vTexture_));
+		if (FAILED(vhr))
+			throw wexception("D3DXCreateTextureFromFileInMemoryEx float copy failure.");
+
+		std::wstring pathReduce = PathProperty::ReduceModuleDirectory(path);
+		Logger::WriteTop(StringUtility::Format(L"TextureManager: Texture loaded. (D3DFMT_A16B16G16R16) [%s]",
+			pathReduce.c_str()));
+	}
+
 	dst->CalculateResourceSize();
 
 	dst->manager_ = this;
 	dst->name_ = path;
 	dst->type_ = TextureData::Type::TYPE_TEXTURE;
 }
-bool TextureManager::_CreateFromFile(shared_ptr<TextureData>& dst, const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo) {
+bool TextureManager::_CreateFromFile(shared_ptr<TextureData>& dst, const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool makeFloatCopy) {
 	DirectGraphics* graphics = DirectGraphics::GetBase();
 
 	bool res = true;
@@ -465,7 +507,7 @@ bool TextureManager::_CreateFromFile(shared_ptr<TextureData>& dst, const std::ws
 	std::wstring pathReduce = PathProperty::ReduceModuleDirectory(path);
 	try {
 		data.reset(new TextureData());
-		__CreateFromFile(data, path, genMipmap, flgNonPowerOfTwo);
+		__CreateFromFile(data, path, genMipmap, flgNonPowerOfTwo, makeFloatCopy);
 
 		Logger::WriteTop(StringUtility::Format(L"TextureManager: Texture loaded. [%s]",
 			pathReduce.c_str()));
@@ -563,7 +605,7 @@ bool TextureManager::_CreateRenderTarget(shared_ptr<TextureData>& dst, const std
 
 	return res;
 }
-shared_ptr<Texture> TextureManager::CreateFromFile(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo) {
+shared_ptr<Texture> TextureManager::CreateFromFile(const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool makeFloatCopy) {
 	//path = PathProperty::GetUnique(path);
 	shared_ptr<Texture> res;
 	{
@@ -581,7 +623,7 @@ shared_ptr<Texture> TextureManager::CreateFromFile(const std::wstring& path, boo
 				data = itrFind->second;
 			}
 			else {
-				if (!_CreateFromFile(data, path, genMipmap, flgNonPowerOfTwo))
+				if (!_CreateFromFile(data, path, genMipmap, flgNonPowerOfTwo, makeFloatCopy))
 					data = nullptr;
 			}
 			
