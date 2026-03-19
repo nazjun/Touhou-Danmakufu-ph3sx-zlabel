@@ -145,6 +145,7 @@ static const std::vector<function> dxFunction = {
 
 	//Mesh functions
 	{ "LoadMesh", DxScript::Func_LoadMesh, 1 },
+	{ "LoadMesh", DxScript::Func_LoadMesh, 2 }, //Overloaded
 	{ "RemoveMesh", DxScript::Func_RemoveMesh, 1 },
 
 	//3D camera functions
@@ -480,6 +481,7 @@ static const std::vector<function> dxFunction = {
 	//Mesh object functions
 	{ "ObjMesh_Create", DxScript::Func_ObjMesh_Create, 0 },
 	{ "ObjMesh_Load", DxScript::Func_ObjMesh_Load, 2 },
+	{ "ObjMesh_Load", DxScript::Func_ObjMesh_Load, 3 }, //Overloaded
 	{ "ObjMesh_SetColor", DxScript::Func_ObjMesh_SetColor, 4 },
 	{ "ObjMesh_SetColor", DxScript::Func_ObjMesh_SetColor, 2 },	//Overloaded
 	{ "ObjMesh_SetAlpha", DxScript::Func_ObjMesh_SetAlpha, 2 },
@@ -1783,12 +1785,14 @@ value DxScript::Func_LoadMesh(script_machine* machine, int argc, const value* ar
 	std::wstring path = argv[0].as_string();
 	path = PathProperty::GetUnique(path);
 
+	bool vertexShaderSampling = argc == 2 ? argv[1].as_boolean() : false;
+
 	bool res = true;
 
 	auto& mapMesh = script->pResouceCache_->mapMesh;
 	if (mapMesh.find(path) == mapMesh.end()) {
 		shared_ptr<DxMesh> mesh = std::make_shared<MetasequoiaMesh>();
-		res = mesh->CreateFromFile(path);
+		res = mesh->CreateFromFile(path, vertexShaderSampling);
 		if (res) {
 			Lock lock(script->criticalSection_);
 			mapMesh[path] = mesh;
@@ -4993,6 +4997,8 @@ value DxScript::Func_ObjMesh_Load(script_machine* machine, int argc, const value
 		std::wstring path = argv[1].as_string();
 		path = PathProperty::GetUnique(path);
 
+		bool vertexShaderSampling = argc == 3 ? argv[2].as_boolean() : false;
+
 		auto& mapMesh = script->pResouceCache_->mapMesh;
 
 		auto itr = mapMesh.find(path);
@@ -5004,7 +5010,7 @@ value DxScript::Func_ObjMesh_Load(script_machine* machine, int argc, const value
 			std::wstring ext = PathProperty::GetFileExtension(path);
 			if (ext == L".mqo") {
 				mesh = std::make_shared<MetasequoiaMesh>();
-				res = mesh->CreateFromFile(path);
+				res = mesh->CreateFromFile(path, vertexShaderSampling);
 			}
 			/*
 			else if (ext == L".elem") {

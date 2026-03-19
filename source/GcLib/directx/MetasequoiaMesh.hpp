@@ -25,13 +25,13 @@ namespace directx {
 		std::vector<RenderObject*> renderList_;
 		std::vector<Material*> materialList_;
 
-		void _ReadMaterial(gstd::Scanner& scanner);
+		void _ReadMaterial(gstd::Scanner& scanner, bool vertexShaderSampling);
 		void _ReadObject(gstd::Scanner& scanner);
 	public:
 		MetasequoiaMeshData();
 		~MetasequoiaMeshData();
 
-		bool CreateFromFileReader(shared_ptr<gstd::FileReader> reader);
+		bool CreateFromFileReader(shared_ptr<gstd::FileReader> reader, bool vertexShaderSampling);
 	};
 
 	class MetasequoiaMeshData::Material {
@@ -93,7 +93,7 @@ namespace directx {
 		MetasequoiaMesh() {}
 		virtual ~MetasequoiaMesh() {}
 
-		virtual bool CreateFromFileReader(shared_ptr<gstd::FileReader> reader);
+		virtual bool CreateFromFileReader(shared_ptr<gstd::FileReader> reader, bool vertexShaderSampling);
 		virtual bool CreateFromFileInLoadThread(const std::wstring& path);
 		virtual std::wstring GetPath();
 

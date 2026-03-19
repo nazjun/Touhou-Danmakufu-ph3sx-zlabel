@@ -17,7 +17,7 @@ MetasequoiaMeshData::~MetasequoiaMeshData() {
 	for (auto& obj : renderList_) ptr_delete(obj);
 	for (auto& obj : materialList_) ptr_delete(obj);
 }
-bool MetasequoiaMeshData::CreateFromFileReader(shared_ptr<gstd::FileReader> reader) {
+bool MetasequoiaMeshData::CreateFromFileReader(shared_ptr<gstd::FileReader> reader, bool vertexShaderSampling) {
 	bool res = false;
 	path_ = reader->GetOriginalPath();
 	std::string text;
@@ -30,7 +30,7 @@ bool MetasequoiaMeshData::CreateFromFileReader(shared_ptr<gstd::FileReader> read
 		while (scanner.HasNext()) {
 			gstd::Token& tok = scanner.Next();
 			if (tok.GetElement() == L"Material") {
-				_ReadMaterial(scanner);
+				_ReadMaterial(scanner , vertexShaderSampling);
 			}
 			else if (tok.GetElement() == L"Object") {
 				_ReadObject(scanner);
@@ -46,7 +46,7 @@ bool MetasequoiaMeshData::CreateFromFileReader(shared_ptr<gstd::FileReader> read
 	}
 	return res;
 }
-void MetasequoiaMeshData::_ReadMaterial(gstd::Scanner& scanner) {
+void MetasequoiaMeshData::_ReadMaterial(gstd::Scanner& scanner, bool vertexShaderSampling) {
 	size_t countMaterial = scanner.Next().GetInteger();
 	materialList_.resize(countMaterial);
 	for (size_t iMat = 0; iMat < countMaterial; iMat++) {
@@ -114,7 +114,7 @@ void MetasequoiaMeshData::_ReadMaterial(gstd::Scanner& scanner) {
 			std::wstring wPathTexture = tok.GetString();
 			std::wstring path = PathProperty::GetFileDirectory(path_) + wPathTexture;
 			mat->texture_ = std::make_shared<Texture>();
-			mat->texture_->CreateFromFile(PathProperty::GetUnique(path), false, false, true);
+			mat->texture_->CreateFromFile(PathProperty::GetUnique(path), false, false, vertexShaderSampling);
 			scanner.CheckType(scanner.Next(), Token::Type::TK_CLOSEP);
 		}
 	}
@@ -478,7 +478,7 @@ void MetasequoiaMeshData::RenderObject::Render(D3DXMATRIX* matTransform) {
 }
 
 //MetasequoiaMesh
-bool MetasequoiaMesh::CreateFromFileReader(shared_ptr<gstd::FileReader> reader) {
+bool MetasequoiaMesh::CreateFromFileReader(shared_ptr<gstd::FileReader> reader, bool vertexShaderSampling) {
 	bool res = false;
 	{
 		Lock lock(DxMeshManager::GetBase()->GetLock());
@@ -492,7 +492,7 @@ bool MetasequoiaMesh::CreateFromFileReader(shared_ptr<gstd::FileReader> reader) 
 			data_ = std::make_shared<MetasequoiaMeshData>();
 			data_->SetName(name);
 			MetasequoiaMeshData* data = (MetasequoiaMeshData*)data_.get();
-			res = data->CreateFromFileReader(reader);
+			res = data->CreateFromFileReader(reader, vertexShaderSampling);
 			if (res) {
 				Logger::WriteTop(StringUtility::Format(L"MetasequoiaMesh: Mesh loaded. [%s]", 
 					PathProperty::ReduceModuleDirectory(name).c_str()));

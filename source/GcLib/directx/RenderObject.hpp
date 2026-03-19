@@ -473,7 +473,7 @@ namespace directx {
 		void SetName(const std::wstring& name) { name_ = name; }
 		std::wstring& GetName() { return name_; }
 
-		virtual bool CreateFromFileReader(shared_ptr<gstd::FileReader> reader) = 0;
+		virtual bool CreateFromFileReader(shared_ptr<gstd::FileReader> reader, bool vertexShaderSampling) = 0;
 	};
 	class DxMesh : public gstd::FileManager::LoadObject, public RenderObject {
 	public:
@@ -494,8 +494,8 @@ namespace directx {
 		virtual void Copy(RenderObject* src);
 
 		virtual void Release();
-		bool CreateFromFile(const std::wstring& path);
-		virtual bool CreateFromFileReader(shared_ptr<gstd::FileReader> reader) = 0;
+		bool CreateFromFile(const std::wstring& path, bool vertexShaderSampling);
+		virtual bool CreateFromFileReader(shared_ptr<gstd::FileReader> reader, bool vertexShaderSampling) = 0;
 		virtual bool CreateFromFileInLoadThread(const std::wstring& path, int type);
 		virtual bool CreateFromFileInLoadThread(const std::wstring& path) = 0;
 		virtual std::wstring GetPath() = 0;

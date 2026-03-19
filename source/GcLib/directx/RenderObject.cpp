@@ -1907,13 +1907,13 @@ void DxMesh::Release() {
 		}
 	}
 }
-bool DxMesh::CreateFromFile(const std::wstring& path) {
+bool DxMesh::CreateFromFile(const std::wstring& path, bool vertexShaderSampling) {
 	try {
 		shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(path);
 		if (reader == nullptr || !reader->Open())
 			throw wexception(ErrorUtility::GetFileNotFoundErrorMessage(PathProperty::ReduceModuleDirectory(path), true));
 
-		return CreateFromFileReader(reader);
+		return CreateFromFileReader(reader, vertexShaderSampling);
 	}
 	catch (gstd::wexception& e) {
 		std::wstring str = StringUtility::Format(L"DxMesh: Mesh load failed. [%s]\r\n\t%s", 
@@ -2069,7 +2069,7 @@ void DxMeshManager::CallFromLoadThread(shared_ptr<FileManager::LoadThreadEvent> 
 		bool res = false;
 		shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(path);
 		if (reader != nullptr && reader->Open())
-			res = data->CreateFromFileReader(reader);
+			res = data->CreateFromFileReader(reader, false);
 
 		if (res) {
 			Logger::WriteTop(StringUtility::Format(L"DxMeshManager(LT): Mesh loaded. [%s]", pathReduce.c_str()));
