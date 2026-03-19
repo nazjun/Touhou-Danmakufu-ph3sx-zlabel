@@ -239,6 +239,7 @@ namespace gstd {
 		static size_t CountCharacter(const std::wstring& str, wchar_t c);
 
 		static int ToInteger(const std::wstring& s);
+		static unsigned int StringUtility::ToUnsignedInteger(const std::wstring& s);
 		static double ToDouble(const std::wstring& s);
 
 		static std::wstring Replace(const std::wstring& source, const std::wstring& pattern, const std::wstring& placement);
@@ -733,6 +734,7 @@ namespace gstd {
 		int GetEndPointer() { return posEnd_; }
 
 		int GetInteger();
+		unsigned int GetUnsignedInteger();
 		double GetReal();
 		bool GetBoolean();
 		std::wstring GetString();

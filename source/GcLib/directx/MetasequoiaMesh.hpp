@@ -56,6 +56,7 @@ namespace directx {
 			struct Vertex {
 				size_t indexVertex_;
 				D3DXVECTOR2 tcoord_;
+				D3DCOLOR col_ = 0xFFFFFFFF;
 			};
 			int indexMaterial_ = -1;
 			std::vector<Vertex> vertices_;

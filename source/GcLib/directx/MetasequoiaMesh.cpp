@@ -193,6 +193,15 @@ void MetasequoiaMeshData::_ReadObject(gstd::Scanner& scanner) {
 							}
 							scanner.CheckType(scanner.Next(), Token::Type::TK_CLOSEP);
 						}
+						else if (tok.GetElement() == L"COL") {
+							scanner.CheckType(scanner.Next(), Token::Type::TK_OPENP);
+							for (size_t iVert = 0; iVert < countVert; ++iVert) {
+								unsigned int vc = scanner.Next().GetUnsignedInteger();
+								// Metasequoia ABGR to D3DCOLOR ARGB
+								face->vertices_[iVert].col_ = (vc & 0xFF00FF00) | ((vc & 0x00FF0000) >> 16) | ((vc & 0x000000FF) << 16);
+							}
+							scanner.CheckType(scanner.Next(), Token::Type::TK_CLOSEP);
+						}
 					}
 
 					mapFace[face->indexMaterial_].push_back(face);
@@ -279,6 +288,7 @@ void MetasequoiaMeshData::_ReadObject(gstd::Scanner& scanner) {
 					vert->position = obj.vertices_[mqoVertexIndex];
 					vert->texcoord = face->vertices_[iVert].tcoord_;
 					vert->normal = normal;
+					vert->diffuse_color = face->vertices_[iVert].col_;
 				}
 				posVert += 3;
 			}
@@ -318,6 +328,7 @@ void MetasequoiaMeshData::_ReadObject(gstd::Scanner& scanner) {
 					vert->position = obj.vertices_[indexVert[indexFace]];
 					vert->texcoord = face->vertices_[indexFace].tcoord_;
 					vert->normal = normals[iVert / 3U];
+					vert->diffuse_color = face->vertices_[indexFace].col_;
 				}
 
 				posVert += 6;
@@ -328,6 +339,7 @@ void MetasequoiaMeshData::_ReadObject(gstd::Scanner& scanner) {
 					struct Node {
 						D3DXVECTOR3 pos;
 						D3DXVECTOR2 texCoord;
+						D3DCOLOR col;
 					};
 
 					static float TriangleArea(D3DXVECTOR3* a, D3DXVECTOR3* b, D3DXVECTOR3* c) {
@@ -387,6 +399,7 @@ void MetasequoiaMeshData::_ReadObject(gstd::Scanner& scanner) {
 					size_t index = face->vertices_[i].indexVertex_;
 					polygonNodes[i].pos = obj.vertices_[index];
 					polygonNodes[i].texCoord = face->vertices_[i].tcoord_;
+					polygonNodes[i].col = face->vertices_[i].col_;
 				}
 
 				//Far from perfect, but this is as much I could do by myself ;w;
@@ -409,11 +422,18 @@ void MetasequoiaMeshData::_ReadObject(gstd::Scanner& scanner) {
 						std::next(itrNodeBase, iTri + 2)->texCoord,
 					};
 
+					D3DCOLOR listCol[3] = {
+						itrNodeBase->col,
+						std::next(itrNodeBase, iTri + 1)->col,
+						std::next(itrNodeBase, iTri + 2)->col,
+					};
+
 					for (size_t iVert = 0; iVert < 3; ++iVert) {
 						VERTEX_NX* vert = render->GetVertex(posVert + iVert);
 						vert->position = tri.GetPosition(iVert);
 						vert->texcoord = listUV[iVert];
 						vert->normal = tri.GetNormal();
+						vert->diffuse_color = listCol[iVert];
 					}
 					posVert += 3;
 				}

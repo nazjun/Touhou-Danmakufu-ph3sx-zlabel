@@ -997,6 +997,11 @@ void RenderObjectNX::SetVertexNormal(size_t index, float x, float y, float z) {
 	vertex->normal.y = y;
 	vertex->normal.z = z;
 }
+void RenderObjectNX::SetVertexColor(size_t index, D3DCOLOR color) {
+	VERTEX_NX* vertex = GetVertex(index);
+	if (vertex == nullptr) return;
+	vertex->diffuse_color = color;
+}
 
 //****************************************************************************
 //Sprite2D

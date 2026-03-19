@@ -244,6 +244,7 @@ namespace directx {
 		void SetVertexPosition(size_t index, float x, float y, float z);
 		void SetVertexUV(size_t index, float u, float v);
 		void SetVertexNormal(size_t index, float x, float y, float z);
+		void SetVertexColor(size_t index, D3DCOLOR color);
 		void SetColor(D3DCOLOR color) { color_ = color; }
 	};
 

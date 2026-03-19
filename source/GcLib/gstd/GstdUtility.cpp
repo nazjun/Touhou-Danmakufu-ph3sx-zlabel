@@ -633,6 +633,10 @@ size_t StringUtility::CountCharacter(const std::wstring& str, wchar_t c) {
 int StringUtility::ToInteger(const std::wstring& s) {
 	return _wtoi(s.c_str());
 }
+unsigned int StringUtility::ToUnsignedInteger(const std::wstring& s)
+{
+	return static_cast<unsigned int>(wcstoul(s.c_str(), nullptr, 0));
+}
 double StringUtility::ToDouble(const std::wstring& s) {
 	wchar_t* stopscan;
 	return wcstod(s.c_str(), &stopscan);
@@ -1370,6 +1374,12 @@ int Token::GetInteger() {
 		throw gstd::wexception(L"Token::GetInterger: Incorrect token type");
 	}
 	return StringUtility::ToInteger(element_);
+}
+unsigned int Token::GetUnsignedInteger() {
+	if (type_ != Type::TK_INT) {
+		throw gstd::wexception(L"Token::GetUnsignedInterger: Incorrect token type");
+	}
+	return StringUtility::ToUnsignedInteger(element_);
 }
 double Token::GetReal() {
 	if (type_ != Type::TK_REAL && type_ != Type::TK_INT) {
