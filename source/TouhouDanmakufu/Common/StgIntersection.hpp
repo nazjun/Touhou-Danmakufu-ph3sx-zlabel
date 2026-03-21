@@ -117,6 +117,7 @@ private:
 	size_t countCircleInstance_;
 	size_t countLineVertex_;
 
+	bool bRendererInitialized_;
 	bool bRenderIntersection_;
 	int visualizerRenderPri_;
 	shared_ptr<Shader> shaderVisualizerCircle_;
@@ -130,7 +131,7 @@ public:
 	void Work();
 	void RenderVisualizer();
 
-	void SetEnableVisualizer(bool b) { bRenderIntersection_ = b; }
+	void SetEnableVisualizer(bool b);
 	bool IsEnableVisualizer() { return bRenderIntersection_; }
 	void SetVisualizerRenderPriority(int pri) { visualizerRenderPri_ = pri; }
 	int GetVisualizerRenderPriority() { return visualizerRenderPri_; }

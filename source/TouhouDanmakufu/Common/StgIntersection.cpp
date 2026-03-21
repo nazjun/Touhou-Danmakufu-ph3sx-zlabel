@@ -22,86 +22,10 @@ StgIntersectionManager::StgIntersectionManager() {
 		listSpace_[iSpace] = space;
 	}
 
-	{
-		{
-			ShaderManager* shaderManager = ShaderManager::GetBase();
-			RenderShaderLibrary* shaderLib = shaderManager->GetRenderLib();
+	bRendererInitialized_ = false;
 
-			shaderVisualizerCircle_ = shaderManager->CreateCloneFromEffect(shaderLib->GetIntersectVisualShader1());
-			shaderVisualizerCircle_->SetTechnique("Render");
-
-			shaderVisualizerLine_ = shaderManager->CreateCloneFromEffect(shaderLib->GetIntersectVisualShader2());
-			shaderVisualizerLine_->SetTechnique("Render");
-		}
-
-		{
-			objIntersectionVisualizerCircle_.reset(new DxScriptParticleListObject2D());
-			objIntersectionVisualizerLine_.reset(new DxScriptPrimitiveObject2D());
-
-			countCircleInstance_ = 0U;
-			countLineVertex_ = 0U;
-			bRenderIntersection_ = false;
-
-			visualizerRenderPri_ = 79;
-
-			{
-				ParticleRenderer2D* objParticleCircle = objIntersectionVisualizerCircle_->GetParticlePointer();
-
-				objIntersectionVisualizerCircle_->SetPrimitiveType(D3DPT_TRIANGLESTRIP);
-				objIntersectionVisualizerCircle_->SetShader(shaderVisualizerCircle_);
-
-				uint16_t numEdge = 48ui16;
-				objIntersectionVisualizerCircle_->SetVertexCount(numEdge + 1U);
-				{
-					std::vector<uint16_t> index;
-					index.resize(numEdge * 2U);
-					for (uint16_t i = 0; i < numEdge; ++i) {
-						index[i * 2U + 0] = i;
-						index[i * 2U + 1] = 0;
-					}
-					index.push_back(1);
-					index.push_back(0);
-					objParticleCircle->SetVertexIndices(index);
-				}
-
-				VERTEX_TLX vert;
-				vert.position = D3DXVECTOR4(0, 0, 1, 1);
-				vert.texcoord = D3DXVECTOR2(0, 0);
-				vert.diffuse_color = 0x80ffffff;
-				objParticleCircle->RenderObjectTLX::SetVertex(0, vert);
-				for (size_t i = 0; i < numEdge; ++i) {
-					float angle = i / (float)numEdge * (float)GM_PI_X2;
-					vert.position = D3DXVECTOR4(cosf(angle), sinf(angle), 1, 1);
-					objParticleCircle->RenderObjectTLX::SetVertex(i + 1, vert);
-				}
-
-				/*
-				objIntersectionVisualizerCircle_->SetVertexCount(4U);
-				objParticleCircle->SetVertexIndices({ 0, 1, 2, 3 });
-
-				VERTEX_TLX vert;
-				vert.position = D3DXVECTOR4(-8, -8, 1, 1);
-				vert.texcoord = D3DXVECTOR2(0, 0);
-				vert.diffuse_color = 0xffffffff;
-				objParticleCircle->RenderObjectTLX::SetVertex(0, vert);
-				vert.position = D3DXVECTOR4(8, -8, 1, 1);
-				objParticleCircle->RenderObjectTLX::SetVertex(1, vert);
-				vert.position = D3DXVECTOR4(-8, 8, 1, 1);
-				objParticleCircle->RenderObjectTLX::SetVertex(2, vert);
-				vert.position = D3DXVECTOR4(8, 8, 1, 1);
-				objParticleCircle->RenderObjectTLX::SetVertex(3, vert);
-				*/
-			}
-
-			{
-				objIntersectionVisualizerLine_->SetPrimitiveType(D3DPT_TRIANGLELIST);
-				objIntersectionVisualizerLine_->SetVertexShaderRendering(true);
-				objIntersectionVisualizerLine_->SetVertexCount(65536U);		//10922 max renders
-
-				objIntersectionVisualizerLine_->SetShader(shaderVisualizerLine_);
-			}
-		}
-	}
+	objIntersectionVisualizerCircle_.reset(new DxScriptParticleListObject2D());
+	objIntersectionVisualizerLine_.reset(new DxScriptPrimitiveObject2D());
 }
 StgIntersectionManager::~StgIntersectionManager() {
 	for (auto& itr : listSpace_) {
@@ -110,15 +34,17 @@ StgIntersectionManager::~StgIntersectionManager() {
 	listSpace_.clear();
 }
 void StgIntersectionManager::Work() {
-	objIntersectionVisualizerCircle_->CleanUp();
-	objIntersectionVisualizerLine_->CleanUp();
-	{
-		RenderObjectTLX* objParticleLine = objIntersectionVisualizerLine_->GetRenderObject();
-		VERTEX_TLX* ptrVert = objParticleLine->GetVertex(0);
-		memset(ptrVert, 0x00, sizeof(VERTEX_TLX) * countLineVertex_);
+	if (bRendererInitialized_) {
+		objIntersectionVisualizerCircle_->CleanUp();
+		objIntersectionVisualizerLine_->CleanUp();
+		{
+			RenderObjectTLX* objParticleLine = objIntersectionVisualizerLine_->GetRenderObject();
+			VERTEX_TLX* ptrVert = objParticleLine->GetVertex(0);
+			memset(ptrVert, 0x00, sizeof(VERTEX_TLX) * countLineVertex_);
+		}
+		countCircleInstance_ = 0U;
+		countLineVertex_ = 0U;
 	}
-	countCircleInstance_ = 0U;
-	countLineVertex_ = 0U;
 
 	listEnemyTargetPoint_ = listEnemyTargetPointNext_;
 	listEnemyTargetPointNext_.clear();
@@ -183,6 +109,91 @@ void StgIntersectionManager::RenderVisualizer() {
 		objIntersectionVisualizerCircle_->Render();
 	if (countLineVertex_ > 0U)
 		objIntersectionVisualizerLine_->Render();
+}
+void StgIntersectionManager::SetEnableVisualizer(bool b) {
+	if (b && !bRendererInitialized_) {
+		bRendererInitialized_ = true;
+
+		{
+			ShaderManager* shaderManager = ShaderManager::GetBase();
+			RenderShaderLibrary* shaderLib = shaderManager->GetRenderLib();
+
+			shaderVisualizerCircle_ = shaderManager->CreateCloneFromEffect(shaderLib->GetIntersectVisualShader1());
+			shaderVisualizerCircle_->SetTechnique("Render");
+
+			shaderVisualizerLine_ = shaderManager->CreateCloneFromEffect(shaderLib->GetIntersectVisualShader2());
+			shaderVisualizerLine_->SetTechnique("Render");
+		}
+
+		{
+			// objIntersectionVisualizerCircle_.reset(new DxScriptParticleListObject2D());
+			// objIntersectionVisualizerLine_.reset(new DxScriptPrimitiveObject2D());
+
+			countCircleInstance_ = 0U;
+			countLineVertex_ = 0U;
+
+			visualizerRenderPri_ = 79;
+
+			{
+				ParticleRenderer2D* objParticleCircle = objIntersectionVisualizerCircle_->GetParticlePointer();
+
+				objIntersectionVisualizerCircle_->SetPrimitiveType(D3DPT_TRIANGLESTRIP);
+				objIntersectionVisualizerCircle_->SetShader(shaderVisualizerCircle_);
+
+				uint16_t numEdge = 48ui16;
+				objIntersectionVisualizerCircle_->SetVertexCount(numEdge + 1U);
+				{
+					std::vector<uint16_t> index;
+					index.resize(numEdge * 2U);
+					for (uint16_t i = 0; i < numEdge; ++i) {
+						index[i * 2U + 0] = i;
+						index[i * 2U + 1] = 0;
+					}
+					index.push_back(1);
+					index.push_back(0);
+					objParticleCircle->SetVertexIndices(index);
+				}
+
+				VERTEX_TLX vert;
+				vert.position = D3DXVECTOR4(0, 0, 1, 1);
+				vert.texcoord = D3DXVECTOR2(0, 0);
+				vert.diffuse_color = 0x80ffffff;
+				objParticleCircle->RenderObjectTLX::SetVertex(0, vert);
+				for (size_t i = 0; i < numEdge; ++i) {
+					float angle = i / (float)numEdge * (float)GM_PI_X2;
+					vert.position = D3DXVECTOR4(cosf(angle), sinf(angle), 1, 1);
+					objParticleCircle->RenderObjectTLX::SetVertex(i + 1, vert);
+				}
+
+				/*
+				objIntersectionVisualizerCircle_->SetVertexCount(4U);
+				objParticleCircle->SetVertexIndices({ 0, 1, 2, 3 });
+
+				VERTEX_TLX vert;
+				vert.position = D3DXVECTOR4(-8, -8, 1, 1);
+				vert.texcoord = D3DXVECTOR2(0, 0);
+				vert.diffuse_color = 0xffffffff;
+				objParticleCircle->RenderObjectTLX::SetVertex(0, vert);
+				vert.position = D3DXVECTOR4(8, -8, 1, 1);
+				objParticleCircle->RenderObjectTLX::SetVertex(1, vert);
+				vert.position = D3DXVECTOR4(-8, 8, 1, 1);
+				objParticleCircle->RenderObjectTLX::SetVertex(2, vert);
+				vert.position = D3DXVECTOR4(8, 8, 1, 1);
+				objParticleCircle->RenderObjectTLX::SetVertex(3, vert);
+				*/
+			}
+
+			{
+				objIntersectionVisualizerLine_->SetPrimitiveType(D3DPT_TRIANGLELIST);
+				objIntersectionVisualizerLine_->SetVertexShaderRendering(true);
+				objIntersectionVisualizerLine_->SetVertexCount(65536U);		//10922 max renders
+
+				objIntersectionVisualizerLine_->SetShader(shaderVisualizerLine_);
+			}
+		}
+	}
+
+	bRenderIntersection_ = b;
 }
 void StgIntersectionManager::AddTarget(ref_unsync_ptr<StgIntersectionTarget> target) {
 	if (target == nullptr) return;
