@@ -47,6 +47,7 @@ protected:
 	D3DTEXTUREFILTERTYPE filterMin_;
 	D3DTEXTUREFILTERTYPE filterMag_;
 
+	bool bDefaultTexturesLoaded_;
 	bool bAllItemToPlayer_;
 	bool bCancelToPlayer_;
 	bool bDefaultBonusItemEnable_;

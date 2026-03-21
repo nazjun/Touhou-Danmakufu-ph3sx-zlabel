@@ -15,21 +15,33 @@ StgItemManager::StgItemManager(StgStageController* stageController) {
 
 	const std::wstring& dir = EPathProperty::GetSystemImageDirectory();
 
+	bDefaultTexturesLoaded_ = true;
+
 	{
 		listSpriteItem_.reset(new SpriteList2D());
 
 		std::wstring pathItem = PathProperty::GetUnique(dir + L"System_Stg_Item.png");
-		shared_ptr<Texture> textureItem(new Texture());
-		textureItem->CreateFromFile(pathItem, false, false);
-		listSpriteItem_->SetTexture(textureItem);
+
+		if (File::IsExists(pathItem)) {
+			shared_ptr<Texture> textureItem(new Texture());
+			textureItem->CreateFromFile(pathItem, false, false);
+			listSpriteItem_->SetTexture(textureItem);
+		}
+		else
+			bDefaultTexturesLoaded_ = false;
 	}
 	{
 		listSpriteDigit_.reset(new SpriteList2D());
 
 		std::wstring pathDigit = PathProperty::GetUnique(dir + L"System_Stg_Digit.png");
-		shared_ptr<Texture> textureDigit(new Texture());
-		textureDigit->CreateFromFile(pathDigit, false, false);
-		listSpriteDigit_->SetTexture(textureDigit);
+
+		if (File::IsExists(pathDigit)) {
+			shared_ptr<Texture> textureDigit(new Texture());
+			textureDigit->CreateFromFile(pathDigit, false, false);
+			listSpriteDigit_->SetTexture(textureDigit);
+		}
+		else
+			bDefaultTexturesLoaded_ = false;
 	}
 
 	rcDeleteClip_ = DxRect<LONG>(-64, 0, 64, 64);
@@ -192,7 +204,7 @@ void StgItemManager::Render(int targetPriority) {
 	D3DXMatrixMultiply(&matProj_, &camera2D->GetMatrix(), &graphics->GetViewPortMatrix());
 
 	//Render default items and score texts
-	{
+	if (bDefaultTexturesLoaded_) {
 		for (size_t i = 0; i < renderQueue.count; ++i) {
 			StgItemObject* pItem = renderQueue.listItem[i];
 			pItem->RenderOnItemManager();
