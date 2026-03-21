@@ -536,12 +536,14 @@ bool TextureManager::_CreateRenderTarget(shared_ptr<TextureData>& dst, const std
 
 	try {
 		if (width == 0U) {
-			size_t screenWidth = graphics->GetScreenWidth();
-			width = Math::GetNextPow2(screenWidth);
+			// size_t screenWidth = graphics->GetScreenWidth();
+			// width = Math::GetNextPow2(screenWidth);
+			width = graphics->GetScreenWidth();
 		}
 		if (height == 0U) {
-			size_t screenHeight = graphics->GetScreenHeight();
-			height = Math::GetNextPow2(screenHeight);
+			// size_t screenHeight = graphics->GetScreenHeight();
+			// height = Math::GetNextPow2(screenHeight);
+			height = graphics->GetScreenHeight();
 		}
 		{
 			size_t maxWidth = std::min<DWORD>(graphics->GetDeviceCaps()->MaxTextureWidth, 4096);
@@ -566,6 +568,9 @@ bool TextureManager::_CreateRenderTarget(shared_ptr<TextureData>& dst, const std
 		hr = device->CreateTexture(width, height, 1, D3DUSAGE_RENDERTARGET, fmt, D3DPOOL_DEFAULT,
 			&data->pTexture_, nullptr);
 		if (FAILED(hr)) {
+			width = Math::GetNextPow2(width);
+			height = Math::GetNextPow2(height);
+
 			if (width > height) height = width;
 			else if (height > width) width = height;
 
