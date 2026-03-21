@@ -451,7 +451,7 @@ void ShaderManager::_ReleaseShaderData(std::map<std::wstring, shared_ptr<ShaderD
 		}
 	}
 }
-bool ShaderManager::_CreateFromFile(const std::wstring& path, shared_ptr<ShaderData>& dest) {
+bool ShaderManager::_CreateFromFile(const std::wstring& path, shared_ptr<ShaderData>& dest, bool refreshBinaries) {
 	DirectGraphics* graphics = DirectGraphics::GetBase();
 	lastError_ = L"";
 
@@ -465,19 +465,100 @@ bool ShaderManager::_CreateFromFile(const std::wstring& path, shared_ptr<ShaderD
 	std::wstring pathReduce = PathProperty::ReduceModuleDirectory(path);
 
 	try {
-		shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(path);
-		if (reader == nullptr || !reader->Open()) {
-			std::wstring err = ErrorUtility::GetFileNotFoundErrorMessage(path, true);
-			throw wexception(err);
+		std::wstring cachePath = path;
+		// Replace extension with .fxo
+		size_t extPos = cachePath.rfind(L'.');
+		if (extPos != std::wstring::npos) {
+			cachePath = cachePath.substr(0, extPos) + L".fxo";
 		}
 
-		std::string source = reader->ReadAllString();
+		bool bUseCache = File::IsExists(cachePath) && File::IsExists(path) && !refreshBinaries;
 
-		dest->pIncludeCallback_.reset(new ShaderIncludeCallback(PathProperty::GetFileDirectory(path)));
-
+		HRESULT hr;
 		ID3DXBuffer* pErr = nullptr;
-		HRESULT hr = D3DXCreateEffect(graphics->GetDevice(), source.c_str(), source.size(),
-			nullptr, dest->pIncludeCallback_.get(), 0, nullptr, &dest->effect_, &pErr);
+
+		if (bUseCache) {
+			// Load compiled shader from cache
+			shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(cachePath);
+
+			if (reader == nullptr || !reader->Open()) {
+				throw wexception(L"Failed to open shader cache");
+			}
+
+			std::string binary = reader->ReadAllString();
+
+			hr = D3DXCreateEffect(graphics->GetDevice(), binary.data(), binary.size(),
+				nullptr, nullptr, 0, nullptr, &dest->effect_, &pErr);
+
+			pathReduce = PathProperty::ReduceModuleDirectory(cachePath);
+		}
+		else {
+			// Compile from source
+			shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(path);
+			if (reader == nullptr || !reader->Open()) {
+				std::wstring err = ErrorUtility::GetFileNotFoundErrorMessage(path, true);
+				throw wexception(err);
+			}
+
+			std::string source = reader->ReadAllString();
+
+			dest->pIncludeCallback_.reset(new ShaderIncludeCallback(PathProperty::GetFileDirectory(path)));
+
+			hr = D3DXCreateEffect(graphics->GetDevice(), source.c_str(), source.size(),
+				nullptr, dest->pIncludeCallback_.get(), 0, nullptr, &dest->effect_, &pErr);
+
+			if (SUCCEEDED(hr)) {
+				ID3DXEffectCompiler* pCompiler = nullptr;
+				ID3DXBuffer* pErrCompiler = nullptr;
+				HRESULT hrCompiler = D3DXCreateEffectCompiler(source.c_str(), source.size(),
+					nullptr, dest->pIncludeCallback_.get(), 0, &pCompiler, &pErrCompiler);
+
+				if (SUCCEEDED(hrCompiler)) {
+					ID3DXBuffer* pCode = nullptr;
+					ID3DXBuffer* pErrCompile = nullptr;
+					HRESULT hrCompile = pCompiler->CompileEffect(0, &pCode, &pErrCompile);
+
+					if (SUCCEEDED(hrCompile) && pCode) {
+						// Save compiled bytecode to cache
+						std::ofstream ofs(cachePath, std::ios::binary);
+						if (ofs.is_open()) {
+							ofs.write((const char*)pCode->GetBufferPointer(), pCode->GetBufferSize());
+							ofs.close();
+						}
+					}
+					else {
+						std::wstring compileError = L"unknown error";
+						if (pErrCompile) {
+							char* cText = (char*)pErrCompile->GetBufferPointer();
+							compileError = StringUtility::ConvertMultiToWide(cText);
+						}
+
+						std::wstring err = StringUtility::Format(L"%s\r\n\t%s",
+							DXGetErrorStringW(hrCompile), compileError.c_str());
+						throw wexception(err);
+					}
+
+					if (pCode) {
+						ptr_release(pCode);
+					}
+				}
+				else {
+					std::wstring compileError = L"unknown error";
+					if (pErrCompiler) {
+						char* cText = (char*)pErrCompiler->GetBufferPointer();
+						compileError = StringUtility::ConvertMultiToWide(cText);
+					}
+
+					std::wstring err = StringUtility::Format(L"%s\r\n\t%s",
+						DXGetErrorStringW(hrCompiler), compileError.c_str());
+					throw wexception(err);
+				}
+
+				if (pCompiler) {
+					ptr_release(pCompiler);
+				}
+			}
+		}
 
 		if (FAILED(hr)) {
 			std::wstring compileError = L"unknown error";
@@ -663,14 +744,14 @@ shared_ptr<ShaderData> ShaderManager::GetShaderData(const std::wstring& name) {
 	}
 	return res;
 }
-shared_ptr<Shader> ShaderManager::CreateFromFile(const std::wstring& path) {
+shared_ptr<Shader> ShaderManager::CreateFromFile(const std::wstring& path, bool refreshBinaries) {
 	//path = PathProperty::GetUnique(path);
 	shared_ptr<Shader> res = nullptr;
 	{
 		Lock lock(lock_);
 
 		shared_ptr<ShaderData> data(new ShaderData());
-		if (_CreateFromFile(path, data)) {
+		if (_CreateFromFile(path, data, refreshBinaries)) {
 			res = std::make_shared<Shader>();
 			res->data_ = data;
 		}

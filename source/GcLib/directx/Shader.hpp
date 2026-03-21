@@ -60,7 +60,7 @@ namespace directx {
 		void _ReleaseShaderData(const std::wstring& name);
 		void _ReleaseShaderData(std::map<std::wstring, shared_ptr<ShaderData>>::iterator itr);
 
-		bool _CreateFromFile(const std::wstring& path, shared_ptr<ShaderData>& dest);
+		bool _CreateFromFile(const std::wstring& path, shared_ptr<ShaderData>& dest, bool refreshBinaries = false);
 		bool _CreateFromText(const std::wstring& name, const std::string& source, shared_ptr<ShaderData>& dest);
 		bool _CreateCloneFromEffect(ID3DXEffect* effect, shared_ptr<ShaderData>& dest);
 	public:
@@ -82,7 +82,7 @@ namespace directx {
 		virtual std::map<std::wstring, shared_ptr<ShaderData>>::iterator IsDataExistsItr(std::wstring& name);
 		shared_ptr<ShaderData> GetShaderData(const std::wstring& name);
 
-		shared_ptr<Shader> CreateFromFile(const std::wstring& path);
+		shared_ptr<Shader> CreateFromFile(const std::wstring& path, bool refreshBinaries = false);
 		shared_ptr<Shader> CreateFromText(const std::wstring& name, const std::string& source);
 		shared_ptr<Shader> CreateFromData(shared_ptr<ShaderData> data);
 		shared_ptr<Shader> CreateCloneFromEffect(ID3DXEffect* effect);

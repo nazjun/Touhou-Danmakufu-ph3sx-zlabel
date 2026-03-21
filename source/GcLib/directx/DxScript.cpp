@@ -137,6 +137,7 @@ static const std::vector<function> dxFunction = {
 
 	//Shader functions
 	{ "LoadShader", DxScript::Func_LoadShader, 1 },
+	{ "LoadShader", DxScript::Func_LoadShader, 2 },  //Overloaded
 	{ "RemoveShader", DxScript::Func_RemoveShader, 1 },
 	{ "SetShader", DxScript::Func_SetShader, 3 },
 	{ "SetShaderI", DxScript::Func_SetShaderI, 3 },
@@ -1817,12 +1818,14 @@ value DxScript::Func_LoadShader(script_machine* machine, int argc, const value* 
 	std::wstring path = argv[0].as_string();
 	path = PathProperty::GetUnique(path);
 
+	bool refreshBinaries = argc == 2 ? argv[1].as_boolean() : false;
+
 	bool res = true;
 
 	auto& mapShader = script->pResouceCache_->mapShader;
 	if (mapShader.find(path) == mapShader.end()) {
 		ShaderManager* manager = ShaderManager::GetBase();
-		shared_ptr<Shader> shader = manager->CreateFromFile(path);
+		shared_ptr<Shader> shader = manager->CreateFromFile(path, refreshBinaries);
 		res = shader != nullptr;
 		if (res) {
 			Lock lock(script->criticalSection_);
