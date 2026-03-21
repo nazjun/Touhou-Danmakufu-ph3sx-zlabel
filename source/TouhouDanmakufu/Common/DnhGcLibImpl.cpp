@@ -291,8 +291,10 @@ bool ETextureManager::Initialize() {
 		graphics->SetDefaultBackBufferRenderTarget(data);
 	}
 	{
-		size_t rW = Math::GetNextPow2(graphics->GetRenderScreenWidth() * 2);
-		size_t rH = Math::GetNextPow2(graphics->GetRenderScreenHeight() * 2);
+		// size_t rW = Math::GetNextPow2(graphics->GetRenderScreenWidth() * 2);
+		// size_t rH = Math::GetNextPow2(graphics->GetRenderScreenHeight() * 2);
+		size_t rW = graphics->GetRenderScreenWidth();
+		size_t rH = graphics->GetRenderScreenHeight();
 
 		std::wstring name = L"__SECONDARY_BACKSURFACE__";
 
