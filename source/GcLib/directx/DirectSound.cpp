@@ -1189,7 +1189,7 @@ void SoundStreamingPlayer::_CreateSoundEvent(WAVEFORMATEX& formatWave) {
 void SoundStreamingPlayer::_CopyStream(int indexCopy) {
 	if (pDirectSoundBuffer_ == nullptr) return;
 	{
-		//Lock lock(lock_);
+		Lock lock(lock_);
 
 		LPVOID pMem1, pMem2;
 		DWORD dwSize1, dwSize2;
@@ -1294,13 +1294,27 @@ bool SoundStreamingPlayer::Stop() {
 	return true;
 }
 void SoundStreamingPlayer::ResetStreamForSeek() {
-	Lock lock(lock_);
+	if (!pDirectSoundBuffer_) return;
 
-	if (pDirectSoundBuffer_) {
+	bool wasPlaying = IsPlaying();
+
+	if (wasPlaying)
+		Stop();
+
+	{
+		Lock lock(lock_);
+
 		_CopyStream(1);
 		_CopyStream(0);
 
 		pDirectSoundBuffer_->SetCurrentPosition(0);
+	}
+
+	if (wasPlaying) {
+		bPause_ = true;
+		playStyle_.bResume_ = true;
+
+		Play();
 	}
 }
 bool SoundStreamingPlayer::IsPlaying() {
