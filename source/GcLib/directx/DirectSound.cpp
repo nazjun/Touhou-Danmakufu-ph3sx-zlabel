@@ -1294,6 +1294,8 @@ bool SoundStreamingPlayer::Stop() {
 	return true;
 }
 void SoundStreamingPlayer::ResetStreamForSeek() {
+	Lock lock(lock_);
+
 	if (pDirectSoundBuffer_) {
 		_CopyStream(1);
 		_CopyStream(0);
@@ -1524,7 +1526,13 @@ bool SoundPlayerWave::Seek(DWORD sample) {
 	if (soundSource_ == nullptr || pDirectSoundBuffer_ == nullptr) return false;
 	{
 		Lock lock(lock_);
-		pDirectSoundBuffer_->SetCurrentPosition(sample * soundSource_->formatWave_.nBlockAlign);
+
+		DWORD byteOffset = sample * soundSource_->formatWave_.nBlockAlign;
+		DWORD bufferSize = soundSource_->audioSizeTotal_;
+
+		byteOffset = std::min(byteOffset, bufferSize - soundSource_->formatWave_.nBlockAlign);
+
+		pDirectSoundBuffer_->SetCurrentPosition(byteOffset);
 	}
 	return true;
 }
