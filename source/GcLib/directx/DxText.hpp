@@ -358,6 +358,7 @@ namespace directx {
 	class DxTextRenderer {
 		static DxTextRenderer* thisBase_;
 	protected:
+		bool bLoadedGlyphs_;
 		std::map<std::wstring, shared_ptr<Texture>> glyphs_;
 		std::wstring glyphDir_;
 		DxCharCache cache_;
@@ -394,6 +395,7 @@ namespace directx {
 		bool AddFontFromFile(const std::wstring& path);
 
 		bool LoadGlyphs(const std::wstring& path);
+		void SaveGlyphs();
 
 		void AddGlyph(const std::wstring& path, shared_ptr<Texture> texture) { glyphs_[path] = texture; }
 		shared_ptr<Texture> GetGlyph(const std::wstring& path);

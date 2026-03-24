@@ -120,8 +120,6 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 		}
 	}
 
-	File::CreateFileDirectory(renderer->GetGlyphDirectory());
-
 	HRESULT hr = device->CreateTexture(widthTexture, heightTexture, 1, 
 		0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &pTexture, nullptr);
 	if (FAILED(hr)) return false;
@@ -266,11 +264,6 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 		pTexture->UnlockRect(0);
 		delete[] ptr;
 	}
-
-	HRESULT hrGlyph = D3DXSaveTextureToFile(cachePath.c_str(), D3DXIFF_PNG, pTexture, nullptr);
-
-	if (FAILED(hrGlyph))
-		throw wexception("D3DXSaveTextureToFile failure from glyph cache.");
 
 	texture_ = std::make_shared<Texture>();
 	texture_->SetTexture(pTexture);
@@ -763,7 +756,7 @@ DxTextRenderer::DxTextRenderer() {
 	colorVertex_ = D3DCOLOR_ARGB(255, 255, 255, 255);
 }
 DxTextRenderer::~DxTextRenderer() {
-
+	SaveGlyphs();
 }
 bool DxTextRenderer::Initialize() {
 	if (thisBase_) return false;
@@ -1515,6 +1508,8 @@ bool DxTextRenderer::AddFontFromFile(const std::wstring& path) {
 	return hFont != 0;
 }
 bool DxTextRenderer::LoadGlyphs(const std::wstring& path) {
+	if (bLoadedGlyphs_) return false;
+
 	bool allCreated = true;
 
 	glyphDir_ = path;
@@ -1534,8 +1529,30 @@ bool DxTextRenderer::LoadGlyphs(const std::wstring& path) {
 
 	std::wstring allDone = allCreated ? L"all successful" : L"incomplete";
 
+	bLoadedGlyphs_ = true;
+
 	Logger::WriteTop(StringUtility::Format(L"LoadGlyphs: %d glyphs loaded (%ls). [%s]", glyphs_.size(), allDone.c_str(), pathReduce.c_str()));
 	return allCreated;
+}
+void DxTextRenderer::SaveGlyphs() {
+	if (!bLoadedGlyphs_) return;
+
+	std::wstring dir = GetGlyphDirectory();
+
+	std::wstring pathReduce = PathProperty::ReduceModuleDirectory(dir);
+
+	File::CreateFileDirectory(dir);
+
+	for (const auto& glyph : glyphs_) {
+		if (!File::IsExists(glyph.first)) {
+			HRESULT hrGlyph = D3DXSaveTextureToFile(glyph.first.c_str(), D3DXIFF_PNG, glyph.second->GetD3DTexture(), nullptr);
+
+			if (FAILED(hrGlyph))
+				throw wexception("D3DXSaveTextureToFile failure from glyph cache.");
+		}
+	}
+
+	Logger::WriteTop(StringUtility::Format(L"SaveGlyphs: %d glyphs saved. [%s]", glyphs_.size(), pathReduce.c_str()));
 }
 shared_ptr<Texture> DxTextRenderer::GetGlyph(const std::wstring& path) {
 	auto itr = glyphs_.find(path);
