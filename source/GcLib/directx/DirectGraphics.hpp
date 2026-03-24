@@ -82,6 +82,8 @@ namespace directx {
 
 		//-----------------------------------------------------------
 
+		IDirect3DTexture9* currentTexture_;
+
 		shared_ptr<TextureData> defaultBackBufferRenderTarget_;
 		shared_ptr<Texture> currentRenderTarget_;
 
@@ -129,6 +131,8 @@ namespace directx {
 		virtual void EndScene(bool bPresent);
 
 		//-----------------------------------------------------------
+
+		void SetCurrentTexture(IDirect3DTexture9* texture, DWORD sampler = 0);
 
 		void ClearRenderTarget();
 		void ClearRenderTarget(DxRect<LONG>* rect);

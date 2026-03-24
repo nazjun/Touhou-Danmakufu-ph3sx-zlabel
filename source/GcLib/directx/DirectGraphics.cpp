@@ -85,6 +85,8 @@ bool DirectGraphics::Initialize(HWND hWnd, const DirectGraphicsConfig& config) {
 
 	IDirect3D9* pDirect3D = EDirect3D9::GetInstance()->GetD3D();
 
+	currentTexture_ = nullptr;
+
 	config_ = config;
 	hAttachedWindow_ = hWnd;
 
@@ -546,6 +548,12 @@ void DirectGraphics::EndScene(bool bPresent) {
 		panelSystem_->EndD3DQuery();
 
 	DirectGraphicsBase::EndScene(bPresent);
+}
+
+void DirectGraphics::SetCurrentTexture(IDirect3DTexture9* texture, DWORD sampler) {
+	if (currentTexture_ == texture) return;
+	currentTexture_ = texture;
+	pDevice_->SetTexture(sampler, texture);
 }
 
 void DirectGraphics::ClearRenderTarget() {

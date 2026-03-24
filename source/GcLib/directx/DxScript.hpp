@@ -91,6 +91,7 @@ namespace directx {
 
 		//Dx関数：システム系
 		static gstd::value Func_InstallFont(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		DNH_FUNCAPI_DECL_(Func_LoadGlyphs);
 
 		//Dx関数：音声系
 		static gstd::value Func_LoadSound(gstd::script_machine* machine, int argc, const gstd::value* argv);

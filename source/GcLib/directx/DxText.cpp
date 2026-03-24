@@ -76,13 +76,52 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 
 	if (sizeMax_.x >= 8192 || sizeMax_.y >= 8192)
 		return false;
-	UINT widthTexture = Math::GetNextPow2(sizeMax_.x);
-	UINT heightTexture = Math::GetNextPow2(sizeMax_.y);
+	UINT widthTexture = sizeMax_.x; // Math::GetNextPow2(sizeMax_.x);
+	UINT heightTexture = sizeMax_.y; // Math::GetNextPow2(sizeMax_.y);
 
 	//--------------------------------------------------------------
 
 	IDirect3DTexture9* pTexture = nullptr;
 	IDirect3DDevice9* device = DirectGraphics::GetBase()->GetDevice();
+
+	//--------------------------------------------------------------
+
+	// hash based on:
+	// font name, height, weight, italic, offx, offy,
+	// top color, bottom color, border color, border type, border width,
+	// code
+
+	LOGFONT info = dxFont->GetLogFont();
+	std::wstring fontName(info.lfFaceName);
+
+	size_t fontNameHash = std::hash<std::wstring>{}(fontName);
+
+	std::wstring hash = StringUtility::Format(L"%08x%lx%lx%02x%lx%lx%lx%lx%lx%02x%lx%08x",
+		fontNameHash, tm.tmHeight, tm.tmWeight, tm.tmItalic, glyphOriginX, glyphOriginY,
+		dxFont->GetTopColor(), dxFont->GetBottomColor(), dxFont->GetBorderColor(), typeBorder, widthBorder,
+		code_
+	);
+
+	DxTextRenderer* renderer = DxTextRenderer::GetBase();
+
+	std::wstring cachePath = renderer->GetGlyphDirectory() + hash + L".png";
+
+	if (File::IsExists(cachePath)) {
+		shared_ptr<Texture> tex = renderer->GetGlyph(cachePath);
+
+		if (tex) {
+			//Restore previous font handle and discard the device context
+			::SelectObject(hDC, oldFont);
+			::ReleaseDC(nullptr, hDC);
+
+			texture_ = tex;
+
+			return true;
+		}
+	}
+
+	File::CreateFileDirectory(renderer->GetGlyphDirectory());
+
 	HRESULT hr = device->CreateTexture(widthTexture, heightTexture, 1, 
 		0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &pTexture, nullptr);
 	if (FAILED(hr)) return false;
@@ -219,7 +258,7 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 
 					memcpy((BYTE*)lock.pBits + lock.Pitch * iy + 4 * ix, &color, sizeof(D3DCOLOR));
 				}
-			};
+				};
 
 			ParallelFor(sizeMax_.y, _GenRow);
 		}
@@ -228,8 +267,15 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 		delete[] ptr;
 	}
 
+	HRESULT hrGlyph = D3DXSaveTextureToFile(cachePath.c_str(), D3DXIFF_PNG, pTexture, nullptr);
+
+	if (FAILED(hrGlyph))
+		throw wexception("D3DXSaveTextureToFile failure from glyph cache.");
+
 	texture_ = std::make_shared<Texture>();
 	texture_->SetTexture(pTexture);
+
+	renderer->AddGlyph(cachePath, texture_);
 
 	return true;
 }
@@ -723,6 +769,9 @@ bool DxTextRenderer::Initialize() {
 	if (thisBase_) return false;
 
 	winFont_.CreateFont(Font::GOTHIC, 20, true);
+
+	glyphDir_ = L"";
+	glyphs_ = {};
 
 	thisBase_ = this;
 	return true;
@@ -1464,6 +1513,42 @@ bool DxTextRenderer::AddFontFromFile(const std::wstring& path) {
 
 	Logger::WriteTop(StringUtility::Format(L"AddFontFromFile: Font loaded. [%s]", pathReduce.c_str()));
 	return hFont != 0;
+}
+bool DxTextRenderer::LoadGlyphs(const std::wstring& path) {
+	bool allCreated = true;
+
+	glyphDir_ = path;
+
+	std::wstring pathReduce = PathProperty::ReduceModuleDirectory(path);
+
+	std::vector<std::wstring> listFile = File::GetFilePathList(path);
+	for (auto itr = listFile.begin(); itr != listFile.end(); ++itr) {
+		std::wstring pathGlyph = *itr;
+		pathGlyph = PathProperty::GetUnique(pathGlyph);
+
+		shared_ptr<Texture> texture = std::make_shared<Texture>();
+		allCreated &= texture->CreateFromFile(pathGlyph, false, true);
+
+		glyphs_[pathGlyph] = texture;
+	}
+
+	std::wstring allDone = allCreated ? L"all successful" : L"incomplete";
+
+	Logger::WriteTop(StringUtility::Format(L"LoadGlyphs: %d glyphs loaded (%ls). [%s]", glyphs_.size(), allDone.c_str(), pathReduce.c_str()));
+	return allCreated;
+}
+shared_ptr<Texture> DxTextRenderer::GetGlyph(const std::wstring& path) {
+	auto itr = glyphs_.find(path);
+	if (itr != glyphs_.end())
+		return itr->second;
+	return nullptr;
+}
+const std::wstring& DxTextRenderer::GetGlyphDirectory() {
+	if (glyphDir_ == L"") {
+		std::wstring moduleDir = PathProperty::GetModuleDirectory();
+		glyphDir_ = moduleDir + L"glyph/";
+	}
+	return glyphDir_;
 }
 
 //*******************************************************************

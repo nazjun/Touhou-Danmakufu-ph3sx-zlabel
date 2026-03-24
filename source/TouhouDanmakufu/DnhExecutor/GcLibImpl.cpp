@@ -307,7 +307,7 @@ void EApplication::_RenderDisplay() {
 				verts[3] = VERTEX_TLX(D3DXVECTOR4(texW, texH, 0, 1), 0xffffffff,
 					D3DXVECTOR2(1, 1));
 
-				device->SetTexture(0, secondaryBackBuffer_->GetD3DTexture());
+				graphics->SetCurrentTexture(secondaryBackBuffer_->GetD3DTexture());
 				device->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, (void*)verts.data(), sizeof(VERTEX_TLX));
 			}
 			{
@@ -353,7 +353,7 @@ void EApplication::_RenderDisplay() {
 					}
 				}
 
-				device->SetTexture(0, mainSceneTexture->GetD3DTexture());
+				graphics->SetCurrentTexture(mainSceneTexture->GetD3DTexture());
 				if (shader) {
 					BufferLockParameter lockParam = BufferLockParameter(D3DLOCK_DISCARD);
 

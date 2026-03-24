@@ -134,6 +134,7 @@ static const std::vector<function> dxFunction = {
 
 	//Font functions
 	{ "InstallFont", DxScript::Func_InstallFont, 1 },
+	{ "LoadGlyphs", DxScript::Func_LoadGlyphs, 1 },
 
 	//Shader functions
 	{ "LoadShader", DxScript::Func_LoadShader, 1 },
@@ -1102,6 +1103,23 @@ gstd::value DxScript::Func_InstallFont(gstd::script_machine* machine, int argc, 
 	bool res = false;
 	try {
 		res = renderer->AddFontFromFile(path);
+	}
+	catch (gstd::wexception& e) {
+		Logger::WriteTop(e.what());
+	}
+
+	return script->CreateBooleanValue(res);
+}
+
+gstd::value DxScript::Func_LoadGlyphs(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+
+	std::wstring path = argv[0].as_string();
+	path = PathProperty::GetUnique(path) + L"/";
+	DxTextRenderer* renderer = DxTextRenderer::GetBase();
+	bool res = false;
+	try {
+		res = renderer->LoadGlyphs(path);
 	}
 	catch (gstd::wexception& e) {
 		Logger::WriteTop(e.what());

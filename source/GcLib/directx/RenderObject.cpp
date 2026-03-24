@@ -433,7 +433,7 @@ void RenderObjectTLX::Render(const D3DXMATRIX& matTransform) {
 		else graphics->SetRenderTarget(nullptr);
 	}
 
-	device->SetTexture(0, texture_ ? texture_->GetD3DTexture() : nullptr);
+	graphics->SetCurrentTexture(texture_ ? texture_->GetD3DTexture() : nullptr);
 	device->SetFVF(VERTEX_TLX::fvf);
 
 	{
@@ -644,7 +644,7 @@ void RenderObjectLX::Render(const D3DXMATRIX& matTransform) {
 		else graphics->SetRenderTarget(nullptr);
 	}
 
-	device->SetTexture(0, texture_ ? texture_->GetD3DTexture() : nullptr);
+	graphics->SetCurrentTexture(texture_ ? texture_->GetD3DTexture() : nullptr);
 	device->SetFVF(VERTEX_LX::fvf);
 
 	device->SetTransform(D3DTS_WORLD, &matTransform);
@@ -847,14 +847,14 @@ void RenderObjectNX::Render(D3DXMATRIX* matTransform) {
 	}
 
 	if (bVertexShaderMode_) {
-		device->SetTexture(D3DVERTEXTEXTURESAMPLER0, texture_ ? texture_->GetD3DVTexture() : nullptr);
+		graphics->SetCurrentTexture(texture_ ? texture_->GetD3DVTexture() : nullptr, D3DVERTEXTEXTURESAMPLER0);
 
 		device->SetSamplerState(D3DVERTEXTEXTURESAMPLER0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
 		device->SetSamplerState(D3DVERTEXTEXTURESAMPLER0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
 		device->SetSamplerState(D3DVERTEXTEXTURESAMPLER0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
 	}
 
-	device->SetTexture(0, texture_ ? texture_->GetD3DTexture() : nullptr);
+	graphics->SetCurrentTexture(texture_ ? texture_->GetD3DTexture() : nullptr);
 	device->SetFVF(VERTEX_NX::fvf);
 
 	{
@@ -1106,7 +1106,7 @@ void SpriteList2D::Render(const D3DXVECTOR2& angX, const D3DXVECTOR2& angY, cons
 		else graphics->SetRenderTarget(nullptr);
 	}
 	
-	device->SetTexture(0, texture_ ? texture_->GetD3DTexture() : nullptr);
+	graphics->SetCurrentTexture(texture_ ? texture_->GetD3DTexture() : nullptr);
 	device->SetFVF(VERTEX_TLX::fvf);
 
 	bool bCamera = camera->IsEnable() && bPermitCamera_;
@@ -1610,7 +1610,7 @@ void ParticleRenderer2D::Render() {
 
 	bool bCamera = camera->IsEnable() && bPermitCamera_;
 
-	device->SetTexture(0, texture_ ? texture_->GetD3DTexture() : nullptr);
+	graphics->SetCurrentTexture(texture_ ? texture_->GetD3DTexture() : nullptr);
 
 	{
 		size_t countVertex = std::min(GetVertexCount(), 65536U);
@@ -1736,7 +1736,7 @@ void ParticleRenderer3D::Render() {
 		else graphics->SetRenderTarget(nullptr);
 	}
 
-	device->SetTexture(0, texture_ ? texture_->GetD3DTexture() : nullptr);
+	graphics->SetCurrentTexture(texture_ ? texture_->GetD3DTexture() : nullptr);
 
 	{
 		size_t countVertex = std::min(GetVertexCount(), 65536U);

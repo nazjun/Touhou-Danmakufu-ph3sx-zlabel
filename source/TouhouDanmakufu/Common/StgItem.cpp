@@ -65,7 +65,6 @@ StgItemManager::StgItemManager(StgStageController* stageController) {
 			listRenderQueue_[i].listItem.resize(32);
 		}
 	}
-	pLastTexture_ = nullptr;
 }
 StgItemManager::~StgItemManager() {
 }
@@ -221,7 +220,6 @@ void StgItemManager::Render(int targetPriority) {
 
 	device->SetFVF(VERTEX_TLX::fvf);
 	device->SetVertexDeclaration(shaderManager->GetVertexDeclarationTLX());
-	pLastTexture_ = nullptr;
 
 	if (D3DXHANDLE handle = effectItem_->GetParameterBySemantic(nullptr, "VIEWPROJECTION")) {
 		effectItem_->SetMatrix(handle, &matProj_);
@@ -1222,11 +1220,7 @@ void StgItemObject_User::Render(BlendMode targetBlend) {
 					else graphics->SetRenderTarget(nullptr);
 				}
 
-				IDirect3DTexture9* pTexture = pVB->GetD3DTexture();
-				if (pTexture != itemManager->pLastTexture_) {
-					device->SetTexture(0, pTexture);
-					itemManager->pLastTexture_ = pTexture;
-				}
+				graphics->SetCurrentTexture(pVB->GetD3DTexture());
 				device->SetStreamSource(0, pVB->GetD3DBuffer(), vertexOffset * sizeof(VERTEX_TLX), sizeof(VERTEX_TLX));
 
 				{

@@ -111,7 +111,7 @@ namespace directx {
 		friend DxTextRenderer;
 	public:
 		enum : size_t {
-			MAX = 1024U,
+			MAX = 4096U, // 1024U
 		};
 	private:
 		int countPri_;
@@ -358,6 +358,8 @@ namespace directx {
 	class DxTextRenderer {
 		static DxTextRenderer* thisBase_;
 	protected:
+		std::map<std::wstring, shared_ptr<Texture>> glyphs_;
+		std::wstring glyphDir_;
 		DxCharCache cache_;
 		gstd::Font winFont_;
 		D3DCOLOR colorVertex_;
@@ -390,6 +392,12 @@ namespace directx {
 		size_t GetCacheCount() { return cache_.GetCacheCount(); }
 
 		bool AddFontFromFile(const std::wstring& path);
+
+		bool LoadGlyphs(const std::wstring& path);
+
+		void AddGlyph(const std::wstring& path, shared_ptr<Texture> texture) { glyphs_[path] = texture; }
+		shared_ptr<Texture> GetGlyph(const std::wstring& path);
+		const std::wstring& GetGlyphDirectory();
 	};
 
 	//*******************************************************************
