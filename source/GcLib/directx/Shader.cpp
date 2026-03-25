@@ -261,7 +261,7 @@ bool Shader::LoadParameter() {
 
 	return true;
 }
-ShaderParameter* Shader::_GetParameter(const std::string& name, bool bCreate) {
+ShaderParameter* Shader::GetParameter(const std::string& name, bool bCreate) {
 	if (data_ == nullptr || data_->effect_ == nullptr) return nullptr;
 	D3DXHANDLE handle = data_->effect_->GetParameterByName(nullptr, name.c_str());
 	if (handle) {
@@ -295,49 +295,49 @@ bool Shader::ValidateTechnique(const std::string& name) {
 }
 
 bool Shader::SetInt(const std::string& name, const int32_t value) {
-	ShaderParameter* param = _GetParameter(name, true);
+	ShaderParameter* param = GetParameter(name, true);
 	if (param)
 		param->SetInt(value);
 	return true;
 }
 bool Shader::SetIntArray(const std::string& name, const std::vector<int32_t>& value) {
-	ShaderParameter* param = _GetParameter(name, true);
+	ShaderParameter* param = GetParameter(name, true);
 	if (param)
 		param->SetIntArray(value);
 	return true;
 }
 bool Shader::SetFloat(const std::string& name, const float value) {
-	ShaderParameter* param = _GetParameter(name, true);
+	ShaderParameter* param = GetParameter(name, true);
 	if (param)
 		param->SetFloat(value);
 	return true;
 }
 bool Shader::SetFloatArray(const std::string& name, const std::vector<float>& value) {
-	ShaderParameter* param = _GetParameter(name, true);
+	ShaderParameter* param = GetParameter(name, true);
 	if (param)
 		param->SetFloatArray(value);
 	return true;
 }
 bool Shader::SetVector(const std::string& name, const D3DXVECTOR4& value) {
-	ShaderParameter* param = _GetParameter(name, true);
+	ShaderParameter* param = GetParameter(name, true);
 	if (param)
 		param->SetVector(value);
 	return true;
 }
 bool Shader::SetMatrix(const std::string& name, const D3DXMATRIX& value) {
-	ShaderParameter* param = _GetParameter(name, true);
+	ShaderParameter* param = GetParameter(name, true);
 	if (param)
 		param->SetMatrix(value);
 	return true;
 }
 bool Shader::SetMatrixArray(const std::string& name, const std::vector<D3DXMATRIX>& value) {
-	ShaderParameter* param = _GetParameter(name, true);
+	ShaderParameter* param = GetParameter(name, true);
 	if (param)
 		param->SetMatrixArray(value);
 	return true;
 }
 bool Shader::SetTexture(const std::string& name, shared_ptr<Texture> value) {
-	ShaderParameter* param = _GetParameter(name, true);
+	ShaderParameter* param = GetParameter(name, true);
 	if (param)
 		param->SetTexture(value);
 	return true;
@@ -346,7 +346,7 @@ bool Shader::SetTexture(const std::string& name, shared_ptr<Texture> value) {
 ShaderParameter* Shader::__GetParam(const std::string& name, void* pData) {
 	ID3DXEffect* effect = GetEffect();
 	if (effect == nullptr || pData == nullptr) return nullptr;
-	return _GetParameter(name, false);
+	return GetParameter(name, false);
 }
 bool Shader::GetInt(const std::string& name, int32_t* value) {
 	if (ShaderParameter* param = __GetParam(name, value)) {

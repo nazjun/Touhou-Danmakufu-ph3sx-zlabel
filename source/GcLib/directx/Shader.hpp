@@ -145,7 +145,6 @@ namespace directx {
 		std::map<D3DXHANDLE, ShaderParameter> mapParam_;
 
 		ShaderData* _GetShaderData() { return data_.get(); }
-		ShaderParameter* _GetParameter(const std::string& name, bool bCreate);
 	public:
 		Shader();
 		Shader(Shader* shader);
@@ -155,6 +154,8 @@ namespace directx {
 
 		bool LoadTechnique();
 		bool LoadParameter();
+
+		ShaderParameter* GetParameter(const std::string& name, bool bCreate);
 
 		shared_ptr<ShaderData> GetData() { return data_; }
 		ID3DXEffect* GetEffect();
