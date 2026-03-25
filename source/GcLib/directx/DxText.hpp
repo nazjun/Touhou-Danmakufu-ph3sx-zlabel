@@ -55,22 +55,88 @@ namespace directx {
 	//DxCharGlyph
 	//文字1文字のテクスチャ
 	//*******************************************************************
+
 	class DxCharGlyph {
+	public:
+		struct CharGlyphKey {
+			uint32_t fontName;
+
+			int32_t  height;
+			int32_t  weight;
+			uint8_t  italic;
+
+			int32_t  originX;
+			int32_t  originY;
+
+			uint32_t topColor;
+			uint32_t bottomColor;
+			uint32_t borderColor;
+
+			uint8_t  borderType;
+			int32_t  borderWidth;
+
+			uint32_t codepoint;
+
+			bool operator==(const CharGlyphKey& rhs) const {
+				return std::tie(fontName, height, weight, italic, originX, originY,
+					topColor, bottomColor, borderColor, borderType, borderWidth, codepoint)
+					== std::tie(rhs.fontName, rhs.height, rhs.weight, rhs.italic, rhs.originX, rhs.originY,
+						rhs.topColor, rhs.bottomColor, rhs.borderColor, rhs.borderType, rhs.borderWidth, rhs.codepoint);
+			}
+		};
+		struct CharGlyphKeyHash {
+			size_t operator()(const CharGlyphKey& k) const {
+				size_t h = 0;
+
+				auto combine = [&h](auto v) {
+					std::hash<std::decay_t<decltype(v)>> hasher;
+					h ^= hasher(v) + 0x9e3779b9 + (h << 6) + (h >> 2);
+					};
+
+				combine(k.fontName);
+				combine(k.height);
+				combine(k.weight);
+				combine(k.italic);
+				combine(k.originX);
+				combine(k.originY);
+				combine(k.topColor);
+				combine(k.bottomColor);
+				combine(k.borderColor);
+				combine(k.borderType);
+				combine(k.borderWidth);
+				combine(k.codepoint);
+
+				return h;
+			}
+		};
+	public:
+		enum : UINT {
+			PADDING = 4U
+		};
+	protected:
 		shared_ptr<Texture> texture_;
 		UINT code_;
 
 		GLYPHMETRICS glpMet_;
 		POINT size_;
 		POINT sizeMax_;
+
+		std::wstring atlasName_;
+		CharGlyphKey hash_;
+
+		POINT lefttop_;
 	public:
 		DxCharGlyph();
 		virtual ~DxCharGlyph();
 
-		bool Create(UINT code, const gstd::Font& winFont, const DxFont* dxFont);
+		bool Create(UINT code, const gstd::Font& winFont, const DxFont* dxFont, DxText* dxText);
 		shared_ptr<Texture> GetTexture() { return texture_; }
 		POINT& GetSize() { return size_; }
 		POINT& GetMaxSize() { return sizeMax_; }
 		GLYPHMETRICS* GetGM() { return &glpMet_; }
+		const std::wstring& GetAtlasName() { return atlasName_; }
+		CharGlyphKey GetHash() { return hash_; }
+		POINT& GetLeftTop() { return lefttop_; }
 	};
 
 
@@ -355,12 +421,30 @@ namespace directx {
 		void SetShader(shared_ptr<Shader> shader) { shader_ = shader; }
 	};
 
+	class DxTextAtlas {
+	public:
+		enum : UINT {
+			ATLAS_SIZE = 2048U
+		};
+	public:
+		std::wstring path_;
+		shared_ptr<Texture> texture_;
+		std::unordered_map<DxCharGlyph::CharGlyphKey, DxRect<LONG>, DxCharGlyph::CharGlyphKeyHash> glyphs_;
+
+		POINT head_;
+		long lineHeight_;
+
+		bool BlitGlyph(DxCharGlyph* glyph);
+	};
+
 	class DxTextRenderer {
 		static DxTextRenderer* thisBase_;
 	protected:
 		bool bLoadedGlyphs_;
-		std::map<std::wstring, shared_ptr<Texture>> glyphs_;
 		std::wstring glyphDir_;
+		std::map<std::wstring, std::list<shared_ptr<DxTextAtlas>>> atlases_;
+		std::list<DxCharGlyph*> generatedGlyphs_;
+
 		DxCharCache cache_;
 		gstd::Font winFont_;
 		D3DCOLOR colorVertex_;
@@ -394,12 +478,14 @@ namespace directx {
 
 		bool AddFontFromFile(const std::wstring& path);
 
-		bool LoadGlyphs(const std::wstring& path);
-		void SaveGlyphs();
+		bool LoadGlyphAtlases(const std::wstring& path);
 
-		void AddGlyph(const std::wstring& path, shared_ptr<Texture> texture) { glyphs_[path] = texture; }
-		shared_ptr<Texture> GetGlyph(const std::wstring& path);
 		const std::wstring& GetGlyphDirectory();
+
+		void AddGeneratedGlyph(DxCharGlyph* glyph) { generatedGlyphs_.push_back(glyph); }
+		bool SaveGeneratedGlyphs();
+
+		const std::list<shared_ptr<DxTextAtlas>>& GetAtlases(std::wstring key) { return atlases_[key]; }
 	};
 
 	//*******************************************************************
@@ -427,6 +513,8 @@ namespace directx {
 		shared_ptr<Shader> shader_;
 		std::wstring text_;
 		size_t textHash_;
+
+		std::wstring atlasName_;
 	public:
 		DxText();
 		virtual ~DxText();
@@ -487,11 +575,13 @@ namespace directx {
 		void SetPermitCamera(bool bPermit) { bPermitCamera_ = bPermit; }
 		bool IsSyntacticAnalysis() { return bSyntacticAnalysis_; }
 		void SetSyntacticAnalysis(bool bEnable) { bSyntacticAnalysis_ = bEnable; }
+		void SetAtlasName(const std::wstring& atlasName) { atlasName_ = atlasName; }
 
 		std::wstring& GetText() { return text_; }
 		void SetText(const std::wstring& text) { text_ = text; }
 		void SetTextHash(size_t hash) { textHash_ = hash; }
 		size_t GetTextHash() { return textHash_; }
+		const std::wstring& GetAtlasName() { return atlasName_; }
 
 		shared_ptr<Shader> GetShader() { return shader_; }
 		void SetShader(shared_ptr<Shader> shader) { shader_ = shader; }

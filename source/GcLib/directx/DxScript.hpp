@@ -92,6 +92,7 @@ namespace directx {
 		//Dx関数：システム系
 		static gstd::value Func_InstallFont(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		DNH_FUNCAPI_DECL_(Func_LoadGlyphs);
+		DNH_FUNCAPI_DECL_(Func_SaveGlyphs);
 
 		//Dx関数：音声系
 		static gstd::value Func_LoadSound(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -488,6 +489,7 @@ namespace directx {
 		static gstd::value Func_ObjText_SetHorizontalAlignment(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_SetVerticalAlignment(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_SetSyntacticAnalysis(gstd::script_machine* machine, int argc, const gstd::value* argv);
+		DNH_FUNCAPI_DECL_(Func_ObjText_SetAtlas);
 		static gstd::value Func_ObjText_GetText(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_GetTextLength(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjText_GetTextLengthCU(gstd::script_machine* machine, int argc, const gstd::value* argv);

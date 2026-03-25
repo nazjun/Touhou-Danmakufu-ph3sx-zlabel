@@ -31,7 +31,7 @@ DxCharGlyph::DxCharGlyph() {
 }
 DxCharGlyph::~DxCharGlyph() {}
 
-bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
+bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont, DxText* dxText) {
 	code_ = code;
 
 	static short colorTop[4];
@@ -74,10 +74,10 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 
 	//--------------------------------------------------------------
 
-	if (sizeMax_.x >= 8192 || sizeMax_.y >= 8192)
+	if (sizeMax_.x + PADDING >= 8192 || sizeMax_.y + PADDING >= 8192)
 		return false;
-	UINT widthTexture = sizeMax_.x; // Math::GetNextPow2(sizeMax_.x);
-	UINT heightTexture = sizeMax_.y; // Math::GetNextPow2(sizeMax_.y);
+	UINT widthTexture = sizeMax_.x + PADDING; // Math::GetNextPow2(sizeMax_.x);
+	UINT heightTexture = sizeMax_.y + PADDING; // Math::GetNextPow2(sizeMax_.y);
 
 	//--------------------------------------------------------------
 
@@ -86,39 +86,49 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 
 	//--------------------------------------------------------------
 
-	// hash based on:
-	// font name, height, weight, italic, offx, offy,
-	// top color, bottom color, border color, border type, border width,
-	// code
-
 	LOGFONT info = dxFont->GetLogFont();
 	std::wstring fontName(info.lfFaceName);
 
+	atlasName_ = dxText->GetAtlasName() == L"" ? fontName : dxText->GetAtlasName();
+
 	size_t fontNameHash = std::hash<std::wstring>{}(fontName);
 
-	std::wstring hash = StringUtility::Format(L"%08x%lx%lx%02x%lx%lx%lx%lx%lx%02x%lx%08x",
-		fontNameHash, tm.tmHeight, tm.tmWeight, tm.tmItalic, glyphOriginX, glyphOriginY,
-		dxFont->GetTopColor(), dxFont->GetBottomColor(), dxFont->GetBorderColor(), typeBorder, widthBorder,
-		code_
-	);
+	hash_ = {
+		(uint32_t)fontNameHash,
+
+		(int32_t)tm.tmHeight,
+		(int32_t)tm.tmWeight,
+		(uint8_t)tm.tmItalic,
+
+		(int32_t)glyphOriginX,
+		(int32_t)glyphOriginY,
+
+		(uint32_t)dxFont->GetTopColor(),
+		(uint32_t)dxFont->GetBottomColor(),
+		(uint32_t)dxFont->GetBorderColor(),
+
+		(uint8_t)typeBorder,
+		(int32_t)widthBorder,
+
+		(uint32_t)code_
+	};
 
 	DxTextRenderer* renderer = DxTextRenderer::GetBase();
 
-	std::wstring cachePath = renderer->GetGlyphDirectory() + hash + L".png";
-
-	if (File::IsExists(cachePath)) {
-		shared_ptr<Texture> tex = renderer->GetGlyph(cachePath);
-
-		if (tex) {
-			//Restore previous font handle and discard the device context
+	for (const auto& atlas : renderer->GetAtlases(atlasName_)) {
+		auto itr = atlas->glyphs_.find(hash_);
+		if (itr != atlas->glyphs_.end()) {
 			::SelectObject(hDC, oldFont);
 			::ReleaseDC(nullptr, hDC);
 
-			texture_ = tex;
+			texture_ = atlas->texture_;
+			lefttop_ = { itr->second.left, itr->second.top };
 
 			return true;
 		}
 	}
+
+	lefttop_ = { 0, 0 };
 
 	HRESULT hr = device->CreateTexture(widthTexture, heightTexture, 1, 
 		0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &pTexture, nullptr);
@@ -256,7 +266,7 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 
 					memcpy((BYTE*)lock.pBits + lock.Pitch * iy + 4 * ix, &color, sizeof(D3DCOLOR));
 				}
-				};
+			};
 
 			ParallelFor(sizeMax_.y, _GenRow);
 		}
@@ -268,7 +278,7 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont) {
 	texture_ = std::make_shared<Texture>();
 	texture_->SetTexture(pTexture);
 
-	renderer->AddGlyph(cachePath, texture_);
+	renderer->AddGeneratedGlyph(this);
 
 	return true;
 }
@@ -756,7 +766,7 @@ DxTextRenderer::DxTextRenderer() {
 	colorVertex_ = D3DCOLOR_ARGB(255, 255, 255, 255);
 }
 DxTextRenderer::~DxTextRenderer() {
-	SaveGlyphs();
+
 }
 bool DxTextRenderer::Initialize() {
 	if (thisBase_) return false;
@@ -764,7 +774,7 @@ bool DxTextRenderer::Initialize() {
 	winFont_.CreateFont(Font::GOTHIC, 20, true);
 
 	glyphDir_ = L"";
-	glyphs_ = {};
+	atlases_ = {};
 
 	thisBase_ = this;
 	return true;
@@ -1366,7 +1376,7 @@ void DxTextRenderer::_CreateRenderObject(shared_ptr<DxTextRenderObject> objRende
 		shared_ptr<DxCharGlyph> dxChar = cache_.GetChar(keyFont);
 		if (dxChar == nullptr) {
 			dxChar = std::make_shared<DxCharGlyph>();
-			dxChar->Create(keyFont.code_, winFont_, &dxFont);
+			dxChar->Create(keyFont.code_, winFont_, &dxFont, pDxText);
 			cache_.AddChar(keyFont, dxChar);
 		}
 
@@ -1380,7 +1390,10 @@ void DxTextRenderer::_CreateRenderObject(shared_ptr<DxTextRenderObject> objRende
 		LONG charHeight = ptrCharSize->y;
 		DxRect<LONG> rcDest(xRender + xOffset, yRender + yOffset,
 			charWidth + xRender + xOffset, charHeight + yRender + yOffset);
-		DxRect<LONG> rcSrc(0, 0, charWidth, charHeight);
+		POINT* ptrLeftTop = &dxChar->GetLeftTop();
+		LONG charLeft = ptrLeftTop->x;
+		LONG charTop = ptrLeftTop->y;
+		DxRect<LONG> rcSrc(0 + charLeft, 0 + charTop, charWidth + charLeft, charHeight + charTop); // ATLAS OFFSET (IN PIXELS) GOES HERE
 		spriteText->SetVertex(rcSrc, rcDest, colorVertex_);
 		objRender->AddRenderObject(shared_ptr<Sprite2D>(spriteText));
 
@@ -1507,8 +1520,10 @@ bool DxTextRenderer::AddFontFromFile(const std::wstring& path) {
 	Logger::WriteTop(StringUtility::Format(L"AddFontFromFile: Font loaded. [%s]", pathReduce.c_str()));
 	return hFont != 0;
 }
-bool DxTextRenderer::LoadGlyphs(const std::wstring& path) {
+bool DxTextRenderer::LoadGlyphAtlases(const std::wstring& path) {
 	if (bLoadedGlyphs_) return false;
+
+	bLoadedGlyphs_ = true;
 
 	bool allCreated = true;
 
@@ -1516,49 +1531,103 @@ bool DxTextRenderer::LoadGlyphs(const std::wstring& path) {
 
 	std::wstring pathReduce = PathProperty::ReduceModuleDirectory(path);
 
+	size_t glyphCount = 0;
+
 	std::vector<std::wstring> listFile = File::GetFilePathList(path);
 	for (auto itr = listFile.begin(); itr != listFile.end(); ++itr) {
 		std::wstring pathGlyph = *itr;
 		pathGlyph = PathProperty::GetUnique(pathGlyph);
 
+		if (PathProperty::GetFileExtension(pathGlyph) != L".png")
+			continue;
+
 		shared_ptr<Texture> texture = std::make_shared<Texture>();
 		allCreated &= texture->CreateFromFile(pathGlyph, false, true);
 
-		glyphs_[pathGlyph] = texture;
+		shared_ptr<DxTextAtlas> atlas = std::make_shared<DxTextAtlas>();
+		atlas->path_ = pathGlyph;
+		atlas->texture_ = texture;
+
+		// read atlas metadata
+		std::wstring metadataPath = atlas->path_.substr(0, atlas->path_.rfind(L".")) + L".bin";
+		std::ifstream ifs(metadataPath, std::ios::binary);
+
+		if (ifs.is_open()) {
+			uint32_t size;
+			ifs.read(reinterpret_cast<char*>(&size), sizeof(uint32_t));
+
+			for (uint32_t i = 0; i < size; ++i) {
+				DxCharGlyph::CharGlyphKey key;
+
+				ifs.read(reinterpret_cast<char*>(&(key.fontName)), sizeof(uint32_t));
+
+				ifs.read(reinterpret_cast<char*>(&(key.height)), sizeof(int32_t));
+				ifs.read(reinterpret_cast<char*>(&(key.weight)), sizeof(int32_t));
+				ifs.read(reinterpret_cast<char*>(&(key.italic)), sizeof(uint8_t));
+
+				ifs.read(reinterpret_cast<char*>(&(key.originX)), sizeof(int32_t));
+				ifs.read(reinterpret_cast<char*>(&(key.originY)), sizeof(int32_t));
+
+				ifs.read(reinterpret_cast<char*>(&(key.topColor)), sizeof(uint32_t));
+				ifs.read(reinterpret_cast<char*>(&(key.bottomColor)), sizeof(uint32_t));
+				ifs.read(reinterpret_cast<char*>(&(key.borderColor)), sizeof(uint32_t));
+
+				ifs.read(reinterpret_cast<char*>(&(key.borderType)), sizeof(uint8_t));
+				ifs.read(reinterpret_cast<char*>(&(key.borderWidth)), sizeof(int32_t));
+
+				ifs.read(reinterpret_cast<char*>(&(key.codepoint)), sizeof(uint32_t));
+
+				int32_t left;
+				int32_t top;
+				int32_t right;
+				int32_t bottom;
+
+				ifs.read(reinterpret_cast<char*>(&left), sizeof(int32_t));
+				ifs.read(reinterpret_cast<char*>(&top), sizeof(int32_t));
+				ifs.read(reinterpret_cast<char*>(&right), sizeof(int32_t));
+				ifs.read(reinterpret_cast<char*>(&bottom), sizeof(int32_t));
+
+				DxRect<LONG> rect = DxRect<LONG>(left, top, right, bottom);
+
+				atlas->glyphs_.emplace(key, rect);
+
+				++glyphCount;
+			}
+
+			int32_t headX;
+			int32_t headY;
+			int32_t lineHeight;
+
+			ifs.read(reinterpret_cast<char*>(&headX), sizeof(int32_t));
+			ifs.read(reinterpret_cast<char*>(&headY), sizeof(int32_t));
+			ifs.read(reinterpret_cast<char*>(&lineHeight), sizeof(int32_t));
+
+			atlas->head_ = { headX, headY };
+			atlas->lineHeight_ = lineHeight;
+
+			ifs.close();
+
+			Logger::WriteTop(StringUtility::Format(L"LoadGlyphs: Atlas metadata loaded. [%s]", PathProperty::ReduceModuleDirectory(metadataPath).c_str()));
+		}
+
+		std::wstring atlasName = PathProperty::GetFileNameWithoutExtension(pathGlyph);
+		size_t split = atlasName.rfind(L"_");
+
+		std::wstring atlasFontName;
+
+		if (split == std::wstring::npos)
+			throw gstd::wexception(L"LoadGlyphs: Glyphs folder contains atlas files without underscore delimiters.");
+
+		atlasFontName = atlasName.substr(0, split);
+		
+		atlases_[atlasFontName].push_back(atlas);
 	}
 
 	std::wstring allDone = allCreated ? L"all successful" : L"incomplete";
 
-	bLoadedGlyphs_ = true;
+	Logger::WriteTop(StringUtility::Format(L"LoadGlyphs: %d glyphs loaded (%ls). [%s]", glyphCount, allDone.c_str(), pathReduce.c_str()));
 
-	Logger::WriteTop(StringUtility::Format(L"LoadGlyphs: %d glyphs loaded (%ls). [%s]", glyphs_.size(), allDone.c_str(), pathReduce.c_str()));
 	return allCreated;
-}
-void DxTextRenderer::SaveGlyphs() {
-	if (!bLoadedGlyphs_) return;
-
-	std::wstring dir = GetGlyphDirectory();
-
-	std::wstring pathReduce = PathProperty::ReduceModuleDirectory(dir);
-
-	File::CreateFileDirectory(dir);
-
-	for (const auto& glyph : glyphs_) {
-		if (!File::IsExists(glyph.first)) {
-			HRESULT hrGlyph = D3DXSaveTextureToFile(glyph.first.c_str(), D3DXIFF_PNG, glyph.second->GetD3DTexture(), nullptr);
-
-			if (FAILED(hrGlyph))
-				throw wexception("D3DXSaveTextureToFile failure from glyph cache.");
-		}
-	}
-
-	Logger::WriteTop(StringUtility::Format(L"SaveGlyphs: %d glyphs saved. [%s]", glyphs_.size(), pathReduce.c_str()));
-}
-shared_ptr<Texture> DxTextRenderer::GetGlyph(const std::wstring& path) {
-	auto itr = glyphs_.find(path);
-	if (itr != glyphs_.end())
-		return itr->second;
-	return nullptr;
 }
 const std::wstring& DxTextRenderer::GetGlyphDirectory() {
 	if (glyphDir_ == L"") {
@@ -1566,6 +1635,162 @@ const std::wstring& DxTextRenderer::GetGlyphDirectory() {
 		glyphDir_ = moduleDir + L"glyph/";
 	}
 	return glyphDir_;
+}
+bool DxTextRenderer::SaveGeneratedGlyphs() {
+	IDirect3DDevice9* device = DirectGraphics::GetBase()->GetDevice();
+
+	std::wstring dir = GetGlyphDirectory();
+
+	std::wstring pathReduce = PathProperty::ReduceModuleDirectory(dir);
+
+	File::CreateFileDirectory(dir);
+
+	for (const auto& glyph : generatedGlyphs_) {
+		std::wstring atlasName = glyph->GetAtlasName();
+
+		bool blitted = false;
+		for (const auto& atlas : atlases_[atlasName]) {
+			if (atlas->BlitGlyph(glyph)) {
+				blitted = true;
+				break;
+			}
+		}
+		
+		if (blitted) continue;
+
+		IDirect3DTexture9* dstTexture = nullptr;
+
+		HRESULT hr = device->CreateTexture(DxTextAtlas::ATLAS_SIZE, DxTextAtlas::ATLAS_SIZE, 1,
+			0, D3DFMT_A8R8G8B8, D3DPOOL_MANAGED, &dstTexture, nullptr);
+		if (FAILED(hr))
+			throw wexception("D3DXSaveTextureToFile failure generating new atlas texture.");
+
+		std::shared_ptr<Texture> texture = std::make_shared<Texture>();
+		texture->SetTexture(dstTexture);
+
+		std::wstring atlasPath = dir + atlasName + L"_" + std::to_wstring(atlases_[atlasName].size() + 1U) + L".png";
+
+		shared_ptr<DxTextAtlas> atlas = std::make_shared<DxTextAtlas>();
+		atlas->path_ = atlasPath;
+		atlas->texture_ = texture;
+		atlas->BlitGlyph(glyph);
+		atlases_[atlasName].push_back(atlas);
+	}
+
+	for (auto itr = atlases_.begin(); itr != atlases_.end(); itr++) {
+		for (const auto& atlas : itr->second) {
+			// save atlas texture
+			HRESULT hrGlyph = D3DXSaveTextureToFile(atlas->path_.c_str(), D3DXIFF_PNG, atlas->texture_->GetD3DTexture(), nullptr);
+			if (FAILED(hrGlyph))
+				throw wexception("D3DXSaveTextureToFile failure saving atlas texture to file.");
+
+			// save atlas metadata
+			std::wstring metadataPath = atlas->path_.substr(0, atlas->path_.rfind(L".")) + L".bin";
+			std::ofstream ofs(metadataPath, std::ios::binary | std::ios::trunc);
+
+			if (ofs.is_open()) {
+				uint32_t size = static_cast<uint32_t>(atlas->glyphs_.size());
+				ofs.write(reinterpret_cast<const char*>(&size), sizeof(uint32_t));
+
+				for (auto gitr = atlas->glyphs_.begin(); gitr != atlas->glyphs_.end(); gitr++) {
+					// CharGlyphKey
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.fontName)), sizeof(uint32_t));
+
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.height)), sizeof(int32_t));
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.weight)), sizeof(int32_t));
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.italic)), sizeof(uint8_t));
+
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.originX)), sizeof(int32_t));
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.originY)), sizeof(int32_t));
+
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.topColor)), sizeof(uint32_t));
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.bottomColor)), sizeof(uint32_t));
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.borderColor)), sizeof(uint32_t));
+
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.borderType)), sizeof(uint8_t));
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.borderWidth)), sizeof(int32_t));
+
+					ofs.write(reinterpret_cast<const char*>(&(gitr->first.codepoint)), sizeof(uint32_t));
+
+					// DxRect
+					int32_t left = gitr->second.left;
+					int32_t top = gitr->second.top;
+					int32_t right = gitr->second.right;
+					int32_t bottom = gitr->second.bottom;
+
+					ofs.write(reinterpret_cast<const char*>(&left), sizeof(int32_t));
+					ofs.write(reinterpret_cast<const char*>(&top), sizeof(int32_t));
+					ofs.write(reinterpret_cast<const char*>(&right), sizeof(int32_t));
+					ofs.write(reinterpret_cast<const char*>(&bottom), sizeof(int32_t));
+				}
+
+				int32_t headX = atlas->head_.x;
+				int32_t headY = atlas->head_.y;
+				int32_t lineHeight = atlas->lineHeight_;
+
+				ofs.write(reinterpret_cast<const char*>(&headX), sizeof(int32_t));
+				ofs.write(reinterpret_cast<const char*>(&headY), sizeof(int32_t));
+				ofs.write(reinterpret_cast<const char*>(&lineHeight), sizeof(int32_t));
+
+				ofs.close();
+			}
+		}
+	}
+
+	Logger::WriteTop(StringUtility::Format(L"SaveGlyphs: %d glyphs saved. [%s]", generatedGlyphs_.size(), pathReduce.c_str()));
+	return true;
+}
+
+bool DxTextAtlas::BlitGlyph(DxCharGlyph* glyph) {
+	std::shared_ptr<Texture> texture = glyph->GetTexture();
+
+	UINT width = texture->GetWidth();
+	UINT height = texture->GetHeight();
+
+	if ((head_.x >= ATLAS_SIZE) || (ATLAS_SIZE - head_.x <= width)) {
+		head_.x = 0;
+		head_.y = lineHeight_;
+	}
+
+	if ((head_.y >= ATLAS_SIZE) || (ATLAS_SIZE - head_.y <= height))
+		return false;
+
+	UINT atlasX = head_.x;
+	UINT atlasY = head_.y;
+
+	D3DLOCKED_RECT srcLock;
+	D3DLOCKED_RECT dstLock;
+
+	IDirect3DTexture9* srcTexture = texture->GetD3DTexture();
+	IDirect3DTexture9* dstTexture = texture_->GetD3DTexture();
+
+	srcTexture->LockRect(0, &srcLock, nullptr, D3DLOCK_READONLY);
+	dstTexture->LockRect(0, &dstLock, nullptr, 0);
+
+	const int bytesPerPixel = 4; // A8R8G8B8
+
+	for (int y = 0; y < height; y++)
+	{
+		BYTE* srcRow = (BYTE*)srcLock.pBits + y * srcLock.Pitch;
+		BYTE* dstRow = (BYTE*)dstLock.pBits + (atlasY + y) * dstLock.Pitch + atlasX * bytesPerPixel;
+
+		memcpy(dstRow, srcRow, width * bytesPerPixel);
+	}
+
+	srcTexture->UnlockRect(0);
+	dstTexture->UnlockRect(0);
+
+	glyphs_[glyph->GetHash()] = DxRect<LONG>(head_.x, head_.y, width - DxCharGlyph::PADDING, height - DxCharGlyph::PADDING);
+
+	lineHeight_ = std::max(lineHeight_, head_.y + (long)height);
+
+	head_.x += width;
+	if (head_.x >= ATLAS_SIZE) {
+		head_.x = 0;
+		head_.y = lineHeight_;
+	}
+
+	return true;
 }
 
 //*******************************************************************
@@ -1607,6 +1832,8 @@ DxText::DxText() {
 	bSyntacticAnalysis_ = true;
 
 	textHash_ = 0;
+
+	atlasName_ = L"";
 }
 DxText::~DxText() {}
 void DxText::Copy(const DxText& src) {
@@ -1621,6 +1848,7 @@ void DxText::Copy(const DxText& src) {
 	alignmentHorizontal_ = src.alignmentHorizontal_;
 	alignmentVertical_ = src.alignmentVertical_;
 	colorVertex_ = src.colorVertex_;
+	atlasName_ = src.atlasName_;
 	text_ = src.text_;
 }
 void DxText::SetFontType(const wchar_t* type) {

@@ -135,6 +135,7 @@ static const std::vector<function> dxFunction = {
 	//Font functions
 	{ "InstallFont", DxScript::Func_InstallFont, 1 },
 	{ "LoadGlyphs", DxScript::Func_LoadGlyphs, 1 },
+	{ "SaveGlyphs", DxScript::Func_SaveGlyphs, 0 },
 
 	//Shader functions
 	{ "LoadShader", DxScript::Func_LoadShader, 1 },
@@ -519,6 +520,7 @@ static const std::vector<function> dxFunction = {
 	{ "ObjText_SetHorizontalAlignment", DxScript::Func_ObjText_SetHorizontalAlignment, 2 },
 	{ "ObjText_SetVerticalAlignment", DxScript::Func_ObjText_SetVerticalAlignment, 2 },
 	{ "ObjText_SetSyntacticAnalysis", DxScript::Func_ObjText_SetSyntacticAnalysis, 2 },
+	{ "ObjText_SetAtlas", DxScript::Func_ObjText_SetAtlas, 2 },
 	{ "ObjText_GetText", DxScript::Func_ObjText_GetText, 1 },
 	{ "ObjText_GetTextLength", DxScript::Func_ObjText_GetTextLength, 1 },
 	{ "ObjText_GetTextLengthCU", DxScript::Func_ObjText_GetTextLengthCU, 1 },
@@ -1119,7 +1121,21 @@ gstd::value DxScript::Func_LoadGlyphs(gstd::script_machine* machine, int argc, c
 	DxTextRenderer* renderer = DxTextRenderer::GetBase();
 	bool res = false;
 	try {
-		res = renderer->LoadGlyphs(path);
+		res = renderer->LoadGlyphAtlases(path);
+	}
+	catch (gstd::wexception& e) {
+		Logger::WriteTop(e.what());
+	}
+
+	return script->CreateBooleanValue(res);
+}
+gstd::value DxScript::Func_SaveGlyphs(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+
+	DxTextRenderer* renderer = DxTextRenderer::GetBase();
+	bool res = false;
+	try {
+		res = renderer->SaveGeneratedGlyphs();
 	}
 	catch (gstd::wexception& e) {
 		Logger::WriteTop(e.what());
@@ -5372,6 +5388,16 @@ gstd::value DxScript::Func_ObjText_SetSyntacticAnalysis(gstd::script_machine* ma
 	DxScriptTextObject* obj = script->GetObjectPointerAs<DxScriptTextObject>(id);
 	if (obj)
 		obj->SetSyntacticAnalysis(argv[1].as_boolean());
+	return value();
+}
+value DxScript::Func_ObjText_SetAtlas(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	DxScriptTextObject* obj = script->GetObjectPointerAs<DxScriptTextObject>(id);
+	if (obj) {
+		std::wstring wstr = argv[1].as_string();
+		obj->SetAtlas(wstr);
+	}
 	return value();
 }
 value DxScript::Func_ObjText_GetText(script_machine* machine, int argc, const value* argv) {

@@ -724,6 +724,7 @@ namespace directx {
 		void SetVerticalAlignment(TextAlignment value) { text_.SetVerticalAlignment(value); change_ = CHANGE_ALL; }
 		void SetPermitCamera(bool bPermit) { text_.SetPermitCamera(bPermit); }
 		void SetSyntacticAnalysis(bool bEnable) { text_.SetSyntacticAnalysis(bEnable); }
+		void SetAtlas(const std::wstring& name) { text_.SetAtlasName(name); }
 
 		virtual void SetAlpha(int alpha);
 		virtual void SetColor(int r, int g, int b);

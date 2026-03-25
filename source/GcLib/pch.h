@@ -142,6 +142,7 @@
 #include <bitset>
 #include <complex>
 #include <optional>
+#include <functional>
 
 #include <memory>
 #include <algorithm>
