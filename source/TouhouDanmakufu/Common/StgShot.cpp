@@ -1035,12 +1035,13 @@ void StgShotObject::_DeleteInAutoDeleteFrame() {
 void StgShotObject::_CommonWorkTask() {
 	if (bEnableMovement_) {
 		++frameWork_;
-		if (frameFadeDelete_ >= 0) --frameFadeDelete_;
 		_DeleteInLife();
 		_DeleteInAutoClip();
 		_DeleteInAutoDeleteFrame();
-		_DeleteInFadeDelete();
 	}
+	if (frameFadeDelete_ >= 0) --frameFadeDelete_;
+	_DeleteInFadeDelete();
+
 	--frameGrazeInvalid_;
 
 	//----------------------------------------------------------
@@ -1748,7 +1749,14 @@ void StgNormalShotObject::Render(BlendMode targetBlend) {
 			color = (delay_.colorRep != 0) ? delay_.colorRep : shotData->GetDelayColor();
 			if (delay_.colorMix) ColorAccess::MultiplyColor(color, color_);
 			{
-				byte alpha = ColorAccess::ClampColorRet(((color >> 24) & 0xff) * delay_.GetAlpha());
+				float alphaRate = delay_.GetAlpha();
+				if (frameFadeDelete_ >= 0) {
+					float lerp = std::clamp<float>(1.0f - (float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
+					alphaRate = std::clamp<float>(Math::Lerp::Accelerate<float, float>(alphaRate, alphaRate - 1.0f, lerp), 0, 1);
+					scaleX = Math::Lerp::Smooth<float, float>(scaleX, 0, lerp);
+					scaleY = Math::Lerp::Smooth<float, float>(scaleY, 0, lerp);
+				}
+				byte alpha = ColorAccess::ClampColorRet(((color >> 24) & 0xff) * alphaRate);
 				color = (color & 0x00ffffff) | (alpha << 24);
 			}
 
@@ -1766,8 +1774,12 @@ void StgNormalShotObject::Render(BlendMode targetBlend) {
 
 		{
 			float alphaRate = shotData->GetAlpha() / 255.0f;
-			if (frameFadeDelete_ >= 0)
-				alphaRate *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
+			if (frameFadeDelete_ >= 0) {
+				float lerp = std::clamp<float>(1.0f - (float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
+				alphaRate = std::clamp<float>(Math::Lerp::Accelerate<float, float>(alphaRate, alphaRate - 1.0f, lerp), 0, 1);
+				scaleX = Math::Lerp::Smooth<float, float>(scaleX, 0, lerp);
+				scaleY = Math::Lerp::Smooth<float, float>(scaleY, 0, lerp);
+			}
 			byte alpha = ColorAccess::ClampColorRet(((color >> 24) & 0xff) * alphaRate);
 			color = (color & 0x00ffffff) | (alpha << 24);
 		}
@@ -2129,8 +2141,11 @@ void StgLooseLaserObject::Render(BlendMode targetBlend) {
 				rColor = color_;
 				{
 					float alphaRate = shotData->GetAlpha() / 255.0f;
-					if (frameFadeDelete_ >= 0)
-						alphaRate *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
+					if (frameFadeDelete_ >= 0) {
+						float lerp = std::clamp<float>(1.0f - (float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
+						alphaRate = std::clamp<float>(Math::Lerp::Accelerate<float, float>(alphaRate, alphaRate - 1.0f, lerp), 0, 1);
+						rScale.x = Math::Lerp::Smooth<float, float>(rScale.x, 0, lerp);
+					}
 					byte alpha = ColorAccess::ClampColorRet(((rColor >> 24) & 0xff) * alphaRate);
 					rColor = (rColor & 0x00ffffff) | (alpha << 24);
 				}
@@ -2362,8 +2377,11 @@ void StgStraightLaserObject::Render(BlendMode targetBlend) {
 			rColor = color_;
 			{
 				float alphaRate = shotData->GetAlpha() / 255.0f;
-				if (frameFadeDelete_ >= 0)
-					alphaRate *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE_LASER, 0, 1);
+				if (frameFadeDelete_ >= 0) {
+					float lerp = std::clamp<float>(1.0f - (float)frameFadeDelete_ / FRAME_FADEDELETE_LASER, 0, 1);
+					alphaRate = std::clamp<float>(Math::Lerp::Accelerate<float, float>(alphaRate, alphaRate - 1.0f, lerp), 0, 1);
+					rScale.x = Math::Lerp::Smooth<float, float>(rScale.x, 0, lerp);
+				}
 				byte alpha = ColorAccess::ClampColorRet(((rColor >> 24) & 0xff) * alphaRate);
 				rColor = (rColor & 0x00ffffff) | (alpha << 24);
 			}
@@ -2748,14 +2766,18 @@ void StgCurveLaserObject::Render(BlendMode targetBlend) {
 			size_t halfPos = countRect / 2U;
 
 			shared_ptr<Texture> texture = shotFrame->GetVertexBufferContainer()->GetTexture();
-			D3DXVECTOR2 texSizeInv = D3DXVECTOR2(1.0f / texture->GetWidth(), 1.0f / texture->GetHeight());
+			D3DXVECTOR2 texSizeInv = D3DXVECTOR2(1.0f / texture->GetWidth(), 1.0f / std::max<UINT>(texture->GetHeight(), 1));
 
 			const DxRect<LONG>* rcSrcOrg = shotFrame->GetSourceRect();
 			const LONG* ptrSrc = reinterpret_cast<const LONG*>(rcSrcOrg);
 
 			float alphaRateShot = shotData->GetAlpha() / 255.0f;
-			if (frameFadeDelete_ >= 0)
-				alphaRateShot *= std::clamp<float>((float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
+			float scaleRateShot = 1.0f;
+			if (frameFadeDelete_ >= 0) {
+				float lerp = std::clamp<float>(1.0f - (float)frameFadeDelete_ / FRAME_FADEDELETE, 0, 1);
+				alphaRateShot = std::clamp<float>(Math::Lerp::Accelerate<float, float>(alphaRateShot, alphaRateShot - 1.0f, lerp), 0, 1);
+				scaleRateShot = Math::Lerp::Smooth<float, float>(scaleRateShot, 0, lerp);
+			}
 
 			float baseAlpha = (color_ >> 24) & 0xff;
 			float tipAlpha = baseAlpha * (1.0f - tipDecrement_);
@@ -2858,7 +2880,7 @@ void StgCurveLaserObject::Render(BlendMode targetBlend) {
 						nodeAlpha = Math::Lerp::Linear(tipAlpha, baseAlpha, iPos * inv_halfPosDec);
 					nodeAlpha = std::max(0.0f, nodeAlpha);
 
-				float renderWd = std::max(halfWidthRender * itr->widthMul, 1.0f) * scale_.x;
+				float renderWd = std::max(halfWidthRender * itr->widthMul, 1.0f) * scale_.x * scaleRateShot;
 
 				D3DCOLOR thisColor = 0xffffffff;
 				{

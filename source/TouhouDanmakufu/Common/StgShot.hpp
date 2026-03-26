@@ -245,8 +245,8 @@ public:
 		OWNER_ENEMY,
 		OWNER_NULL,
 
-		FRAME_FADEDELETE = 30,
-		FRAME_FADEDELETE_LASER = 30,
+		FRAME_FADEDELETE = 15,
+		FRAME_FADEDELETE_LASER = 15,
 	};
 public:
 	struct DelayParameter {
