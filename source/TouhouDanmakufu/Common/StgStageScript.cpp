@@ -4706,9 +4706,10 @@ gstd::value StgStageScript::Func_ObjShot_FadeDelete(gstd::script_machine* machin
 	StgStageScript* script = (StgStageScript*)machine->data;
 	int id = argv[0].as_int();
 	StgShotObject* obj = script->GetObjectPointerAs<StgShotObject>(id);
+	bool res = false;
 	if (obj)
-		obj->SetFadeDelete();
-	return value();
+		res = obj->SetFadeDelete();
+	return script->CreateBooleanValue(res);
 }
 gstd::value StgStageScript::Func_ObjShot_SetDeleteFrame(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;

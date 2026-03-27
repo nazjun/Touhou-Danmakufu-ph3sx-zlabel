@@ -439,7 +439,8 @@ public:
 	void SetLife(double life) { life_ = life; }
 	double GetDamage() { return damage_; }
 	void SetDamage(double damage) { damage_ = damage; }
-	virtual void SetFadeDelete() { if (frameFadeDelete_ < 0) frameFadeDelete_ = FRAME_FADEDELETE; }
+	virtual bool SetFadeDelete() { if (frameFadeDelete_ < 0) { frameFadeDelete_ = FRAME_FADEDELETE; return true; } return false; }
+	virtual int GetFadeDelete() { return frameFadeDelete_; }
 	bool IsAutoDelete() { return bAutoDelete_; }
 	void SetAutoDelete(bool b) { bAutoDelete_ = b; }
 	void SetAutoDeleteFrame(int frame) { frameAutoDelete_ = frame; }
@@ -616,7 +617,8 @@ public:
 	double GetLaserAngle() { return angLaser_; }
 	void SetLaserAngle(double angle) { angLaser_ = angle; }
 	void SetLaserAngularVelocity(double angVel) { angVelLaser_ = angVel; }
-	void SetFadeDelete() { if (frameFadeDelete_ < 0) frameFadeDelete_ = FRAME_FADEDELETE_LASER; }
+	bool SetFadeDelete() { if (frameFadeDelete_ < 0) { frameFadeDelete_ = FRAME_FADEDELETE_LASER; return true; } return false; }
+	int GetFadeDelete() { return frameFadeDelete_; }
 
 	void SetSourceEnable(bool bEnable) { bUseSouce_ = bEnable; }
 	void SetEndEnable(bool bEnable) { bUseEnd_ = bEnable; }

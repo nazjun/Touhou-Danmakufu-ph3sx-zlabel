@@ -174,6 +174,7 @@ size_t StgShotManager::DeleteInCircle(int typeDelete, int typeTo, int typeOwner,
 		if (obj->IsDeleted()) continue;
 		if ((typeOwner != StgShotObject::OWNER_NULL) && (obj->GetOwnerType() != typeOwner)) continue;
 		if (typeDelete == DEL_TYPE_SHOT && obj->IsSpellResist()) continue;
+		if (obj->GetFadeDelete() >= 0) continue;
 
 		int sx = obj->GetPositionX();
 		int sy = obj->GetPositionY();
@@ -209,6 +210,7 @@ size_t StgShotManager::DeleteInRegularPolygon(int typeDelete, int typeTo, int ty
 		if (obj->IsDeleted()) continue;
 		if ((typeOwner != StgShotObject::OWNER_NULL) && (obj->GetOwnerType() != typeOwner)) continue;
 		if (typeDelete == DEL_TYPE_SHOT && obj->IsSpellResist()) continue;
+		if (obj->GetFadeDelete() >= 0) continue;
 
 		int sx = obj->GetPositionX();
 		int sy = obj->GetPositionY();
@@ -252,22 +254,32 @@ size_t StgShotManager::DeleteInRegularPolygon(int typeDelete, int typeTo, int ty
 }
 
 std::vector<int> StgShotManager::GetShotIdInCircle(int typeOwner, int cx, int cy, optional<int> radius) {
-	int r = radius.has_value() ? *radius : 0;
-	int rr = r * r;
-
-	DxRect<int> rcBox(cx - r, cy - r, cx + r, cy + r);
-
 	std::vector<int> res;
-	for (ref_unsync_ptr<StgShotObject>& obj : listObj_) {
-		if (obj->IsDeleted()) continue;
-		if ((typeOwner != StgShotObject::OWNER_NULL) && (obj->GetOwnerType() != typeOwner)) continue;
 
-		int sx = obj->GetPositionX();
-		int sy = obj->GetPositionY();
+	if (!radius.has_value()) {
+		for (ref_unsync_ptr<StgShotObject>& obj : listObj_) {
+			if (obj->IsDeleted()) continue;
+			if ((typeOwner != StgShotObject::OWNER_NULL) && (obj->GetOwnerType() != typeOwner)) continue;
+			if (obj->GetFadeDelete() >= 0) continue;
 
-		bool bInRadius = rcBox.IsPointIntersected(sx, sy) && Math::HypotSq<int64_t>(cx - sx, cy - sy) <= rr;
-		if (!radius.has_value() || bInRadius) {
 			res.push_back(obj->GetObjectID());
+		}
+	}
+	else {
+		int r = *radius;
+		int rr = r * r;
+		DxRect<int> rcBox(cx - r, cy - r, cx + r, cy + r);
+
+		for (ref_unsync_ptr<StgShotObject>& obj : listObj_) {
+			if (obj->IsDeleted()) continue;
+			if ((typeOwner != StgShotObject::OWNER_NULL) && (obj->GetOwnerType() != typeOwner)) continue;
+			if (obj->GetFadeDelete() >= 0) continue;
+
+			int sx = obj->GetPositionX();
+			int sy = obj->GetPositionY();
+			bool bInRadius = rcBox.IsPointIntersected(sx, sy) && Math::HypotSq<int64_t>(cx - sx, cy - sy) <= rr;
+			if (bInRadius)
+				res.push_back(obj->GetObjectID());
 		}
 	}
 
@@ -282,6 +294,7 @@ std::vector<int> StgShotManager::GetShotIdInRegularPolygon(int typeOwner, int cx
 	for (ref_unsync_ptr<StgShotObject>& obj : listObj_) {
 		if (obj->IsDeleted()) continue;
 		if ((typeOwner != StgShotObject::OWNER_NULL) && (obj->GetOwnerType() != typeOwner)) continue;
+		if (obj->GetFadeDelete() >= 0) continue;
 
 		int sx = obj->GetPositionX();
 		int sy = obj->GetPositionY();
@@ -316,6 +329,7 @@ std::vector<int> StgShotManager::GetLaserIdAll(int typeOwner) {
 		if (obj->IsDeleted()) continue;
 		if ((typeOwner != StgShotObject::OWNER_NULL) && (obj->GetOwnerType() != typeOwner)) continue;
 		if (obj->GetObjectType() == TypeObject::Shot) continue;
+		if (obj->GetFadeDelete() >= 0) continue;
 
 		res.push_back(obj->GetObjectID());
 	}
