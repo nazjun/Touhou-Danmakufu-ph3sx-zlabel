@@ -158,6 +158,8 @@ static const std::vector<function> commonFunction = {
 	{ "rand_int", ScriptClientBase::Func_RandI, 2 },
 	{ "prand", ScriptClientBase::Func_RandEff, 2 },
 	{ "prand_int", ScriptClientBase::Func_RandEffI, 2 },
+	{ "rand_sign", ScriptClientBase::Func_RandSign, 0 },
+	{ "prand_sign", ScriptClientBase::Func_RandEffSign, 0 },
 	{ "rand_array", ScriptClientBase::Func_RandArray, 3 },
 	{ "rand_int_array", ScriptClientBase::Func_RandArrayI, 3 },
 	{ "prand_array", ScriptClientBase::Func_RandEffArray, 3 },
@@ -1057,6 +1059,17 @@ value ScriptClientBase::Func_RandEffI(script_machine* machine, int argc, const v
 	double min = argv[0].as_int();
 	double max = argv[1].as_int() + 0.9999999;
 	return script->CreateIntValue(script->mtEffect_->GetReal(min, max));
+}
+value ScriptClientBase::Func_RandSign(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	script->CheckRunInMainThread();
+	++randCalls_;
+	return script->CreateIntValue(-1i64 + 2i64 * (int64_t)script->mt_->GetReal(0, 1.9999999));
+}
+value ScriptClientBase::Func_RandEffSign(script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = reinterpret_cast<ScriptClientBase*>(machine->data);
+	++prandCalls_;
+	return script->CreateIntValue(-1i64 + 2i64 * (int64_t)script->mtEffect_->GetReal(0, 1.9999999));
 }
 
 value ScriptClientBase::Func_RandArray(script_machine* machine, int argc, const value* argv) {

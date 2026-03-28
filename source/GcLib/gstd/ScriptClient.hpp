@@ -300,6 +300,8 @@ namespace gstd {
 		DNH_FUNCAPI_DECL_(Func_RandI);
 		DNH_FUNCAPI_DECL_(Func_RandEff);
 		DNH_FUNCAPI_DECL_(Func_RandEffI);
+		DNH_FUNCAPI_DECL_(Func_RandSign);
+		DNH_FUNCAPI_DECL_(Func_RandEffSign);
 		DNH_FUNCAPI_DECL_(Func_RandArray);
 		DNH_FUNCAPI_DECL_(Func_RandEffArray);
 		DNH_FUNCAPI_DECL_(Func_RandArrayI);
