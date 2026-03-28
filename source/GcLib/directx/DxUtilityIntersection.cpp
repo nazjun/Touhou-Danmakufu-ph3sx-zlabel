@@ -192,6 +192,35 @@ bool DxIntersect::Point_RegularPolygon(const DxPoint* pos, const DxRegularPolygo
 	}
 	return res;
 }
+bool DxIntersect::Point_AmorphousPolygram(const DxPoint* pos, const DxAmorphousPolygram* polygram) {
+	Math::DVec2 cpos{ pos->GetX(), pos->GetY() };
+	float dx = cpos[0] - polygram->GetX();
+	float dy = cpos[1] - polygram->GetY();
+	float r = polygram->GetR();
+
+	bool res = abs(dx) <= r && abs(dy) <= r;
+	if (res) {
+		float n2 = polygram->GetSide();
+
+		float n = n2 / 2.0f;
+		float m = Math::Lerp::Linear<float, float>(1.0f, n - 1.0f, polygram->GetInning());
+		float k = 1.0f - polygram->GetSmoothing();
+
+		float mPi = m * GM_PI;
+
+		float numerator = cos((2.0f * asin(k) + mPi) / n2);
+
+		float theta = atan2(dy, dx) - polygram->GetAngle();
+
+		float denominator = cos((2.0f * asin(k * cos(n * theta)) + mPi) / n2);
+
+		float polyRad = r * numerator / denominator;
+
+		res = dx * dx + dy * dy <= polyRad * polyRad;
+	}
+
+	return res;
+}
 
 bool DxIntersect::Circle_Polygon(const DxCircle* circle, const std::vector<DxPoint>* verts) {
 	return Polygon_Circle(verts, circle);
@@ -715,6 +744,27 @@ bool DxIntersect::Polygon_RegularPolygon(const std::vector<DxPoint>* verts, cons
 	}
 
 	return Polygon_Polygon(verts, &tmpVerts);
+}
+
+void DxIntersect::GetSlice_AmorphousPolygram(std::vector<double>& radii, size_t samples, const DxAmorphousPolygram* polygram) {
+	// https://www.desmos.com/calculator/uppqppacg0
+	// inning [0, 1] comes from [1, corners_ - 1] in above graph, moves every other vertex closer to the origin
+	// smoothing [0, 1] interpolates between the polygram and a circle
+
+	float n2 = (float)polygram->GetSide();
+	float n = n2 / 2.0f;
+	float m = Math::Lerp::Linear<float, float>(1.0f, n - 1.0f, polygram->GetInning());
+	float k = 1.0f - polygram->GetSmoothing();
+
+	float mPi = m * GM_PI;
+	float spanTheta = GM_PI_X2 / ((float)samples * n2);
+
+	float numerator = cos((2.0f * asin(k) + mPi) / n2);
+
+	for (size_t i = 0; i <= samples; ++i) {
+		float denominator = cos((2.0f * asin(k * cos(n * spanTheta * i)) + mPi) / n2);
+		radii[i] = numerator / denominator;
+	}
 }
 
 #endif

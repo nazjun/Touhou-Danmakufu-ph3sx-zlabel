@@ -223,6 +223,7 @@ namespace directx {
 		DNH_FUNCAPI_DECL_(Func_IsIntersected_Point_Ellipse);
 		DNH_FUNCAPI_DECL_(Func_IsIntersected_Point_Line);
 		DNH_FUNCAPI_DECL_(Func_IsIntersected_Point_RegularPolygon);
+		DNH_FUNCAPI_DECL_(Func_IsIntersected_Point_AmorphousPolygram);
 
 		DNH_FUNCAPI_DECL_(Func_IsIntersected_Circle_Polygon);
 		DNH_FUNCAPI_DECL_(Func_IsIntersected_Circle_Circle);
@@ -238,6 +239,10 @@ namespace directx {
 		DNH_FUNCAPI_DECL_(Func_IsIntersected_Polygon_Polygon);
 		DNH_FUNCAPI_DECL_(Func_IsIntersected_Polygon_Ellipse);
 		DNH_FUNCAPI_DECL_(Func_IsIntersected_Polygon_RegularPolygon);
+
+		//Surface slice lists
+		DNH_FUNCAPI_DECL_(Func_GetSlice_AmorphousPolygram);
+		DNH_FUNCAPI_DECL_(Func_GetSlice_EquidistantAmorphousPolygram);
 
 		//Color
 		DNH_FUNCAPI_DECL_(Func_ColorARGBToHex);

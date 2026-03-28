@@ -211,6 +211,7 @@ static const std::vector<function> dxFunction = {
 	{ "IsIntersected_Point_Ellipse", DxScript::Func_IsIntersected_Point_Ellipse, 6 },
 	{ "IsIntersected_Point_Line", DxScript::Func_IsIntersected_Point_Line, 7 },
 	{ "IsIntersected_Point_RegularPolygon", DxScript::Func_IsIntersected_Point_RegularPolygon, 7 },
+	{ "IsIntersected_Point_AmorphousPolygram", DxScript::Func_IsIntersected_Point_AmorphousPolygram, 9 },
 
 	{ "IsIntersected_Circle_Polygon", DxScript::Func_IsIntersected_Circle_Polygon, 4 },
 	{ "IsIntersected_Circle_Circle", DxScript::Func_IsIntersected_Circle_Circle, 6 },
@@ -226,6 +227,10 @@ static const std::vector<function> dxFunction = {
 	{ "IsIntersected_Polygon_Polygon", DxScript::Func_IsIntersected_Polygon_Polygon, 2 },
 	{ "IsIntersected_Polygon_Ellipse", DxScript::Func_IsIntersected_Polygon_Ellipse, 5 },
 	{ "IsIntersected_Polygon_RegularPolygon", DxScript::Func_IsIntersected_Polygon_RegularPolygon, 6 },
+
+	//Surface slice lists
+	{ "GetSlice_AmorphousPolygram", DxScript::Func_GetSlice_AmorphousPolygram, 4 },
+	{ "GetSlice_EquidistantAmorphousPolygram", DxScript::Func_GetSlice_EquidistantAmorphousPolygram, 5 },
 
 	//Color conversion functions
 	{ "ColorARGBToHex", DxScript::Func_ColorARGBToHex, 4 },
@@ -2364,6 +2369,14 @@ gstd::value DxScript::Func_IsIntersected_Point_RegularPolygon(gstd::script_machi
 	bool res = DxIntersect::Point_RegularPolygon(&point, &rPolygon);
 	return DxScript::CreateBooleanValue(res);
 }
+gstd::value DxScript::Func_IsIntersected_Point_AmorphousPolygram(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxPoint point(argv[0].as_float(), argv[1].as_float());
+	DxAmorphousPolygram aPolygram(argv[2].as_float(), argv[3].as_float(),
+		argv[4].as_float(), argv[5].as_int(), Math::DegreeToRadian(argv[6].as_float()), argv[7].as_float(), argv[8].as_float());
+
+	bool res = DxIntersect::Point_AmorphousPolygram(&point, &aPolygram);
+	return DxScript::CreateBooleanValue(res);
+}
 
 gstd::value DxScript::Func_IsIntersected_Circle_Polygon(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	DxCircle circle(argv[0].as_float(), argv[1].as_float(), argv[2].as_float());
@@ -2462,6 +2475,78 @@ gstd::value DxScript::Func_IsIntersected_Polygon_RegularPolygon(gstd::script_mac
 
 	bool res = DxIntersect::Polygon_RegularPolygon(&polygon, &rPolygon);
 	return DxScript::CreateBooleanValue(res);
+}
+
+//Surface slice lists
+value DxScript::Func_GetSlice_AmorphousPolygram(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	size_t samples = argv[0].as_float();
+	size_t side = argv[1].as_float();
+	float inning = argv[2].as_float();
+	float smoothing = argv[3].as_float();
+
+	std::vector<double> radii(samples + 1, 0);
+	DxAmorphousPolygram aPolygram(0, 0, 1, side, 0, inning, smoothing);
+	DxIntersect::GetSlice_AmorphousPolygram(radii, samples, &aPolygram);
+
+	return DxScript::CreateFloatArrayValue(radii);
+}
+value DxScript::Func_GetSlice_EquidistantAmorphousPolygram(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	size_t fineSamples = argv[0].as_float();
+
+	size_t samples = argv[1].as_float();
+	size_t side = argv[2].as_float();
+	float inning = argv[3].as_float();
+	float smoothing = argv[4].as_float();
+
+	std::vector<double> radii(fineSamples + 1, 0);
+	DxAmorphousPolygram aPolygram(0, 0, 1, side, 0, inning, smoothing);
+	DxIntersect::GetSlice_AmorphousPolygram(radii, fineSamples, &aPolygram);
+
+	float spanTheta = (GM_PI_X2 / (float)side) / (float)fineSamples;
+
+	std::vector<double> dists(fineSamples + 1, 0);
+
+	float x1 = 1;
+	float y1 = 0;
+
+	for (size_t i = 1; i <= fineSamples; ++i) {
+		float theta = spanTheta * i;
+		float radSample = radii[i];
+		float x2 = radSample * cos(theta);
+		float y2 = radSample * sin(theta);
+
+		dists[i] = dists[i - 1] + hypot(y2 - y1, x2 - x1);
+
+		x1 = x2;
+		y1 = y2;
+	}
+
+	std::vector<double> radiiAngles(2 * (samples + 1), 0);
+
+	radiiAngles[0] = 1;
+
+	float sampleDist = dists[fineSamples] / (float)samples;
+	float aggregateDist = sampleDist;
+
+	spanTheta = Math::RadianToDegree(spanTheta);
+
+	size_t j = 1;
+
+	for (size_t i = 1; i <= samples; ++i) {
+		for (; dists[j] < aggregateDist && j < fineSamples; ++j);
+
+		float nearestLower = dists[j - 1];
+		float nearestUpper = dists[j];
+
+		float interp = (aggregateDist - nearestLower) / (nearestUpper - nearestLower);
+
+		radiiAngles[2 * i] = Math::Lerp::Linear<float, float>(radii[j - 1], radii[j], interp);
+		radiiAngles[2 * i + 1] = spanTheta * (j - 1 + interp);
+
+		aggregateDist += sampleDist;
+	}
+
+	return DxScript::CreateFloatArrayValue(radiiAngles);
 }
 
 //Color

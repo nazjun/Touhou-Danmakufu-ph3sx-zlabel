@@ -174,6 +174,7 @@ namespace directx {
 		static bool Point_Line(const DxPoint* pos, const DxLine* line);
 		static bool Point_LineW(const DxPoint* pos, const DxWidthLine* line);
 		static bool Point_RegularPolygon(const DxPoint* pos, const DxRegularPolygon* polygon);
+		static bool Point_AmorphousPolygram(const DxPoint* pos, const DxAmorphousPolygram* polygram);
 
 		static bool Circle_Polygon(const DxCircle* circle, const std::vector<DxPoint>* verts);
 		static bool Circle_Circle(const DxCircle* circle1, const DxCircle* circle2);
@@ -202,6 +203,8 @@ namespace directx {
 		static bool Polygon_Line(const std::vector<DxPoint>* verts, const DxLine* line);
 		static bool Polygon_LineW(const std::vector<DxPoint>* verts, const DxWidthLine* line);
 		static bool Polygon_RegularPolygon(const std::vector<DxPoint>* verts, const DxRegularPolygon* polygon);
+
+		static void GetSlice_AmorphousPolygram(std::vector<double>& radii, size_t samples, const DxAmorphousPolygram* polygram);
 	};
 #endif
 }

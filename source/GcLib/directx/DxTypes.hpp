@@ -360,6 +360,28 @@ namespace directx {
 		float GetAngle() const { return ang; }
 	};
 
+	class DxAmorphousPolygram : public DxCircle {
+	private:
+		size_t side;
+		float ang;
+		float inning;
+		float smoothing;
+	public:
+		DxAmorphousPolygram() { side = 1; ang = 0; inning = 0; smoothing = 0; }
+		DxAmorphousPolygram(float x, float y, float r, size_t s, float a, float i, float m) : DxCircle(x, y, r) {
+			side = s; ang = a; inning = i; smoothing = m;
+		}
+
+		void SetSide(size_t s) { side = s; }
+		size_t GetSide() const { return side; }
+		void SetAngle(float a) { ang = a; }
+		float GetAngle() const { return ang; }
+		void SetInning(float i) { inning = i; }
+		float GetInning() const { return inning; }
+		void SetSmoothing(float m) { smoothing = m; }
+		float GetSmoothing() const { return smoothing; }
+	};
+
 	class DxLine3D : public DxShapeBase {
 	private:
 		D3DXVECTOR3 vertex_[2];
