@@ -1538,7 +1538,7 @@ bool DxTextRenderer::LoadGlyphAtlases(const std::wstring& path) {
 		std::wstring pathGlyph = *itr;
 		pathGlyph = PathProperty::GetUnique(pathGlyph);
 
-		if (PathProperty::GetFileExtension(pathGlyph) != L".png")
+		if (PathProperty::GetFileExtension(pathGlyph) != L".dds")
 			continue;
 
 		shared_ptr<Texture> texture = std::make_shared<Texture>();
@@ -1549,7 +1549,7 @@ bool DxTextRenderer::LoadGlyphAtlases(const std::wstring& path) {
 		atlas->texture_ = texture;
 
 		// read atlas metadata
-		std::wstring metadataPath = atlas->path_.substr(0, atlas->path_.rfind(L".")) + L".bin";
+		std::wstring metadataPath = atlas->path_.substr(0, atlas->path_.rfind(L".")) + L".dat";
 		std::ifstream ifs(metadataPath, std::ios::binary);
 
 		if (ifs.is_open()) {
@@ -1668,7 +1668,7 @@ bool DxTextRenderer::SaveGeneratedGlyphs() {
 		std::shared_ptr<Texture> texture = std::make_shared<Texture>();
 		texture->SetTexture(dstTexture);
 
-		std::wstring atlasPath = dir + atlasName + L"_" + std::to_wstring(atlases_[atlasName].size() + 1U) + L".png";
+		std::wstring atlasPath = dir + atlasName + L"_" + std::to_wstring(atlases_[atlasName].size() + 1U) + L".dds";
 
 		shared_ptr<DxTextAtlas> atlas = std::make_shared<DxTextAtlas>();
 		atlas->path_ = atlasPath;
@@ -1680,12 +1680,12 @@ bool DxTextRenderer::SaveGeneratedGlyphs() {
 	for (auto itr = atlases_.begin(); itr != atlases_.end(); itr++) {
 		for (const auto& atlas : itr->second) {
 			// save atlas texture
-			HRESULT hrGlyph = D3DXSaveTextureToFile(atlas->path_.c_str(), D3DXIFF_PNG, atlas->texture_->GetD3DTexture(), nullptr);
+			HRESULT hrGlyph = D3DXSaveTextureToFile(atlas->path_.c_str(), D3DXIFF_DDS, atlas->texture_->GetD3DTexture(), nullptr);
 			if (FAILED(hrGlyph))
 				throw wexception("D3DXSaveTextureToFile failure saving atlas texture to file.");
 
 			// save atlas metadata
-			std::wstring metadataPath = atlas->path_.substr(0, atlas->path_.rfind(L".")) + L".bin";
+			std::wstring metadataPath = atlas->path_.substr(0, atlas->path_.rfind(L".")) + L".dat";
 			std::ofstream ofs(metadataPath, std::ios::binary | std::ios::trunc);
 
 			if (ofs.is_open()) {
