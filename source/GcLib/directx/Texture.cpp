@@ -453,42 +453,36 @@ void TextureManager::RestoreDxResource() {
 void TextureManager::__CreateFromFile(shared_ptr<TextureData>& dst, const std::wstring& path, bool genMipmap, bool flgNonPowerOfTwo, bool makeFloatCopy) {
 	DirectGraphics* graphics = DirectGraphics::GetBase();
 
-	shared_ptr<FileReader> reader = FileManager::GetBase()->GetFileReader(path);
-	if (reader == nullptr || !reader->Open())
-		throw wexception(ErrorUtility::GetFileNotFoundErrorMessage(PathProperty::ReduceModuleDirectory(path), true));
-
-	std::string source = reader->ReadAllString();
-
 	dst->useMipMap_ = genMipmap;
 	dst->useNonPowerOfTwo_ = flgNonPowerOfTwo;
 
-	HRESULT hr = D3DXCreateTextureFromFileInMemoryEx(DirectGraphics::GetBase()->GetDevice(),
-		source.c_str(), source.size(),
+	HRESULT hr = D3DXCreateTextureFromFileEx(DirectGraphics::GetBase()->GetDevice(),
+		path.c_str(),
 		dst->useNonPowerOfTwo_ ? D3DX_DEFAULT_NONPOW2 : D3DX_DEFAULT,
 		dst->useNonPowerOfTwo_ ? D3DX_DEFAULT_NONPOW2 : D3DX_DEFAULT,
 		dst->useMipMap_ ? D3DX_DEFAULT : 1, 0,
 		D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_BOX, D3DX_DEFAULT, 0x00000000,
 		nullptr, nullptr, &(dst->pTexture_));
 	if (FAILED(hr))
-		throw wexception("D3DXCreateTextureFromFileInMemoryEx failure.");
+		throw wexception("D3DXCreateTextureFromFileEx failure.");
 
-	hr = D3DXGetImageInfoFromFileInMemory(source.c_str(), source.size(), &dst->infoImage_);
+	hr = D3DXGetImageInfoFromFile(path.c_str(), &dst->infoImage_);
 	if (FAILED(hr))
-		throw wexception("D3DXGetImageInfoFromFileInMemory failure.");
+		throw wexception("D3DXGetImageInfoFromFile failure.");
 
 	if (makeFloatCopy) {
-		HRESULT vhr = D3DXCreateTextureFromFileInMemoryEx(DirectGraphics::GetBase()->GetDevice(),
-			source.c_str(), source.size(),
+		HRESULT vhr = D3DXCreateTextureFromFileEx(DirectGraphics::GetBase()->GetDevice(),
+			path.c_str(),
 			dst->useNonPowerOfTwo_ ? D3DX_DEFAULT_NONPOW2 : D3DX_DEFAULT,
 			dst->useNonPowerOfTwo_ ? D3DX_DEFAULT_NONPOW2 : D3DX_DEFAULT,
 			dst->useMipMap_ ? D3DX_DEFAULT : 1, 0,
 			D3DFMT_A16B16G16R16, D3DPOOL_MANAGED, D3DX_FILTER_BOX, D3DX_DEFAULT, 0x00000000,
 			nullptr, nullptr, &(dst->vTexture_));
 		if (FAILED(vhr))
-			throw wexception("D3DXCreateTextureFromFileInMemoryEx float copy failure.");
+			throw wexception("D3DXCreateTextureFromFileEx float copy failure.");
 
 		std::wstring pathReduce = PathProperty::ReduceModuleDirectory(path);
-		Logger::WriteTop(StringUtility::Format(L"TextureManager: Texture loaded. (D3DFMT_A16B16G16R16) [%s]",
+		Logger::WriteTop(StringUtility::Format(L"TextureManager: Texture loaded (vertex copy). (A16B16G16R16) [%s]",
 			pathReduce.c_str()));
 	}
 
@@ -509,8 +503,23 @@ bool TextureManager::_CreateFromFile(shared_ptr<TextureData>& dst, const std::ws
 		data.reset(new TextureData());
 		__CreateFromFile(data, path, genMipmap, flgNonPowerOfTwo, makeFloatCopy);
 
-		Logger::WriteTop(StringUtility::Format(L"TextureManager: Texture loaded. [%s]",
-			pathReduce.c_str()));
+		std::wstring textureFormat = StringUtility::Format(L"Format ID %d", static_cast<int>(data->infoImage_.Format));
+
+		switch (data->infoImage_.Format) {
+			case D3DFMT_R8G8B8: textureFormat = L"R8G8B8"; break;
+			case D3DFMT_A8R8G8B8: textureFormat = L"A8R8G8B8"; break;
+			case D3DFMT_X8R8G8B8: textureFormat = L"X8R8G8B8"; break;
+			case D3DFMT_L8: textureFormat = L"L8"; break;
+			case D3DFMT_A8L8: textureFormat = L"A8L8"; break;
+			case D3DFMT_DXT1: textureFormat = L"DXT1"; break;
+			case D3DFMT_DXT2: textureFormat = L"DXT2"; break;
+			case D3DFMT_DXT3: textureFormat = L"DXT3"; break;
+			case D3DFMT_DXT4: textureFormat = L"DXT4"; break;
+			case D3DFMT_DXT5: textureFormat = L"DXT5"; break;
+		}
+
+		Logger::WriteTop(StringUtility::Format(L"TextureManager: Texture loaded. (%s) [%s]",
+			textureFormat.c_str(), pathReduce.c_str()));
 	}
 	catch (wexception& e) {
 		std::wstring str = StringUtility::Format(L"TextureManager: Failed to load texture \"%s\"\r\n    %s", 
