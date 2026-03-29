@@ -65,9 +65,6 @@ namespace directx {
 			int32_t  weight;
 			uint8_t  italic;
 
-			int32_t  originX;
-			int32_t  originY;
-
 			uint32_t topColor;
 			uint32_t bottomColor;
 			uint32_t borderColor;
@@ -78,9 +75,9 @@ namespace directx {
 			uint32_t codepoint;
 
 			bool operator==(const CharGlyphKey& rhs) const {
-				return std::tie(fontName, height, weight, italic, originX, originY,
+				return std::tie(fontName, height, weight, italic,
 					topColor, bottomColor, borderColor, borderType, borderWidth, codepoint)
-					== std::tie(rhs.fontName, rhs.height, rhs.weight, rhs.italic, rhs.originX, rhs.originY,
+					== std::tie(rhs.fontName, rhs.height, rhs.weight, rhs.italic,
 						rhs.topColor, rhs.bottomColor, rhs.borderColor, rhs.borderType, rhs.borderWidth, rhs.codepoint);
 			}
 		};
@@ -97,8 +94,6 @@ namespace directx {
 				combine(k.height);
 				combine(k.weight);
 				combine(k.italic);
-				combine(k.originX);
-				combine(k.originY);
 				combine(k.topColor);
 				combine(k.bottomColor);
 				combine(k.borderColor);

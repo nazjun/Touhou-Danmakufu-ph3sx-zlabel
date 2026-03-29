@@ -100,9 +100,6 @@ bool DxCharGlyph::Create(UINT code, const Font& winFont, const DxFont* dxFont, D
 		(int32_t)tm.tmWeight,
 		(uint8_t)tm.tmItalic,
 
-		(int32_t)glyphOriginX,
-		(int32_t)glyphOriginY,
-
 		(uint32_t)dxFont->GetTopColor(),
 		(uint32_t)dxFont->GetBottomColor(),
 		(uint32_t)dxFont->GetBorderColor(),
@@ -1565,9 +1562,6 @@ bool DxTextRenderer::LoadGlyphAtlases(const std::wstring& path) {
 				ifs.read(reinterpret_cast<char*>(&(key.weight)), sizeof(int32_t));
 				ifs.read(reinterpret_cast<char*>(&(key.italic)), sizeof(uint8_t));
 
-				ifs.read(reinterpret_cast<char*>(&(key.originX)), sizeof(int32_t));
-				ifs.read(reinterpret_cast<char*>(&(key.originY)), sizeof(int32_t));
-
 				ifs.read(reinterpret_cast<char*>(&(key.topColor)), sizeof(uint32_t));
 				ifs.read(reinterpret_cast<char*>(&(key.bottomColor)), sizeof(uint32_t));
 				ifs.read(reinterpret_cast<char*>(&(key.borderColor)), sizeof(uint32_t));
@@ -1699,9 +1693,6 @@ bool DxTextRenderer::SaveGeneratedGlyphs() {
 					ofs.write(reinterpret_cast<const char*>(&(gitr->first.height)), sizeof(int32_t));
 					ofs.write(reinterpret_cast<const char*>(&(gitr->first.weight)), sizeof(int32_t));
 					ofs.write(reinterpret_cast<const char*>(&(gitr->first.italic)), sizeof(uint8_t));
-
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.originX)), sizeof(int32_t));
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.originY)), sizeof(int32_t));
 
 					ofs.write(reinterpret_cast<const char*>(&(gitr->first.topColor)), sizeof(uint32_t));
 					ofs.write(reinterpret_cast<const char*>(&(gitr->first.bottomColor)), sizeof(uint32_t));
