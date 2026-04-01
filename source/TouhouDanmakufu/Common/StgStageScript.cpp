@@ -486,6 +486,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjShot_SetOwnerType", StgStageScript::Func_ObjShot_SetOwnerType, 2 },
 	{ "ObjShot_SetAutoDelete", StgStageScript::Func_ObjShot_SetAutoDelete, 2 },
 	{ "ObjShot_FadeDelete", StgStageScript::Func_ObjShot_FadeDelete, 1 },
+	{ "ObjShot_IsDeleting", StgStageScript::Func_ObjShot_IsDeleting, 1 },
 	{ "ObjShot_SetDeleteFrame", StgStageScript::Func_ObjShot_SetDeleteFrame, 2 },
 	{ "ObjShot_SetFrameDeleteType", StgStageScript::Func_ObjShot_SetFrameDeleteType, 2 },
 	{ "ObjShot_SetDelay", StgStageScript::Func_ObjShot_SetDelay, 2 },
@@ -4709,6 +4710,15 @@ gstd::value StgStageScript::Func_ObjShot_FadeDelete(gstd::script_machine* machin
 	bool res = false;
 	if (obj)
 		res = obj->SetFadeDelete();
+	return script->CreateBooleanValue(res);
+}
+gstd::value StgStageScript::Func_ObjShot_IsDeleting(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgShotObject* obj = script->GetObjectPointerAs<StgShotObject>(id);
+	bool res = false;
+	if (obj)
+		res = obj->GetFadeDelete() >= 0;
 	return script->CreateBooleanValue(res);
 }
 gstd::value StgStageScript::Func_ObjShot_SetDeleteFrame(gstd::script_machine* machine, int argc, const gstd::value* argv) {
