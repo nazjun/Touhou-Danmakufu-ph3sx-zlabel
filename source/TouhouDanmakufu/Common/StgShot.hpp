@@ -293,6 +293,25 @@ public:
 		float _CalculateValue(D3DXVECTOR3* param, lerp_func func);
 
 	};
+
+	struct AnimParameter {
+		enum {
+			SHOTANIM_NONE,
+			SHOTANIM_JIGGLE,
+			SHOTANIM_SQUISH,
+			SHOTANIM_FLUTTER,
+			SHOTANIM_DANCE,
+		};
+
+		int time;
+		float accumulate;
+		uint8_t type;
+		D3DXVECTOR4 args;
+
+		AnimParameter() : time(0), accumulate(0.0f), type(0) {
+			args = D3DXVECTOR4(0.0f, 0.0f, 0.0f, 0.0f);
+		}
+	};
 protected:
 	ref_unsync_weak_ptr<StgShotObject> pOwnReference_;
 
@@ -306,6 +325,8 @@ protected:
 	D3DXVECTOR2 hitboxScale_;
 
 	DelayParameter delay_;
+
+	AnimParameter anim_;
 
 	int frameGrazeInvalid_;
 	int frameGrazeInvalidStart_;
@@ -434,6 +455,8 @@ public:
 	void SetDelayParameter(DelayParameter& param) { delay_ = param; }
 	void SetEnableDelayMotion(bool b) { bEnableMotionDelay_ = b; }
 	void SetDelayAngularVelocity(float av) { delay_.angle.y = av; }
+
+	AnimParameter* GetAnimParameter() { return &anim_; }
 
 	double GetLife() { return life_; }
 	void SetLife(double life) { life_ = life; }

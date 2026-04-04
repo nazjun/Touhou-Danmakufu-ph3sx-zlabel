@@ -523,6 +523,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjShot_SetDelayColor", StgStageScript::Func_ObjShot_SetDelayColor, 2 },
 	{ "ObjShot_SetDelayColoringEnable", StgStageScript::Func_ObjShot_SetDelayColoringEnable, 2 },
 	{ "ObjShot_SetDelayScalingEnable", StgStageScript::Func_ObjShot_SetDelayScalingEnable, 2 },
+	{ "ObjShot_SetAnimation", StgStageScript::Func_ObjShot_SetAnimation, 7 },
 	{ "ObjShot_SetGrazeInvalidFrame", StgStageScript::Func_ObjShot_SetGrazeInvalidFrame, 2 },
 	{ "ObjShot_SetGrazeFrame", StgStageScript::Func_ObjShot_SetGrazeFrame, 2 },
 	{ "ObjShot_IsValidGraze", StgStageScript::Func_ObjShot_IsValidGraze, 1 },
@@ -643,6 +644,13 @@ static const std::vector<constant> stgStageConstant = {
 	//Shot delay types
 	constant("DELAY_DEFAULT", StgShotObject::DelayParameter::DELAY_DEFAULT),
 	constant("DELAY_LERP", StgShotObject::DelayParameter::DELAY_LERP),
+
+	//Shot animation types
+	constant("SHOTANIM_NONE", StgShotObject::AnimParameter::SHOTANIM_NONE),
+	constant("SHOTANIM_JIGGLE", StgShotObject::AnimParameter::SHOTANIM_JIGGLE),
+	constant("SHOTANIM_SQUISH", StgShotObject::AnimParameter::SHOTANIM_SQUISH),
+	constant("SHOTANIM_FLUTTER", StgShotObject::AnimParameter::SHOTANIM_FLUTTER),
+	constant("SHOTANIM_DANCE", StgShotObject::AnimParameter::SHOTANIM_DANCE),
 
 	//Pattern shot pattern types
 	constant("PATTERN_FAN", StgShotPatternGeneratorObject::PATTERN_TYPE_FAN),
@@ -5158,6 +5166,19 @@ gstd::value StgStageScript::Func_ObjShot_SetDelayScalingEnable(gstd::script_mach
 	if (obj) {
 		StgShotObject::DelayParameter* delay = obj->GetDelayParameter();
 		delay->scaleMix = argv[1].as_boolean();
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjShot_SetAnimation(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgShotObject* obj = script->GetObjectPointerAs<StgShotObject>(id);
+	if (obj) {
+		StgShotObject::AnimParameter* anim = obj->GetAnimParameter();
+		anim->type = argv[1].as_int();
+		anim->time = argv[2].as_int();
+		anim->accumulate = 0.0f;
+		anim->args = D3DXVECTOR4(argv[3].as_float(), argv[4].as_float(), argv[5].as_float(), argv[6].as_float());
 	}
 	return value();
 }

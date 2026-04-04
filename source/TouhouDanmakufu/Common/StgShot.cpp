@@ -925,6 +925,7 @@ void StgShotObject::Clone(DxScriptObjectBase* _src) {
 
 	hitboxScale_ = src->hitboxScale_;
 	delay_ = src->delay_;
+	anim_ = src->anim_;
 
 	frameGrazeInvalid_ = src->frameGrazeInvalid_;
 	frameGrazeInvalidStart_ = src->frameGrazeInvalidStart_;
@@ -1570,6 +1571,23 @@ void StgNormalShotObject::Work() {
 				lastAngle_ = angleZ;
 			}
 		}
+
+		if (anim_.type) {
+			switch (anim_.type) {
+			case (AnimParameter::SHOTANIM_JIGGLE):
+				// args -> total time, speed, scale amount, _
+				anim_.time--;
+				if (anim_.time <= 0)
+					anim_.type = AnimParameter::SHOTANIM_NONE;
+				else
+					anim_.accumulate += anim_.time * anim_.args[1] / anim_.args[0];
+				break;
+			case (AnimParameter::SHOTANIM_FLUTTER):
+				// args -> speed, move amount, scale offset, scale amount
+				anim_.accumulate += anim_.args[0] + GetSpeed() * anim_.args[1];
+				break;
+			}
+		}
 	}
 
 	_CommonWorkTask();
@@ -1733,17 +1751,69 @@ void StgNormalShotObject::Render(BlendMode targetBlend) {
 	float scaleY = 1.0f;
 	D3DCOLOR color;
 
+	FLOAT rotX = move_.x;
+	FLOAT rotY = move_.y;
+
 	auto _Render = [&](StgShotData* pData, StgShotDataFrame* pFrame) {
 		if (pData == nullptr || pFrame == nullptr) return;
 
 		D3DXMATRIX matTransform(
-			scaleX * move_.x, scaleX * move_.y, 0, 0,
-			scaleY * -move_.y, scaleY * move_.x, 0, 0,
+			scaleX * rotX, scaleX * rotY, 0, 0,
+			scaleY * -rotY, scaleY * rotX, 0, 0,
 			0, 0, 1, 0,
 			sposx, sposy, 0, 1
 		);
 		_DefaultShotRender(pData, pFrame, matTransform, color);
 	};
+
+	if (anim_.type) {
+		switch (anim_.type) {
+		case (AnimParameter::SHOTANIM_JIGGLE):
+			// args -> total time, speed, scale amount, _
+			// time decrements, accumulate used
+			{
+				double sc[2];
+				Math::DoSinCos(Math::DegreeToRadian(anim_.accumulate), sc);
+				float decel = Math::Lerp::Decelerate<float, float>(0.0f, 1.0f, (anim_.args[0] - anim_.time) / anim_.args[0]);
+				float bell = (1.0f - cos(GM_PI_X2 * decel)) / 2;
+				float amplitude = anim_.args[2] * bell;
+				scaleX *= 1.0f + amplitude * sc[1];
+				scaleY *= 1.0f + amplitude * sc[0];
+			}
+			break;
+		case (AnimParameter::SHOTANIM_SQUISH):
+			// args -> speed, scale amount, _, _
+			{
+				double sc[2];
+				Math::DoSinCos(Math::DegreeToRadian(anim_.args[0] * (anim_.time + frameExist_)), sc);
+				scaleX *= 1.0f + anim_.args[1] * sc[0];
+				scaleY *= 1.0f + anim_.args[1] * sc[1];
+			}
+			break;
+		case (AnimParameter::SHOTANIM_FLUTTER):
+			// args -> speed, move amount, scale offset, scale amount
+			// accumulate used
+			{
+				float amplitude = sin(Math::DegreeToRadian(anim_.accumulate + anim_.time)) - anim_.args[2];
+				scaleX *= 1.0f + amplitude * anim_.args[3];
+				scaleY *= 1.0f + amplitude * anim_.args[3] * 0.1f; // this 0.1f is arbitrary
+			}
+			break;
+		case (AnimParameter::SHOTANIM_DANCE):
+			// args -> speed, angle amount, scale amount, scale oscillation rate
+			{
+				float timeOff = Math::DegreeToRadian(anim_.args[0] * (anim_.time + frameExist_));
+				double sc[2];
+				Math::DoSinCos(Math::DegreeToRadian(anim_.args[1]) * sin(timeOff), sc);
+				rotX = move_.x * sc[1] - move_.y * sc[0];
+				rotY = move_.x * sc[0] + move_.y * sc[1];
+				float dance = anim_.args[2] * sinf(timeOff * anim_.args[3]);
+				scaleX *= 1.0f + dance;
+				scaleY *= 1.0f - dance;
+			}
+			break;
+		}
+	}
 
 	if (delay_.time > 0) {
 		BlendMode objBlendType = GetDelayBlendType();
@@ -1754,7 +1824,8 @@ void StgNormalShotObject::Render(BlendMode targetBlend) {
 		if (delayData) {
 			StgShotDataFrame* delayFrame = delayData ? delayData->GetFrame(frameWork_) : nullptr;
 
-			scaleX = scaleY = delay_.GetScale();
+			scaleX *= delay_.GetScale();
+			scaleY *= delay_.GetScale();
 			if (delay_.scaleMix) {
 				scaleX *= scale_.x;
 				scaleY *= scale_.y;
@@ -1782,8 +1853,8 @@ void StgNormalShotObject::Render(BlendMode targetBlend) {
 		objBlendType = objBlendType == MODE_BLEND_NONE ? shotData->GetRenderType() : objBlendType;
 		if (objBlendType != targetBlend) return;
 
-		scaleX = scale_.x;
-		scaleY = scale_.y;
+		scaleX *= scale_.x;
+		scaleY *= scale_.y;
 		color = color_;
 
 		{
