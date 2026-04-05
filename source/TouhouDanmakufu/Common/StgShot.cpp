@@ -3211,8 +3211,6 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 	if (idShotData_ < 0) return;
 	if (shotWay_ == 0U || shotStack_ == 0U) return;
 
-	shared_ptr<Texture> renderTarget = renderTarget_.lock();
-
 	float basePosX = basePointX_;
 	float basePosY = basePointY_;
 	if (!parent_.expired()) {
@@ -3269,43 +3267,12 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 
 		if (objShot == nullptr) return false;
 
+		objShot->Clone(this);
 		objShot->SetX(_x);
 		objShot->SetY(_y);
 		objShot->SetSpeed(_ss);
 		objShot->SetDirectionAngle(_sa);
-		objShot->SetShotDataID(idShotData_);
-		objShot->SetOwnerType(typeOwner_);
-
 		objShot->SetTransformList(transformAsList);
-
-		objShot->SetEnableDelayMotion(bEnableMotionDelay_);
-		objShot->SetDelayParameter(delay_);
-		objShot->SetAnimParameter(anim_);
-
-		objShot->SetPositionRounding(bRoundingPosition_);
-		objShot->SetAngleRounding(roundingAngle_);
-
-		objShot->SetAutoDelete(bAutoDelete_);
-		objShot->SetAutoDeleteFrame(frameAutoDelete_);
-		objShot->SetAutoDeleteType(typeAutoDelete_);
-		objShot->SetSpellResist(bSpellResist_);
-
-		objShot->SetIntersectionEnable(bIntersectionEnable_);
-		objShot->SetHitboxScale(hitboxScale_);
-		objShot->SetGrazeInvalidFrame(frameGrazeInvalidStart_);
-		objShot->SetGrazeFrame(frameGrazeInvalid_);
-
-		objShot->SetBlendType(typeBlend_);
-		objShot->SetColor(color_);
-		objShot->SetScale(scale_);
-		objShot->SetRenderPriorityI(priRender_);
-		objShot->SetRenderTarget(renderTarget);
-		objShot->SetShader(shader_);
-
-		auto& srcMap = GetValueMapI();
-		auto& dstMap = objShot->GetValueMapI();
-		for (auto itr = srcMap.begin(); itr != srcMap.end(); ++itr)
-			dstMap.insert(*itr);
 
 		int idRes = script->AddObject(objShot);
 		if (idRes == DxScript::ID_INVALID) return false;
