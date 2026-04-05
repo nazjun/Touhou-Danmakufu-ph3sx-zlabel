@@ -245,7 +245,7 @@ protected:
 public:
 	StgItemObject(StgStageController* stageController);
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual bool HasNormalRendering() { return false; }
 
@@ -354,7 +354,7 @@ protected:
 public:
 	StgItemObject_User(StgStageController* stageController);
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void Work();
 

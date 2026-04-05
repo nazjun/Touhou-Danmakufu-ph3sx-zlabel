@@ -387,7 +387,7 @@ public:
 	StgShotObject(StgStageController* stageController);
 	virtual ~StgShotObject();
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual bool HasNormalRendering() { return false; }
 
@@ -496,7 +496,7 @@ public:
 	StgNormalShotObject(StgStageController* stageController);
 	virtual ~StgNormalShotObject();
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void Work();
 	virtual void Render(BlendMode targetBlend);
@@ -540,7 +540,7 @@ protected:
 public:
 	StgLaserObject(StgStageController* stageController);
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void ClearShotObject() {
 		ClearIntersectionRelativeTarget();
@@ -587,7 +587,7 @@ protected:
 public:
 	StgLooseLaserObject(StgStageController* stageController);
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void Work();
 	virtual void Render(BlendMode targetBlend);
@@ -621,7 +621,7 @@ protected:
 public:
 	StgStraightLaserObject(StgStageController* stageController);
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void Work();
 	virtual void Render(BlendMode targetBlend);
@@ -698,7 +698,7 @@ protected:
 public:
 	StgCurveLaserObject(StgStageController* stageController);
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void Work();
 	virtual void Render(BlendMode targetBlend);
@@ -780,7 +780,7 @@ private:
 public:
 	StgShotPatternGeneratorObject(StgStageController* stageController);
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void Render(BlendMode targetBlend) {}
 	virtual void SetRenderState() {}

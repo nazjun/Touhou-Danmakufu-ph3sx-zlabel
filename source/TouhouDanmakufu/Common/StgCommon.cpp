@@ -270,8 +270,8 @@ StgMoveParent::~StgMoveParent() {
 	}
 	target_ = nullptr;
 }
-void StgMoveParent::Clone(DxScriptObjectBase* _src) {
-	DxScriptObjectBase::Clone(_src);
+void StgMoveParent::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptObjectBase::Clone(_src, deepCopy);
 
 	auto src = (StgMoveParent*)_src;
 

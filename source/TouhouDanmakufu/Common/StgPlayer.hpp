@@ -86,7 +86,7 @@ public:
 	StgPlayerObject(StgStageController* stageController);
 	virtual ~StgPlayerObject();
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	void Clear() { ClearIntersectionRelativeTarget(); }
 
@@ -186,7 +186,7 @@ protected:
 public:
 	StgPlayerSpellObject(StgStageController* stageController);
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 	
 	virtual void Work();
 	virtual void Intersect(StgIntersectionTarget* ownTarget, StgIntersectionTarget* otherTarget);

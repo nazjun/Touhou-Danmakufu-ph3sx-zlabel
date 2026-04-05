@@ -84,7 +84,7 @@ public:
 	StgEnemyObject(StgStageController* stageController);
 	virtual ~StgEnemyObject();
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void Work();
 	virtual void Activate();
@@ -137,7 +137,7 @@ private:
 public:
 	StgEnemyBossObject(StgStageController* stageController);
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 };
 
 //*******************************************************************
@@ -159,7 +159,7 @@ public:
 	StgEnemyBossSceneObject(StgStageController* stageController);
 	~StgEnemyBossSceneObject();
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void Work();
 	virtual void Activate();

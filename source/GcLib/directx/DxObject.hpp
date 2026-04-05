@@ -44,7 +44,7 @@ namespace directx {
 		void SetObjectManager(DxScriptObjectManager* manager) { manager_ = manager; }
 		
 		virtual void Initialize() {}
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual void Work() {}
 		virtual void Render() {}
@@ -249,7 +249,7 @@ namespace directx {
 	public:
 		DxScriptRenderObject();
 
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual void Render() {}
 		virtual void SetRenderState() {}
@@ -305,7 +305,7 @@ namespace directx {
 	public:
 		DxScriptShaderObject();
 
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual shared_ptr<Shader> GetShader() { return shader_; }
 		virtual void SetShader(shared_ptr<Shader> shader) { shader_ = shader; }
@@ -385,7 +385,7 @@ namespace directx {
 	public:
 		DxScriptPrimitiveObject();
 
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual DirectionalLightingState* GetLightPointer() { return objRender_->GetLighting(); }
 		RenderObjectPrimitive* GetRenderObject() { return objRender_.get(); }
@@ -597,7 +597,7 @@ namespace directx {
 	public:
 		DxScriptMeshObject();
 
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual void Render();
 		virtual void SetRenderState();
@@ -665,7 +665,7 @@ namespace directx {
 	public:
 		DxScriptTextObject();
 
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual void Render();
 		virtual void SetRenderState();
@@ -754,7 +754,7 @@ namespace directx {
 		DxSoundObject();
 		~DxSoundObject();
 
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual void Render() {}
 		virtual void SetRenderState() {}
@@ -780,7 +780,7 @@ namespace directx {
 		DxFileObject();
 		virtual ~DxFileObject();
 
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual void Render() {}
 		virtual void SetRenderState() {}
@@ -816,7 +816,7 @@ namespace directx {
 		DxTextFileObject();
 		virtual ~DxTextFileObject();
 
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual bool OpenR(const std::wstring& path);
 		virtual bool OpenR(shared_ptr<gstd::FileReader> reader);
@@ -848,7 +848,7 @@ namespace directx {
 		DxBinaryFileObject();
 		virtual ~DxBinaryFileObject();
 
-		virtual void Clone(DxScriptObjectBase* src);
+		virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 		virtual bool OpenR(const std::wstring& path);
 		virtual bool OpenR(shared_ptr<gstd::FileReader> reader);

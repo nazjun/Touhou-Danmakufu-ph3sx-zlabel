@@ -51,8 +51,8 @@ StgPlayerObject::StgPlayerObject(StgStageController* stageController) : StgMoveO
 }
 StgPlayerObject::~StgPlayerObject() {}
 
-void StgPlayerObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptSpriteObject2D::Clone(_src);
+void StgPlayerObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptSpriteObject2D::Clone(_src, deepCopy);
 
 	auto src = (StgPlayerObject*)_src;
 	StgMoveObject::Copy((StgMoveObject*)src);
@@ -365,8 +365,8 @@ StgPlayerSpellObject::StgPlayerSpellObject(StgStageController* stageController) 
 	life_ = 256 * 256 * 256;
 }
 
-void StgPlayerSpellObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptPrimitiveObject2D::Clone(_src);
+void StgPlayerSpellObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptPrimitiveObject2D::Clone(_src, deepCopy);
 
 	auto src = (StgPlayerSpellObject*)_src;
 	StgIntersectionObject::Copy((StgIntersectionObject*)src);

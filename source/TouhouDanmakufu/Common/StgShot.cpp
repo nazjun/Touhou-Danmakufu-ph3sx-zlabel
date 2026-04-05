@@ -906,8 +906,8 @@ StgShotObject::StgShotObject(StgStageController* stageController) : StgMoveObjec
 StgShotObject::~StgShotObject() {
 }
 
-void StgShotObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptShaderObject::Clone(_src);
+void StgShotObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptShaderObject::Clone(_src, deepCopy);
 
 	auto src = (StgShotObject*)_src;
 	StgMoveObject::Copy((StgMoveObject*)src);
@@ -1201,8 +1201,8 @@ StgNormalShotObject::StgNormalShotObject(StgStageController* stageController) : 
 StgNormalShotObject::~StgNormalShotObject() {
 }
 
-void StgNormalShotObject::Clone(DxScriptObjectBase* _src) {
-	StgShotObject::Clone(_src);
+void StgNormalShotObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	StgShotObject::Clone(_src, deepCopy);
 
 	auto src = (StgNormalShotObject*)_src;
 
@@ -1631,8 +1631,8 @@ StgLaserObject::StgLaserObject(StgStageController* stageController) : StgShotObj
 	lastAngle_ = 0;
 }
 
-void StgLaserObject::Clone(DxScriptObjectBase* _src) {
-	StgShotObject::Clone(_src);
+void StgLaserObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	StgShotObject::Clone(_src, deepCopy);
 
 	auto src = (StgLaserObject*)_src;
 
@@ -1710,8 +1710,8 @@ StgLooseLaserObject::StgLooseLaserObject(StgStageController* stageController) : 
 	listIntersectionTarget_.push_back(CreateEmptyIntersection());
 }
 
-void StgLooseLaserObject::Clone(DxScriptObjectBase* _src) {
-	StgLaserObject::Clone(_src);
+void StgLooseLaserObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	StgLaserObject::Clone(_src, deepCopy);
 
 	auto src = (StgLooseLaserObject*)_src;
 
@@ -1986,8 +1986,8 @@ StgStraightLaserObject::StgStraightLaserObject(StgStageController* stageControll
 	listIntersectionTarget_.push_back(CreateEmptyIntersection());
 }
 
-void StgStraightLaserObject::Clone(DxScriptObjectBase* _src) {
-	StgLaserObject::Clone(_src);
+void StgStraightLaserObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	StgLaserObject::Clone(_src, deepCopy);
 
 	auto src = (StgStraightLaserObject*)_src;
 
@@ -2259,8 +2259,8 @@ StgCurveLaserObject::StgCurveLaserObject(StgStageController* stageController) : 
 	posOrigin_ = D3DXVECTOR2(0, 0);
 }
 
-void StgCurveLaserObject::Clone(DxScriptObjectBase* _src) {
-	StgLaserObject::Clone(_src);
+void StgCurveLaserObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	StgLaserObject::Clone(_src, deepCopy);
 
 	auto src = (StgCurveLaserObject*)_src;
 
@@ -2818,8 +2818,8 @@ void StgShotPatternGeneratorObject::CleanUp() {
 }
 
 
-void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src) {
-	StgShotObject::Clone(_src);
+void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	StgShotObject::Clone(_src, deepCopy);
 
 	auto src = (StgShotPatternGeneratorObject*)_src;
 
@@ -2915,7 +2915,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 
 		if (objShot == nullptr) return false;
 
-		objShot->StgShotObject::Clone(this);
+		objShot->StgShotObject::Clone(this, false);
 		objShot->SetX(_x);
 		objShot->SetY(_y);
 		objShot->SetSpeed(_ss);

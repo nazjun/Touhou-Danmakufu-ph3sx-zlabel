@@ -263,6 +263,7 @@ static const std::vector<function> dxFunction = {
 	{ "Obj_SetParentScriptID", DxScript::Func_Obj_SetParentScriptID, 1 },
 	{ "Obj_SetParentScriptID", DxScript::Func_Obj_SetParentScriptID, 2 }, //Overloaded
 	{ "Obj_Clone", DxScript::Func_Obj_Clone, 1 },
+	{ "Obj_Clone", DxScript::Func_Obj_Clone, 2 }, //Overloaded
 
 	{ "Obj_GetValue", DxScript::Func_Obj_GetValue<false>, 2 },
 	{ "Obj_GetValue", DxScript::Func_Obj_GetValue<false>, 3 },

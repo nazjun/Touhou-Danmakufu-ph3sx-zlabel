@@ -32,7 +32,7 @@ DxScriptObjectBase::~DxScriptObjectBase() {
 	//	manager_->listUnusedIndex_.push_back(idObject_);
 }
 
-void DxScriptObjectBase::Clone(DxScriptObjectBase* src) {
+void DxScriptObjectBase::Clone(DxScriptObjectBase* src, bool deepCopy) {
 	idScript_ = src->idScript_;
 
 	bActive_ = src->bActive_;
@@ -552,8 +552,8 @@ DxScriptRenderObject::DxScriptRenderObject() {
 	bEnableMatrix_ = true;
 }
 
-void DxScriptRenderObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptObjectBase::Clone(_src);
+void DxScriptRenderObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptObjectBase::Clone(_src, deepCopy);
 
 	auto src = (DxScriptRenderObject*)_src;
 
@@ -584,16 +584,20 @@ DxScriptShaderObject::DxScriptShaderObject() {
 	typeObject_ = TypeObject::Shader;
 }
 
-void DxScriptShaderObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptRenderObject::Clone(_src);
+void DxScriptShaderObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptRenderObject::Clone(_src, deepCopy);
 
 	auto src = (DxScriptShaderObject*)_src;
 
-	shader_ = nullptr;
-	if (src->shader_) {
-		ShaderManager* manager = ShaderManager::GetBase();
-		shader_ = manager->CreateFromData(src->shader_->GetData());
+	if (deepCopy) {
+		shader_ = nullptr;
+		if (src->shader_) {
+			ShaderManager* manager = ShaderManager::GetBase();
+			shader_ = manager->CreateFromData(src->shader_->GetData());
+		}
 	}
+	else
+		shader_ = src->shader_;
 }
 
 //****************************************************************************
@@ -605,8 +609,8 @@ DxScriptPrimitiveObject::DxScriptPrimitiveObject() {
 	angZ_ = D3DXVECTOR2(1, 0);
 }
 
-void DxScriptPrimitiveObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptRenderObject::Clone(_src);
+void DxScriptPrimitiveObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptRenderObject::Clone(_src, deepCopy);
 
 	auto src = (DxScriptPrimitiveObject*)_src;
 
@@ -1087,8 +1091,8 @@ DxScriptMeshObject::DxScriptMeshObject() {
 	angZ_ = D3DXVECTOR2(1, 0);
 }
 
-void DxScriptMeshObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptRenderObject::Clone(_src);
+void DxScriptMeshObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptRenderObject::Clone(_src, deepCopy);
 
 	auto src = (DxScriptMeshObject*)_src;
 
@@ -1190,8 +1194,8 @@ DxScriptTextObject::DxScriptTextObject() {
 	angZ_ = D3DXVECTOR2(1, 0);
 }
 
-void DxScriptTextObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptRenderObject::Clone(_src);
+void DxScriptTextObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptRenderObject::Clone(_src, deepCopy);
 
 	auto src = (DxScriptTextObject*)_src;
 
@@ -1355,8 +1359,8 @@ DxSoundObject::~DxSoundObject() {
 		player_->Delete();
 }
 
-void DxSoundObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptObjectBase::Clone(_src);
+void DxSoundObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptObjectBase::Clone(_src, deepCopy);
 
 	auto src = (DxSoundObject*)_src;
 
@@ -1420,8 +1424,8 @@ DxFileObject::~DxFileObject() {
 	Close();
 }
 
-void DxFileObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptObjectBase::Clone(_src);
+void DxFileObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptObjectBase::Clone(_src, deepCopy);
 
 	auto src = (DxFileObject*)_src;
 
@@ -1499,8 +1503,8 @@ DxTextFileObject::DxTextFileObject() {
 DxTextFileObject::~DxTextFileObject() {
 }
 
-void DxTextFileObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptObjectBase::Clone(_src);
+void DxTextFileObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptObjectBase::Clone(_src, deepCopy);
 
 	auto src = (DxTextFileObject*)_src;
 
@@ -1839,8 +1843,8 @@ DxBinaryFileObject::~DxBinaryFileObject() {
 	ptr_delete(buffer_);
 }
 
-void DxBinaryFileObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptObjectBase::Clone(_src);
+void DxBinaryFileObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptObjectBase::Clone(_src, deepCopy);
 
 	auto src = (DxBinaryFileObject*)_src;
 

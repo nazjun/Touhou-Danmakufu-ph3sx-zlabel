@@ -744,8 +744,8 @@ StgItemObject::StgItemObject(StgStageController* stageController) : StgMoveObjec
 	SetRenderPriorityI(priItemI);
 }
 
-void StgItemObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptShaderObject::Clone(_src);
+void StgItemObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptShaderObject::Clone(_src, deepCopy);
 
 	auto src = (StgItemObject*)_src;
 
@@ -1117,8 +1117,8 @@ StgItemObject_User::StgItemObject_User(StgStageController* stageController) : St
 	bDefaultScoreText_ = true;
 }
 
-void StgItemObject_User::Clone(DxScriptObjectBase* _src) {
-	DxScriptShaderObject::Clone(_src);
+void StgItemObject_User::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptShaderObject::Clone(_src, deepCopy);
 
 	auto src = (StgItemObject_User*)_src;
 	StgMoveObject::Copy((StgMoveObject*)src);

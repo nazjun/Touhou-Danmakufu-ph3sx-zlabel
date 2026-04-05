@@ -133,7 +133,7 @@ public:
 	StgMoveParent(StgStageController* stageController);
 	~StgMoveParent();
 
-	virtual void Clone(DxScriptObjectBase* src);
+	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
 	virtual void Work();
 	virtual void Render() {}

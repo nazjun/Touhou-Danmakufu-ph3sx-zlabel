@@ -155,8 +155,8 @@ StgEnemyObject::StgEnemyObject(StgStageController* stageController) : StgMoveObj
 StgEnemyObject::~StgEnemyObject() {
 }
 
-void StgEnemyObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptSpriteObject2D::Clone(_src);
+void StgEnemyObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptSpriteObject2D::Clone(_src, deepCopy);
 
 	auto src = (StgEnemyObject*)_src;
 	StgMoveObject::Copy((StgMoveObject*)src);
@@ -284,8 +284,8 @@ StgEnemyBossObject::StgEnemyBossObject(StgStageController* stageController) : St
 	typeObject_ = TypeObject::EnemyBoss;
 }
 
-void StgEnemyBossObject::Clone(DxScriptObjectBase* _src) {
-	StgEnemyObject::Clone(_src);
+void StgEnemyBossObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	StgEnemyObject::Clone(_src, deepCopy);
 
 	auto src = (StgEnemyBossObject*)_src;
 
@@ -315,8 +315,8 @@ StgEnemyBossSceneObject::~StgEnemyBossSceneObject() {
 	}
 }
 
-void StgEnemyBossSceneObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptObjectBase::Clone(_src);
+void StgEnemyBossSceneObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
+	DxScriptObjectBase::Clone(_src, deepCopy);
 
 	auto src = (StgEnemyBossObject*)_src;
 

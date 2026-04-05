@@ -88,8 +88,13 @@ value DxScript::Func_Obj_Clone(script_machine* machine, int argc, const value* a
 			obj->manager_ = script->objManager_.get();
 			idDst = script->AddObject(obj);
 		}
-		if (idDst != ID_INVALID)
-			obj->Clone(objSrc);
+		if (idDst != ID_INVALID) {
+			if (argc == 2)
+				obj->Clone(objSrc, argv[1].as_boolean());
+			else
+				obj->Clone(objSrc, true);
+		}
+
 	}
 	return script->CreateIntValue(idDst);
 }
