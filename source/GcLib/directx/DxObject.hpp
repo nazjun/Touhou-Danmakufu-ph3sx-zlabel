@@ -197,6 +197,8 @@ namespace directx {
 	public:
 		DxSpringMassSystemObject();
 
+		virtual void Work();
+
 		void SetGravity(DxVector3::DxVec3 gravity) { DxVector3::DxVec3Copy(gravity_, gravity); }
 		void SetGlobalDrag(double drag) { globalDrag_ = drag; }
 
@@ -217,8 +219,6 @@ namespace directx {
 
 		void SpringForce(DxVector3::DxVec3 out, DxSpringMassSystemObjectParticle* pA, DxSpringMassSystemObjectParticle* pB,
 			double ks, double kd, double rest);
-
-		void Integrate();
 	};
 
 	//****************************************************************************

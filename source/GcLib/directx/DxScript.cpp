@@ -297,7 +297,6 @@ static const std::vector<function> dxFunction = {
 
 	//DxScriptSpringMassSystemObject
 	{ "ObjSpring_Create", DxScript::Func_ObjSpring_Create, 0 },
-	{ "ObjSpring_Step", DxScript::Func_ObjSpring_Step, 1 },
 	{ "ObjSpring_SetGravity", DxScript::Func_ObjSpring_SetGravity, 4 },
 	{ "ObjSpring_SetGlobalDrag", DxScript::Func_ObjSpring_SetGlobalDrag, 2 },
 	{ "ObjSpring_AddNode", DxScript::Func_ObjSpring_AddNode, 9 }, // x, y, z, vx, vy, vz, mass, bMove
@@ -3098,14 +3097,6 @@ value DxScript::Func_ObjSpring_Create(gstd::script_machine* machine, int argc, c
 		id = script->AddObject(obj);
 	}
 	return script->CreateIntValue(id);
-}
-value DxScript::Func_ObjSpring_Step(script_machine* machine, int argc, const value* argv) {
-	DxScript* script = (DxScript*)machine->data;
-	int id = argv[0].as_int();
-	DxSpringMassSystemObject* obj = script->GetObjectPointerAs<DxSpringMassSystemObject>(id);
-	if (obj)
-		obj->Integrate();
-	return value();
 }
 value DxScript::Func_ObjSpring_SetGravity(script_machine* machine, int argc, const value* argv) {
 	DxScript* script = (DxScript*)machine->data;

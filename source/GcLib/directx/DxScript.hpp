@@ -294,7 +294,6 @@ namespace directx {
 
 		//DxScriptSpringMassSystemObject
 		DNH_FUNCAPI_DECL_(Func_ObjSpring_Create);
-		DNH_FUNCAPI_DECL_(Func_ObjSpring_Step);
 		DNH_FUNCAPI_DECL_(Func_ObjSpring_SetGravity);
 		DNH_FUNCAPI_DECL_(Func_ObjSpring_SetGlobalDrag);
 		DNH_FUNCAPI_DECL_(Func_ObjSpring_AddNode);

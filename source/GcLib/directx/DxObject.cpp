@@ -332,7 +332,7 @@ void DxSpringMassSystemObject::SpringForce(
 	DxVector3::DxVec3Add(out, fs, fd);
 }
 
-void DxSpringMassSystemObject::Integrate() {
+void DxSpringMassSystemObject::Work() {
 	// Compute per-particle force components
 	for (size_t i = 0; i < particles_.size(); ++i) {
 		DxSpringMassSystemObjectParticle* p = &(particles_[i]);
@@ -358,26 +358,26 @@ void DxSpringMassSystemObject::Integrate() {
 				DxVector3::DxVec3Sub(v, p->pos, q->pos);
 
 				DxVector3::DxVec3 dot;
-DxVector3::DxVec3Dot(dot, v, q->normal);
+				DxVector3::DxVec3Dot(dot, v, q->normal);
 
-double signedDist = DxVector3::DxVec3Sum(dot);
+				double signedDist = DxVector3::DxVec3Sum(dot);
 
-if (signedDist < q->epsilon) {
-	DxVector3::DxVec3 projPos;
-	DxVector3::DxVec3Copy(projPos, p->pos);
+				if (signedDist < q->epsilon) {
+					DxVector3::DxVec3 projPos;
+					DxVector3::DxVec3Copy(projPos, p->pos);
 
-	DxVector3::DxVec3 projTravel;
-	DxVector3::DxVec3Scale(projTravel, q->normal, -(signedDist - q->epsilon));
-	DxVector3::DxVec3Add(projPos, projPos, projTravel);
+					DxVector3::DxVec3 projTravel;
+					DxVector3::DxVec3Scale(projTravel, q->normal, -(signedDist - q->epsilon));
+					DxVector3::DxVec3Add(projPos, projPos, projTravel);
 
-	DxSpringMassSystemObjectParticle pPlane = DxSpringMassSystemObjectParticle(projPos, DxVector3::DxVec3{ 0.0, 0.0, 0.0 }, 1.0, false);
+					DxSpringMassSystemObjectParticle pPlane = DxSpringMassSystemObjectParticle(projPos, DxVector3::DxVec3{ 0.0, 0.0, 0.0 }, 1.0, false);
 
-	// Add penalty spring force against the plane
-	DxVector3::DxVec3 springForce;
-	SpringForce(springForce, p, &pPlane, q->ks, q->kd, 0.0);
-	DxVector3::DxVec3Scale(springForce, springForce, FRAME_STEP);
-	DxVector3::DxVec3Add(p->force, p->force, springForce);
-}
+					// Add penalty spring force against the plane
+					DxVector3::DxVec3 springForce;
+					SpringForce(springForce, p, &pPlane, q->ks, q->kd, 0.0);
+					DxVector3::DxVec3Scale(springForce, springForce, FRAME_STEP);
+					DxVector3::DxVec3Add(p->force, p->force, springForce);
+				}
 			}
 		}
 	}
