@@ -593,8 +593,6 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 2 },
 	{ "ObjPatternShot_SetSpinParameter", StgStageScript::Func_ObjPatternShot_SetSpinParameter, 3 },
 	{ "ObjPatternShot_SetLaserParameter", StgStageScript::Func_ObjPatternShot_SetLaserParameter, 3 },
-	{ "ObjPatternShot_AddTransform", StgStageScript::Func_ObjPatternShot_AddTransform, -4 },	//2 fixed + ... -> 3 minimum
-	{ "ObjPatternShot_SetTransform", StgStageScript::Func_ObjPatternShot_SetTransform, -5 },	//3 fixed + ... -> 4 minimum
 
 	//STG共通関数：アイテムオブジェクト操作
 	{ "ObjItem_Create", StgStageScript::Func_ObjItem_Create, 1 },
@@ -667,21 +665,6 @@ static const std::vector<constant> stgStageConstant = {
 	constant("PATTERN_ROSE", StgShotPatternGeneratorObject::PATTERN_TYPE_ROSE),
 	constant("PATTERN_ROSE_AIMED", StgShotPatternGeneratorObject::PATTERN_TYPE_ROSE_AIMED),
 	constant("PATTERN_BASEPOINT_RESET", StgShotPatternGeneratorObject::BASEPOINT_RESET),
-
-	//Pattern shot transforms
-	constant("TRANSFORM_WAIT", StgShotPatternTransform::TRANSFORM_WAIT),
-	constant("TRANSFORM_ADD_SPEED_ANGLE", StgShotPatternTransform::TRANSFORM_ADD_SPEED_ANGLE),
-	constant("TRANSFORM_ANGULAR_MOVE", StgShotPatternTransform::TRANSFORM_ANGULAR_MOVE),
-	constant("TRANSFORM_N_DECEL_CHANGE", StgShotPatternTransform::TRANSFORM_N_DECEL_CHANGE),
-	constant("TRANSFORM_GRAPHIC_CHANGE", StgShotPatternTransform::TRANSFORM_GRAPHIC_CHANGE),
-	constant("TRANSFORM_BLEND_CHANGE", StgShotPatternTransform::TRANSFORM_BLEND_CHANGE),
-	constant("TRANSFORM_TO_SPEED_ANGLE", StgShotPatternTransform::TRANSFORM_TO_SPEED_ANGLE),
-	constant("TRANSFORM_ADDPATTERN_A1", StgShotPatternTransform::TRANSFORM_ADDPATTERN_A1),
-	constant("TRANSFORM_ADDPATTERN_A2", StgShotPatternTransform::TRANSFORM_ADDPATTERN_A2),
-	constant("TRANSFORM_ADDPATTERN_B1", StgShotPatternTransform::TRANSFORM_ADDPATTERN_B1),
-	constant("TRANSFORM_ADDPATTERN_B2", StgShotPatternTransform::TRANSFORM_ADDPATTERN_B2),
-	constant("TRANSFORM_ADDPATTERN_C1", StgShotPatternTransform::TRANSFORM_ADDPATTERN_C1),
-	constant("TRANSFORM_ADDPATTERN_C2", StgShotPatternTransform::TRANSFORM_ADDPATTERN_C2),
 
 	//Player states
 	constant("STATE_NORMAL", StgPlayerObject::STATE_NORMAL),
@@ -5920,47 +5903,6 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetLaserParameter(gstd::script_m
 		int width = argv[1].as_int();
 		int length = argv[2].as_int();
 		obj->SetLaserArgument(width, length);
-	}
-	return value();
-}
-gstd::value StgStageScript::Func_ObjPatternShot_AddTransform(gstd::script_machine* machine, int argc, const gstd::value* argv) {
-	StgStageScript* script = (StgStageScript*)machine->data;
-	StgStageController* stageController = script->stageController_;
-
-	int idDst = argv[0].as_int();
-	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(idDst);
-	if (obj) {
-		int typeAct = argv[1].as_int();
-
-		StgShotPatternTransform transform;
-		transform.act = (uint8_t)typeAct;
-
-		ZeroMemory(transform.param, sizeof(transform.param));
-		for (int i = 0; i < argc - 2 && i < 8; ++i)
-			transform.param[i] = argv[i + 2].as_float();
-
-		obj->AddTransformation(transform);
-	}
-	return value();
-}
-gstd::value StgStageScript::Func_ObjPatternShot_SetTransform(gstd::script_machine* machine, int argc, const gstd::value* argv) {
-	StgStageScript* script = (StgStageScript*)machine->data;
-	StgStageController* stageController = script->stageController_;
-
-	int idDst = argv[0].as_int();
-	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(idDst);
-	if (obj) {
-		int slot = argv[1].as_int();
-		int typeAct = argv[2].as_int();
-
-		StgShotPatternTransform transform;
-		transform.act = (uint8_t)typeAct;
-
-		ZeroMemory(transform.param, sizeof(transform.param));
-		for (int i = 0; i < argc - 3 && i < 8; ++i)
-			transform.param[i] = argv[i + 3].as_float();
-
-		obj->SetTransformation(slot, transform);
 	}
 	return value();
 }

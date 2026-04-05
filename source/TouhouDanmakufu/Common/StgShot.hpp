@@ -235,7 +235,6 @@ public:
 //*******************************************************************
 //StgShotObject
 //*******************************************************************
-struct StgShotPatternTransform;
 class StgShotObject : public DxScriptShaderObject, public StgMoveObject, public StgIntersectionObject {
 protected:
 	using TypeDelete = StgShotManager::TypeDelete;
@@ -384,12 +383,6 @@ protected:
 	void _RequestPlayerDeleteEvent(int hitObjectID);
 
 	inline void _DefaultShotRender(StgShotData* shotData, StgShotDataFrame* shotFrame, const D3DXMATRIX& matWorld, D3DCOLOR color);
-protected:
-	std::list<StgShotPatternTransform> listTransformationShotAct_;
-	int timerTransform_;
-	int timerTransformNext_;
-
-	void _ProcessTransformAct();
 public:
 	StgShotObject(StgStageController* stageController);
 	virtual ~StgShotObject();
@@ -419,10 +412,6 @@ public:
 	virtual void SetColor(int r, int g, int b);
 	virtual void SetAlpha(int alpha);
 	virtual void SetRenderState() {}
-
-	void SetTransformList(const std::list<StgShotPatternTransform>& listTransform) {
-		listTransformationShotAct_ = listTransform;
-	}
 
 	void SetOwnObjectReference();
 
@@ -788,8 +777,6 @@ private:
 
 	int laserWidth_;
 	int laserLength_;
-
-	std::vector<StgShotPatternTransform> listTransformation_;
 public:
 	StgShotPatternGeneratorObject(StgStageController* stageController);
 
@@ -799,10 +786,6 @@ public:
 	virtual void SetRenderState() {}
 	virtual void CleanUp();
 	virtual void RegistIntersectionTarget() {}
-
-	void AddTransformation(StgShotPatternTransform& entry) { listTransformation_.push_back(entry); }
-	void SetTransformation(size_t off, StgShotPatternTransform& entry);
-	void ClearTransformation() { listTransformation_.clear(); }
 
 	void SetParent(ref_unsync_ptr<StgMoveObject> obj) { parent_ = obj; }
 	void SetShotParent(ref_unsync_ptr<StgMoveParent> obj) { shotParent_ = obj; }
@@ -846,24 +829,4 @@ public:
 		laserWidth_ = width;
 		laserLength_ = length;
 	}
-};
-struct StgShotPatternTransform {
-	enum : uint8_t {
-		TRANSFORM_WAIT,
-		TRANSFORM_ADD_SPEED_ANGLE,
-		TRANSFORM_ANGULAR_MOVE,
-		TRANSFORM_N_DECEL_CHANGE,
-		TRANSFORM_GRAPHIC_CHANGE,
-		TRANSFORM_BLEND_CHANGE,
-		TRANSFORM_TO_SPEED_ANGLE,
-		TRANSFORM_ADDPATTERN_A1,
-		TRANSFORM_ADDPATTERN_A2,
-		TRANSFORM_ADDPATTERN_B1,
-		TRANSFORM_ADDPATTERN_B2,
-		TRANSFORM_ADDPATTERN_C1,
-		TRANSFORM_ADDPATTERN_C2,
-		//TRANSFORM_,
-	};
-	uint8_t act = 0xff;
-	double param[8];
 };
