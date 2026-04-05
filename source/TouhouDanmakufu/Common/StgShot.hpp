@@ -415,6 +415,7 @@ public:
 
 	virtual void SetX(float x) { posX_ = x; DxScriptRenderObject::SetX(x); }
 	virtual void SetY(float y) { posY_ = y; DxScriptRenderObject::SetY(y); }
+	void SetColor(D3DCOLOR color) { color_ = color; }
 	virtual void SetColor(int r, int g, int b);
 	virtual void SetAlpha(int alpha);
 	virtual void SetRenderState() {}
@@ -457,6 +458,7 @@ public:
 	void SetDelayAngularVelocity(float av) { delay_.angle.y = av; }
 
 	AnimParameter* GetAnimParameter() { return &anim_; }
+	void SetAnimParameter(AnimParameter& param) { anim_ = param; }
 
 	double GetLife() { return life_; }
 	void SetLife(double life) { life_ = life; }
@@ -730,7 +732,7 @@ public:
 //*******************************************************************
 //StgShotPatternGeneratorObject (ECL-style bullets firing)
 //*******************************************************************
-class StgShotPatternGeneratorObject : public DxScriptObjectBase, public StgObjectBase {
+class StgShotPatternGeneratorObject : public StgShotObject {
 public:
 	enum {
 		PATTERN_TYPE_FAN = 0,
@@ -756,13 +758,9 @@ public:
 private:
 	ref_unsync_weak_ptr<StgMoveObject> parent_;
 	ref_unsync_weak_ptr<StgMoveParent> shotParent_;
-	bool bAutoDelete_;
 
-	int idShotData_;
-	int typeOwner_;
 	TypeObject typeShot_;
 	int typePattern_;
-	BlendMode iniBlendType_;
 
 	size_t shotWay_;
 	size_t shotStack_;
@@ -785,8 +783,8 @@ private:
 
     float extra_;
 
-	int delay_;
-	//bool delayMove_;
+	double angularVelocity_;
+	bool bFixedAngle_;
 
 	int laserWidth_;
 	int laserLength_;
@@ -797,9 +795,10 @@ public:
 
 	virtual void Clone(DxScriptObjectBase* src);
 
-	virtual void Render() {}
+	virtual void Render(BlendMode targetBlend) {}
 	virtual void SetRenderState() {}
 	virtual void CleanUp();
+	virtual void RegistIntersectionTarget() {}
 
 	void AddTransformation(StgShotPatternTransform& entry) { listTransformation_.push_back(entry); }
 	void SetTransformation(size_t off, StgShotPatternTransform& entry);
@@ -807,15 +806,12 @@ public:
 
 	void SetParent(ref_unsync_ptr<StgMoveObject> obj) { parent_ = obj; }
 	void SetShotParent(ref_unsync_ptr<StgMoveParent> obj) { shotParent_ = obj; }
-	void SetAutoDelete(bool enable) { bAutoDelete_ = enable; }
 
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);
 
-	void SetGraphic(int id) { idShotData_ = id; }
 	void SetTypeOwner(int type) { typeOwner_ = type; }
 	void SetTypePattern(int type) { typePattern_ = type; }
 	void SetTypeShot(TypeObject type) { typeShot_ = type; }
-	void SetBlendType(BlendMode type) { iniBlendType_ = type; }
 
 	void SetWayStack(size_t way, size_t stack) {
 		shotWay_ = way;
@@ -840,12 +836,12 @@ public:
 		angleBase_ = base;
 		angleArgument_ = arg;
 	}
-    void SetExtraData(float e) {
-        extra_ = e;
-    }
 
-	void SetDelay(int delay) { delay_ = delay; }
-	//void SetDelayMotion(bool b) { delayMove_ = b; }
+	void SetSpinArgument(double angularVelocity, bool bFixedAngle) {
+		angularVelocity_ = angularVelocity;
+		bFixedAngle_ = bFixedAngle;
+	}
+
 	void SetLaserArgument(int width, int length) {
 		laserWidth_ = width;
 		laserLength_ = length;

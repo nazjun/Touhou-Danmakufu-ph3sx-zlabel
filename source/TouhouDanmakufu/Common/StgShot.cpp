@@ -886,7 +886,7 @@ StgShotObject::StgShotObject(StgStageController* stageController) : StgMoveObjec
 
 	frameFadeDelete_ = -1;
 	frameAutoDelete_ = INT_MAX;
-	typeAutoDelete_ = StgShotManager::TO_TYPE_FADE;
+	typeAutoDelete_ = StgShotManager::TO_TYPE_IMMEDIATE;
 
 	typeOwner_ = OWNER_ENEMY;
 
@@ -3124,15 +3124,12 @@ void StgCurveLaserObject::_SendDeleteEvent(TypeDelete type) {
 //****************************************************************************
 //StgShotPatternGeneratorObject (ECL-style bullets firing)
 //****************************************************************************
-StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController* stageController) : StgObjectBase(stageController) {
+StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController* stageController) : StgShotObject(stageController) {
 	typeObject_ = TypeObject::ShotPattern;
 	bAutoDelete_ = false;
 
-	idShotData_ = -1;
-	typeOwner_ = StgShotObject::OWNER_ENEMY;
 	typePattern_ = PATTERN_TYPE_FAN;
 	typeShot_ = TypeObject::Shot;
-	iniBlendType_ = MODE_BLEND_NONE;
 
 	shotWay_ = 1U;
 	shotStack_ = 1U;
@@ -3148,10 +3145,8 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	angleBase_ = 0;
 	angleArgument_ = 0;
 
-    extra_ = 0;
-
-	delay_ = 0;
-	//delayMove_ = false;
+	angularVelocity_ = 0;
+	bFixedAngle_ = false;
 
 	laserWidth_ = 16;
 	laserLength_ = 64;
@@ -3165,17 +3160,14 @@ void StgShotPatternGeneratorObject::CleanUp() {
 
 
 void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src) {
-	DxScriptObjectBase::Clone(_src);
+	StgShotObject::Clone(_src);
 
 	auto src = (StgShotPatternGeneratorObject*)_src;
 
 	parent_ = src->parent_;
 
-	idShotData_ = src->idShotData_;
-	typeOwner_ = src->typeOwner_;
 	typeShot_ = src->typeShot_;
 	typePattern_ = src->typePattern_;
-	iniBlendType_ = src->iniBlendType_;
 
 	shotWay_ = src->shotWay_;
 	shotStack_ = src->shotStack_;
@@ -3191,8 +3183,8 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src) {
 	angleBase_ = src->angleBase_;
 	angleArgument_ = src->angleArgument_;
 
-	delay_ = src->delay_;
-	//delayMove_ = src->delayMove_;
+	angularVelocity_ = src->angularVelocity_;
+	bFixedAngle_ = src->bFixedAngle_;
 
 	laserWidth_ = src->laserWidth_;
 	laserLength_ = src->laserLength_;
@@ -3219,6 +3211,8 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 	if (idShotData_ < 0) return;
 	if (shotWay_ == 0U || shotStack_ == 0U) return;
 
+	shared_ptr<Texture> renderTarget = renderTarget_.lock();
+
 	float basePosX = basePointX_;
 	float basePosY = basePointY_;
 	if (!parent_.expired()) {
@@ -3242,6 +3236,8 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 		case TypeObject::Shot:
 		{
 			ref_unsync_ptr<StgNormalShotObject> ptrShot(new StgNormalShotObject(controller));
+			ptrShot->SetGraphicAngularVelocity(angularVelocity_);
+			ptrShot->SetFixedAngle(bFixedAngle_);
 			objShot = ptrShot;
 			break;
 		}
@@ -3278,13 +3274,38 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 		objShot->SetSpeed(_ss);
 		objShot->SetDirectionAngle(_sa);
 		objShot->SetShotDataID(idShotData_);
-		objShot->SetDelay(delay_);
 		objShot->SetOwnerType(typeOwner_);
 
 		objShot->SetTransformList(transformAsList);
 
-		objShot->SetBlendType(iniBlendType_);
-		//objShot->SetEnableDelayMotion(delayMove_);
+		objShot->SetEnableDelayMotion(bEnableMotionDelay_);
+		objShot->SetDelayParameter(delay_);
+		objShot->SetAnimParameter(anim_);
+
+		objShot->SetPositionRounding(bRoundingPosition_);
+		objShot->SetAngleRounding(roundingAngle_);
+
+		objShot->SetAutoDelete(bAutoDelete_);
+		objShot->SetAutoDeleteFrame(frameAutoDelete_);
+		objShot->SetAutoDeleteType(typeAutoDelete_);
+		objShot->SetSpellResist(bSpellResist_);
+
+		objShot->SetIntersectionEnable(bIntersectionEnable_);
+		objShot->SetHitboxScale(hitboxScale_);
+		objShot->SetGrazeInvalidFrame(frameGrazeInvalidStart_);
+		objShot->SetGrazeFrame(frameGrazeInvalid_);
+
+		objShot->SetBlendType(typeBlend_);
+		objShot->SetColor(color_);
+		objShot->SetScale(scale_);
+		objShot->SetRenderPriorityI(priRender_);
+		objShot->SetRenderTarget(renderTarget);
+		objShot->SetShader(GetShader());
+
+		auto& srcMap = GetValueMapI();
+		auto& dstMap = objShot->GetValueMapI();
+		for (auto itr = srcMap.begin(); itr != srcMap.end(); ++itr)
+			dstMap.insert(*itr);
 
 		int idRes = script->AddObject(objShot);
 		if (idRes == DxScript::ID_INVALID) return false;
