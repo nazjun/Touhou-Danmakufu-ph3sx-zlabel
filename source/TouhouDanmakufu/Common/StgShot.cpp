@@ -3300,7 +3300,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 		objShot->SetScale(scale_);
 		objShot->SetRenderPriorityI(priRender_);
 		objShot->SetRenderTarget(renderTarget);
-		objShot->SetShader(GetShader());
+		objShot->SetShader(shader_);
 
 		auto& srcMap = GetValueMapI();
 		auto& dstMap = objShot->GetValueMapI();
