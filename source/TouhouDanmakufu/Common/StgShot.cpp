@@ -2915,7 +2915,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 
 		if (objShot == nullptr) return false;
 
-		objShot->Clone(this);
+		objShot->StgShotObject::Clone(this);
 		objShot->SetX(_x);
 		objShot->SetY(_y);
 		objShot->SetSpeed(_ss);

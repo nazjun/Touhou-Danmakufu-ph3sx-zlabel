@@ -5889,7 +5889,7 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetSpinParameter(gstd::script_ma
 	if (obj) {
 		double angularVelocity = argv[1].as_float();
 		bool bFixedAngle = argv[2].as_boolean();
-		obj->SetSpinArgument(angularVelocity, bFixedAngle);
+		obj->SetSpinArgument(Math::DegreeToRadian(angularVelocity), bFixedAngle);
 	}
 	return value();
 }
