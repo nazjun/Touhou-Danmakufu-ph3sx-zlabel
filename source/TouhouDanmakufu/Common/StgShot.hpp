@@ -772,8 +772,6 @@ private:
 	double angleBase_;
 	double angleArgument_;
 
-    float extra_;
-
 	double angularVelocity_;
 	bool bFixedAngle_;
 

@@ -2824,6 +2824,9 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 	auto src = (StgShotPatternGeneratorObject*)_src;
 
 	parent_ = src->parent_;
+	shotParent_ = src->shotParent_;
+
+	bAutoDeletePattern_ = src->bAutoDeletePattern_;
 
 	typeShot_ = src->typeShot_;
 	typePattern_ = src->typePattern_;
