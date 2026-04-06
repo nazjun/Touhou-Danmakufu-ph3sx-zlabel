@@ -5764,7 +5764,7 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetAutoDelete(gstd::script_machi
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
 	if (obj) {
 		bool enable = argv[1].as_boolean();
-		obj->SetAutoDelete(enable);
+		obj->SetAutoDeletePattern(enable);
 	}
 	return value();
 }

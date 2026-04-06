@@ -748,6 +748,8 @@ private:
 	ref_unsync_weak_ptr<StgMoveObject> parent_;
 	ref_unsync_weak_ptr<StgMoveParent> shotParent_;
 
+	bool bAutoDeletePattern_;
+
 	TypeObject typeShot_;
 	int typePattern_;
 
@@ -789,6 +791,8 @@ public:
 
 	void SetParent(ref_unsync_ptr<StgMoveObject> obj) { parent_ = obj; }
 	void SetShotParent(ref_unsync_ptr<StgMoveParent> obj) { shotParent_ = obj; }
+
+	void SetAutoDeletePattern(bool bAutoDeletePattern) { bAutoDeletePattern_ = bAutoDeletePattern; }
 
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);
 

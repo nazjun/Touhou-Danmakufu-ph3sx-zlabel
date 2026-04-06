@@ -2785,7 +2785,7 @@ void StgCurveLaserObject::_SendDeleteEvent(TypeDelete type) {
 //****************************************************************************
 StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController* stageController) : StgShotObject(stageController) {
 	typeObject_ = TypeObject::ShotPattern;
-	bAutoDelete_ = false;
+	bAutoDeletePattern_ = false;
 
 	typePattern_ = PATTERN_TYPE_FAN;
 	typeShot_ = TypeObject::Shot;
@@ -2811,7 +2811,7 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	laserLength_ = 64;
 }
 void StgShotPatternGeneratorObject::CleanUp() {
-	if (parent_ == nullptr && bAutoDelete_) {
+	if (parent_ == nullptr && bAutoDeletePattern_) {
 		auto objectManager = stageController_->GetMainObjectManager();
 		objectManager->DeleteObject(this);
 	}
