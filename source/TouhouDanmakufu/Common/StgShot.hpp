@@ -788,6 +788,8 @@ public:
 	virtual void RegistIntersectionTarget() {}
 
 	void SetParent(ref_unsync_ptr<StgMoveObject> obj) { parent_ = obj; }
+	ref_unsync_weak_ptr<StgMoveObject> GetParent() { return parent_; }
+
 	void SetShotParent(ref_unsync_ptr<StgMoveParent> obj) { shotParent_ = obj; }
 
 	void SetAutoDeletePattern(bool bAutoDeletePattern) { bAutoDeletePattern_ = bAutoDeletePattern; }

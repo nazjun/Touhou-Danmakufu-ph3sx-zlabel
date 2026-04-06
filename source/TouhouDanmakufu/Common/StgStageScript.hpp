@@ -534,6 +534,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetShootRadius);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetSpinParameter);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetLaserParameter);
+	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_GetParentObject);
 
 	//STG共通関数：アイテムオブジェクト操作
 	static gstd::value Func_ObjItem_Create(gstd::script_machine* machine, int argc, const gstd::value* argv);

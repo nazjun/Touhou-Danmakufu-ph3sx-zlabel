@@ -593,6 +593,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 2 },
 	{ "ObjPatternShot_SetSpinParameter", StgStageScript::Func_ObjPatternShot_SetSpinParameter, 3 },
 	{ "ObjPatternShot_SetLaserParameter", StgStageScript::Func_ObjPatternShot_SetLaserParameter, 3 },
+	{ "ObjPatternShot_GetParentObject", StgStageScript::Func_ObjPatternShot_GetParentObject, 1 },
 
 	//STG共通関数：アイテムオブジェクト操作
 	{ "ObjItem_Create", StgStageScript::Func_ObjItem_Create, 1 },
@@ -5905,6 +5906,20 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetLaserParameter(gstd::script_m
 		obj->SetLaserArgument(width, length);
 	}
 	return value();
+}
+gstd::value StgStageScript::Func_ObjPatternShot_GetParentObject(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	StgStageController* stageController = script->stageController_;
+
+	int id = argv[0].as_int();
+	int idParent = ID_INVALID;
+	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
+	if (obj) {
+		ref_unsync_weak_ptr<StgMoveObject> objParent = obj->GetParent();
+		if (objParent)
+			idParent = dynamic_cast<DxScriptObjectBase*>(objParent.get())->GetObjectID();
+	}
+	return script->CreateIntValue(idParent);
 }
 
 //STG共通関数：アイテムオブジェクト操作
