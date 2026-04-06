@@ -333,6 +333,17 @@ namespace gstd {
 			};
 		}
 
+		static inline int Interlace(int i, int n) {
+			int k = i / 2;
+			return (i % 2 == 0) ? k : (n - 1 - k);
+		}
+
+		static inline int Vee(int i, int n) {
+			int leftMid = (n - 1) / 2;
+			int rightMid = n / 2;
+			return std::min(std::abs<int>(i - leftMid), std::abs<int>(i - rightMid));
+		}
+
 		static inline constexpr double DegreeToRadian(double angle) { return angle * GM_PI / 180.0; }
 		static inline constexpr double RadianToDegree(double angle) { return angle * 180.0 / GM_PI; }
 

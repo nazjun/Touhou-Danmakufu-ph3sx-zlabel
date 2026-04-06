@@ -585,12 +585,17 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjPatternShot_SetPatternType", StgStageScript::Func_ObjPatternShot_SetPatternType, 2 },
 	{ "ObjPatternShot_SetShotType", StgStageScript::Func_ObjPatternShot_SetShotType, 2 },
 	{ "ObjPatternShot_SetShotCount", StgStageScript::Func_ObjPatternShot_SetShotCount, 3 },
+	{ "ObjPatternShot_SetShotCount", StgStageScript::Func_ObjPatternShot_SetShotCount, 4 },
+	{ "ObjPatternShot_SetScale", StgStageScript::Func_ObjPatternShot_SetScale, 3 },
 	{ "ObjPatternShot_SetSpeed", StgStageScript::Func_ObjPatternShot_SetSpeed, 3 },
+	{ "ObjPatternShot_SetSpeed", StgStageScript::Func_ObjPatternShot_SetSpeed, 4 },
 	{ "ObjPatternShot_SetAngle", StgStageScript::Func_ObjPatternShot_SetAngle, 3 },
+	{ "ObjPatternShot_SetAngle", StgStageScript::Func_ObjPatternShot_SetAngle, 4 },
 	{ "ObjPatternShot_SetBasePoint", StgStageScript::Func_ObjPatternShot_SetBasePoint, 3 },
 	{ "ObjPatternShot_SetBasePointOffset", StgStageScript::Func_ObjPatternShot_SetBasePointOffset, 3 },
 	{ "ObjPatternShot_SetBasePointOffsetCircle", StgStageScript::Func_ObjPatternShot_SetBasePointOffsetCircle, 3 },
 	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 2 },
+	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 3 },
 	{ "ObjPatternShot_SetSpinParameter", StgStageScript::Func_ObjPatternShot_SetSpinParameter, 3 },
 	{ "ObjPatternShot_SetLaserParameter", StgStageScript::Func_ObjPatternShot_SetLaserParameter, 3 },
 	{ "ObjPatternShot_GetParentObject", StgStageScript::Func_ObjPatternShot_GetParentObject, 1 },
@@ -5800,7 +5805,21 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetShotCount(gstd::script_machin
 	if (obj) {
 		int way = argv[1].as_int();
 		int stack = argv[2].as_int();
-		obj->SetWayStack((size_t)std::max(0, way), (size_t)std::max(0, stack));
+		bool bInterlace = (argc == 4) ? argv[3].as_boolean() : false;
+		obj->SetWayStack((size_t)std::max(0, way), (size_t)std::max(0, stack), bInterlace);
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjPatternShot_SetScale(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	StgStageController* stageController = script->stageController_;
+
+	int id = argv[0].as_int();
+	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
+	if (obj) {
+		float wayScale = argv[1].as_float();
+		float stackScale = argv[2].as_float();
+		obj->SetWayStackScale(wayScale, stackScale);
 	}
 	return value();
 }
@@ -5813,7 +5832,8 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetSpeed(gstd::script_machine* m
 	if (obj) {
 		float base = argv[1].as_float();
 		float arg = argv[2].as_float();
-		obj->SetSpeed(base, arg);
+		float off = (argc == 4) ? argv[3].as_float() : base;
+		obj->SetSpeed(base, arg, off);
 	}
 	return value();
 }
@@ -5826,7 +5846,8 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetAngle(gstd::script_machine* m
 	if (obj) {
 		float base = Math::DegreeToRadian(argv[1].as_float());
 		float arg = Math::DegreeToRadian(argv[2].as_float());
-		obj->SetAngle(base, arg);
+		float off = (argc == 4) ? Math::DegreeToRadian(argv[3].as_float()) : 0;
+		obj->SetAngle(base, arg, off);
 	}
 	return value();
 }
@@ -5877,7 +5898,8 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetShootRadius(gstd::script_mach
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
 	if (obj) {
 		float r = argv[1].as_float();
-		obj->SetRadiusFromFirePoint(r);
+		float off = (argc == 3) ? argv[2].as_float() : r;
+		obj->SetRadiusFromFirePoint(r, off);
 	}
 	return value();
 }

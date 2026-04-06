@@ -287,6 +287,8 @@ public:
 		}
 		DelayParameter& operator=(const DelayParameter& source) = default;
 
+		inline D3DXVECTOR3* GetScaleVector() { return &scale; }
+		inline D3DXVECTOR3* GetAlphaVector() { return &alpha; }
 		inline float GetScale() { return _CalculateValue(&scale, scaleLerpFunc); }
 		inline float GetAlpha() { return _CalculateValue(&alpha, alphaLerpFunc); }
 		float _CalculateValue(D3DXVECTOR3* param, lerp_func func);
@@ -755,6 +757,10 @@ private:
 
 	size_t shotWay_;
 	size_t shotStack_;
+	bool bInterlace_;
+
+	float wayScale_;
+	float stackScale_;
 
 	//Calculate the sets in order-------------------------------------
 	//Set 1
@@ -765,12 +771,15 @@ private:
 	float basePointOffsetY_;
 	//Set 4
 	float fireRadiusOffset_;
+	float fireRadiusChange_;
 	//-----------------------------------------------------------------
 
 	double speedBase_;
 	double speedArgument_;
+	double speedOff_;
 	double angleBase_;
 	double angleArgument_;
+	double angleOff_;
 
 	double angularVelocity_;
 	bool bFixedAngle_;
@@ -800,10 +809,16 @@ public:
 	void SetTypePattern(int type) { typePattern_ = type; }
 	void SetTypeShot(TypeObject type) { typeShot_ = type; }
 
-	void SetWayStack(size_t way, size_t stack) {
+	void SetWayStack(size_t way, size_t stack, bool bInterlace) {
 		shotWay_ = way;
 		shotStack_ = stack;
+		bInterlace_ = bInterlace;
 	};
+
+	void SetWayStackScale(float wayScale, float stackScale) {
+		wayScale_ = wayScale;
+		stackScale_ = stackScale;
+	}
 
 	void SetBasePoint(float bx, float by) {
 		basePointX_ = bx;
@@ -813,15 +828,20 @@ public:
 		basePointOffsetX_ = ox;
 		basePointOffsetY_ = oy;
 	}
-	void SetRadiusFromFirePoint(float r) { fireRadiusOffset_ = r; }
+	void SetRadiusFromFirePoint(float r, float off) {
+		fireRadiusOffset_ = r;
+		fireRadiusChange_ = off;
+	}
 
-	void SetSpeed(double base, double arg) {
+	void SetSpeed(double base, double arg, double off) {
 		speedBase_ = base;
 		speedArgument_ = arg;
+		speedOff_ = off;
 	}
-	void SetAngle(double base, double arg) {
+	void SetAngle(double base, double arg, double off) {
 		angleBase_ = base;
 		angleArgument_ = arg;
+		angleOff_ = off;
 	}
 
 	void SetSpinArgument(double angularVelocity, bool bFixedAngle) {

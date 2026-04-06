@@ -2792,17 +2792,24 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 
 	shotWay_ = 1U;
 	shotStack_ = 1U;
+	bInterlace_ = false;
+
+	wayScale_ = 1;
+	stackScale_ = 1;
 
 	basePointX_ = BASEPOINT_RESET;
 	basePointY_ = BASEPOINT_RESET;
 	basePointOffsetX_ = 0;
 	basePointOffsetY_ = 0;
 	fireRadiusOffset_ = 0;
+	fireRadiusChange_ = 0;
 
 	speedBase_ = 1;
 	speedArgument_ = 1;
+	speedOff_ = 1;
 	angleBase_ = 0;
 	angleArgument_ = 0;
+	angleOff_ = 0;
 
 	angularVelocity_ = 0;
 	bFixedAngle_ = false;
@@ -2833,17 +2840,24 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 
 	shotWay_ = src->shotWay_;
 	shotStack_ = src->shotStack_;
+	bInterlace_ = src->bInterlace_;
+
+	wayScale_ = src->wayScale_;
+	stackScale_ = src->stackScale_;
 
 	basePointX_ = src->basePointX_;
 	basePointY_ = src->basePointY_;
 	basePointOffsetX_ = src->basePointOffsetX_;
 	basePointOffsetY_ = src->basePointOffsetY_;
 	fireRadiusOffset_ = src->fireRadiusOffset_;
+	fireRadiusChange_ = src->fireRadiusChange_;
 
 	speedBase_ = src->speedBase_;
 	speedArgument_ = src->speedArgument_;
+	speedOff_ = src->speedOff_;
 	angleBase_ = src->angleBase_;
 	angleArgument_ = src->angleArgument_;
+	angleOff_ = src->angleOff_;
 
 	angularVelocity_ = src->angularVelocity_;
 	bFixedAngle_ = src->bFixedAngle_;
@@ -2877,7 +2891,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 	basePosX += basePointOffsetX_;
 	basePosY += basePointOffsetY_;
 
-	auto __CreateShot = [&](float _x, float _y, double _ss, double _sa) -> bool {
+	auto __CreateShot = [&](float _x, float _y, double _ss, double _sa, size_t _iWay, size_t _iStack) -> bool {
 		if (shotManager->GetShotCountAll() >= StgShotManager::SHOT_MAX) return false;
 
 		ref_unsync_ptr<StgShotObject> objShot;
@@ -2924,6 +2938,20 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 		objShot->SetSpeed(_ss);
 		objShot->SetDirectionAngle(_sa);
 
+		if (wayScale_ != 1 || stackScale_ != 1) {
+			double scaling = Math::Lerp::Linear<double, double>(1, wayScale_, (double)_iWay / shotWay_)
+				* Math::Lerp::Linear<double, double>(1, stackScale_, (double)_iStack / shotStack_);
+
+			objShot->SetScale(objShot->GetScale() * scaling);
+
+			D3DXVECTOR2 hitboxScale(objShot->GetHitboxScaleX() * scaling, objShot->GetHitboxScaleY() * scaling);
+			objShot->SetHitboxScale(hitboxScale);
+
+			D3DXVECTOR3* delayScale = objShot->GetDelayParameter()->GetScaleVector();
+			delayScale->x *= scaling;
+			delayScale->y *= scaling;
+		}
+
 		int idRes = script->AddObject(objShot);
 		if (idRes == DxScript::ID_INVALID) return false;
 
@@ -2946,17 +2974,27 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 			double ang_off_way = (double)(shotWay_ / 2) - (shotWay_ % 2 == 0 ? 0.5 : 0.0);
 
 			for (size_t iWay = 0; iWay < shotWay_; ++iWay) {
-				double sa = ini_angle + (iWay - ang_off_way) * angleArgument_;
+				size_t iw = bInterlace_ ? Math::Interlace(iWay, shotWay_) : iWay;
+				double sa = ini_angle + (iw - ang_off_way) * angleArgument_;
 				double r_fac[2] = { cos(sa), sin(sa) };
+				sa += angleOff_;
+
+				size_t vee = Math::Vee(iw, shotWay_);
+				double _ss = (speedOff_ - speedBase_) * vee;
+				float rad = fireRadiusOffset_ + (fireRadiusChange_ - fireRadiusOffset_) * vee;
+
+				size_t ws = bInterlace_ ? vee : iw;
 
 				for (size_t iStack = 0; iStack < shotStack_; ++iStack) {
-					double ss = speedBase_;
-					if (shotStack_ > 1) ss += (speedArgument_ - speedBase_) * (iStack / ((double)shotStack_ - 1));
+					double ss = _ss + speedBase_;
+					if (shotStack_ > 1) {
+						ss += (speedArgument_ - speedBase_) * (iStack / ((double)shotStack_ - 1));
+					}
 
-					float sx = basePosX + fireRadiusOffset_ * r_fac[0];
-					float sy = basePosY + fireRadiusOffset_ * r_fac[1];
+					float sx = basePosX + rad * r_fac[0];
+					float sy = basePosY + rad * r_fac[1];
 
-					__CreateShot(sx, sy, ss, sa);
+					__CreateShot(sx, sy, ss, sa, ws, iStack);
 				}
 			}
 			break;
@@ -2969,17 +3007,25 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 				ini_angle += atan2(objPlayer->GetY() - basePosY, objPlayer->GetX() - basePosX);
 
 			for (size_t iWay = 0; iWay < shotWay_; ++iWay) {
-				double sa_b = ini_angle + (GM_PI_X2 / (double)shotWay_) * iWay;
+				size_t iw = bInterlace_ ? Math::Interlace(shotWay_ - iWay - 1, shotWay_) : iWay;
+				double sa_b = ini_angle + (GM_PI_X2 / (double)shotWay_) * iw;
+
+				size_t vee = Math::Vee(iw, shotWay_ + 1);
+				double _ss = (speedOff_ - speedBase_) * vee;
+				float rad = fireRadiusOffset_ + (fireRadiusChange_ - fireRadiusOffset_) * vee;
+
+				size_t ws = bInterlace_ ? vee : iw;
 
 				for (size_t iStack = 0; iStack < shotStack_; ++iStack) {
-					double ss = speedBase_;
+					double ss = _ss + speedBase_;
 					if (shotStack_ > 1) ss += (speedArgument_ - speedBase_) * (iStack / ((double)shotStack_ - 1));
 
 					double sa = sa_b + iStack * angleArgument_;
-					float sx = basePosX + fireRadiusOffset_ * cos(sa);
-					float sy = basePosY + fireRadiusOffset_ * sin(sa);
+					float sx = basePosX + rad * cos(sa);
+					float sy = basePosY + rad * sin(sa);
+					sa += angleOff_;
 
-					__CreateShot(sx, sy, ss, sa);
+					__CreateShot(sx, sy, ss, sa, ws, iStack);
 				}
 			}
 			break;
@@ -2990,34 +3036,42 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 			double ini_angle = angleBase_;
 			if (objPlayer != nullptr && typePattern_ == PATTERN_TYPE_ARROW_AIMED)
 				ini_angle += atan2(objPlayer->GetY() - basePosY, objPlayer->GetX() - basePosX);
-			size_t stk_cen = shotStack_ / 2;
 
-			for (size_t iStack = 0U; iStack < shotStack_; ++iStack) {
-				double ss = speedBase_;
-				if (shotStack_ > 1) {
-					if (shotStack_ % 2 == 0) {
-						if (shotStack_ > 2) {
-							double tmp = (iStack < stk_cen) ? (stk_cen - iStack - 1) : (iStack - stk_cen);
-							ss = speedBase_ + (speedArgument_ - speedBase_) * (tmp / (stk_cen - 1));
-						}
+			for (size_t iWay = 0; iWay < shotWay_; ++iWay) {
+				size_t iw = bInterlace_ ? Math::Interlace(shotWay_ - iWay - 1, shotWay_) : iWay;
+				double w_angle = ini_angle + (GM_PI_X2 / (double)shotWay_) * iw;
+
+				size_t vee = Math::Vee(iw, shotWay_ + 1);
+				double _ss = (speedOff_ - speedBase_) * vee;
+				float rad = fireRadiusOffset_ + (fireRadiusChange_ - fireRadiusOffset_) * vee;
+
+				size_t ws = bInterlace_ ? vee : iw;
+
+				for (size_t iStack = 0U; iStack < shotStack_; ++iStack) {
+					size_t ist = bInterlace_ ? (shotStack_ - iStack - 1) : iStack;
+
+					int side = (-1 + 2 * (ist % 2));
+					size_t advance = (shotStack_ % 2 == 0) ? (ist / 2) : ((ist + 1) / 2);
+
+					double ss = _ss + speedBase_ + (speedArgument_ - speedBase_) * (double)advance / 2.0;
+					double sa = w_angle;
+					if (shotStack_ % 2 == 0)
+						sa += (angleArgument_ / 2.0) * side;
+					sa += angleArgument_ * advance * side;
+					float sx = basePosX + rad * cos(sa);
+					float sy = basePosY + rad * sin(sa);
+
+					if (angleOff_ != 0) {
+						float ox = basePosX + rad * cos(w_angle);
+						float oy = basePosY + rad * sin(w_angle);
+						double rpos[2] = { sx, sy };
+						Math::Rotate2D(rpos, angleOff_, ox, oy);
+						sx = rpos[0];
+						sy = rpos[1];
+						sa += angleOff_;
 					}
-					else {
-						double tmp = abs((double)iStack - stk_cen);
-						ss = speedBase_ + (speedArgument_ - speedBase_) * (tmp / std::max(1U, stk_cen - 1));
-					}
-				}
 
-				for (size_t iWay = 0; iWay < shotWay_; ++iWay) {
-					double sa = ini_angle + (GM_PI_X2 / (double)shotWay_) * iWay;
-					if (shotStack_ > 1) {
-						sa += (double)((shotStack_ % 2 == 0) ?
-							((double)iStack - (stk_cen - 0.5)) : ((double)iStack - stk_cen)) * angleArgument_;
-					}
-
-					float sx = basePosX + fireRadiusOffset_ * cos(sa);
-					float sy = basePosY + fireRadiusOffset_ * sin(sa);
-
-					__CreateShot(sx, sy, ss, sa);
+					__CreateShot(sx, sy, ss, sa, ws, ist);
 				}
 			}
 			break;
@@ -3049,13 +3103,19 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 					double _sy_b = Math::Lerp::Linear(from_pos[1], to_pos[1], rate);
 					double _sx = _sx_b * r_fac[0] + _sy_b * r_fac[1];
 					double _sy = _sx_b * r_fac[1] - _sy_b * r_fac[0];
-					float sx = basePosX + fireRadiusOffset_ * _sx;
-					float sy = basePosY + fireRadiusOffset_ * _sy;
 
-					double sa = atan2(_sy, _sx);
+					size_t vee = Math::Vee(iShot, numShotPerEdge + 1);
+					float rad = fireRadiusOffset_ + (fireRadiusChange_ - fireRadiusOffset_) * vee;
+					float sx = basePosX + rad * _sx;
+					float sy = basePosY + rad * _sy;
+
+					double sa = atan2(_sy, _sx) + angleOff_;
 					double ss = hypot(_sx, _sy) * speedBase_;
+					ss += (speedOff_ - speedBase_) * vee;
 
-					__CreateShot(sx, sy, ss, sa);
+					size_t ws = bInterlace_ ? vee : iShot;
+
+					__CreateShot(sx, sy, ss, sa, iEdge, ws);
 				}
 			}
 			break;
@@ -3070,17 +3130,23 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 			double r_eccentricity = speedArgument_ / speedBase_;
 
 			for (size_t iWay = 0; iWay < shotWay_; ++iWay) {
-				double angle_cur = GM_PI_X2 / (double)shotWay_ * iWay + angleArgument_;
+				size_t iw = bInterlace_ ? Math::Interlace(shotWay_ - iWay - 1, shotWay_) : iWay;
+				double angle_cur = GM_PI_X2 / (double)shotWay_ * iw + angleArgument_;
 
 				double rpos[2] = { 1 * cos(angle_cur), r_eccentricity * sin(angle_cur) };
 				Math::Rotate2D(rpos, el_pointing_angle, 0, 0);
 
-				double sa = atan2(rpos[1], rpos[0]);
-				double ss = hypot(rpos[0], rpos[1]) * speedBase_;
-				float sx = basePosX + fireRadiusOffset_ * rpos[0];
-				float sy = basePosY + fireRadiusOffset_ * rpos[1];
+				size_t vee = Math::Vee(iw, shotWay_ + 1);
+				float rad = fireRadiusOffset_ + (fireRadiusChange_ - fireRadiusOffset_) * vee;
+				double sa = atan2(rpos[1], rpos[0]) + angleOff_;
+				double sv = (speedOff_ - speedBase_) * vee;
+				double ss = hypot(rpos[0], rpos[1]) * (speedBase_ + sv);
+				float sx = basePosX + rad * rpos[0];
+				float sy = basePosY + rad * rpos[1];
 
-				__CreateShot(sx, sy, ss, sa);
+				size_t ws = bInterlace_ ? vee : iw;
+
+				__CreateShot(sx, sy, ss, sa, ws, 0);
 			}
 			break;
 		}
@@ -3090,20 +3156,36 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 		{
 			double ini_angle = angleBase_;
 
+			std::vector<double> vss(shotWay_ * shotStack_);
+
 			for (size_t iWay = 0; iWay < shotWay_; ++iWay) {
 				for (size_t iStack = 0; iStack < shotStack_; ++iStack) {
-					double ss = speedBase_ + (speedArgument_ - speedBase_) *
+					vss[iWay * shotStack_ + iStack] = speedBase_ + (speedArgument_ - speedBase_) *
 						((shotStack_ > 1 && typePattern_ == PATTERN_TYPE_SCATTER_ANGLE) ?
 							(iStack / ((double)shotStack_ - 1)) : randGenerator->GetReal());
+				}
+			}
 
+			if (bInterlace_)
+				std::sort(vss.begin(), vss.end());
+
+			for (size_t iWay = 0; iWay < shotWay_; ++iWay) {
+				for (size_t iStack = 0; iStack < shotStack_; ++iStack) {
+					double ss = vss[iWay * shotStack_ + iStack];
 					double sa = ini_angle + ((typePattern_ == PATTERN_TYPE_SCATTER_SPEED) ?
 						(GM_PI_X2 / (double)shotWay_ * iWay) + angleArgument_ * iStack :
 						randGenerator->GetReal(-angleArgument_, angleArgument_));
 
-					float sx = basePosX + fireRadiusOffset_ * cos(sa);
-					float sy = basePosY + fireRadiusOffset_ * sin(sa);
+					float vee = std::abs<double>(Math::AngleDifferenceRad(ini_angle, sa)) / GM_PI;
+					float rad = fireRadiusOffset_ + (fireRadiusChange_ - fireRadiusOffset_) * vee;
+					ss += (speedOff_ - speedBase_) * vee;
+					float sx = basePosX + rad * cos(sa);
+					float sy = basePosY + rad * sin(sa);
+					sa += angleOff_;
 
-					__CreateShot(sx, sy, ss, sa);
+					size_t ws = bInterlace_ ? (vee * shotWay_) : iWay;
+
+					__CreateShot(sx, sy, ss, sa, ws, iStack);
 				}
 			}
 			break;
@@ -3123,22 +3205,26 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 			double to_pos[2] = { cos(to_ang), sin(to_ang) };
 
 			for (size_t iWay = 0U; iWay < shotWay_; ++iWay) {
+				size_t iw = bInterlace_ ? (shotWay_ - iWay - 1) : iWay;
 				//Will always be just a little short of a full 1, intentional.
-				double rate = shotWay_ > 1 ? (iWay / ((double)shotWay_ - 1)) : 0.5;
+				double rate = shotWay_ > 1 ? (iw / ((double)shotWay_ - 1)) : 0.5;
 
 				double _sx = Math::Lerp::Linear(from_pos[0], to_pos[0], rate);
 				double _sy = Math::Lerp::Linear(from_pos[1], to_pos[1], rate);
-				float sx = basePosX + fireRadiusOffset_ * _sx;
-				float sy = basePosY + fireRadiusOffset_ * _sy;
+				size_t vee = Math::Vee(iw, shotWay_);
+				float rad = fireRadiusOffset_ + (fireRadiusChange_ - fireRadiusOffset_) * vee;
+				float sx = basePosX + rad * _sx;
+				float sy = basePosY + rad * _sy;
+				double sa = atan2(_sy, _sx) + angleOff_;
+				double _ss = hypot(_sx, _sy) * (1.0 + (speedOff_ - speedBase_) * vee);
 
-				double sa = atan2(_sy, _sx);
-				double _ss = hypot(_sx, _sy);
+				size_t ws = bInterlace_ ? vee : iw;
 
 				for (size_t iStack = 0; iStack < shotStack_; ++iStack) {
 					double ss = speedBase_;
 					if (shotStack_ > 1) ss += (speedArgument_ - speedBase_) * (iStack / ((double)shotStack_ - 1));
 
-					__CreateShot(sx, sy, ss * _ss, sa);
+					__CreateShot(sx, sy, ss * _ss, sa, ws, iStack);
 				}
 			}
 			break;
@@ -3158,14 +3244,21 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 			double angGap = (GM_PI_X2 / (numPetal * numShotPerPetal) * petalSkip);
 
 			for (size_t iStack = 0; iStack < numShotPerPetal; ++iStack) {
-				double ss = speedBase_ + (speedArgument_ - speedBase_) * sin(GM_PI / numShotPerPetal * iStack);
+				size_t ist = bInterlace_ ? (shotStack_ - iStack - 1) : iStack;
+				double _ss = speedBase_ + (speedArgument_ - speedBase_) * sin(GM_PI / numShotPerPetal * ist);
 
 				for (size_t iShot = 0; iShot < numPetal; ++iShot) {
-					double sa = ini_angle + iShot * petalGap + iStack * angGap;
-					float sx = basePosX + fireRadiusOffset_ * cos(sa);
-					float sy = basePosY + fireRadiusOffset_ * sin(sa);
+					size_t vee = Math::Vee(iShot, numPetal + 1);
+					float rad = fireRadiusOffset_ + (fireRadiusChange_ - fireRadiusOffset_) * vee;
+					double ss = _ss * (1.0 + (speedOff_ - speedBase_) * vee);
+					double sa = ini_angle + iShot * petalGap + ist * angGap;
+					float sx = basePosX + rad * cos(sa);
+					float sy = basePosY + rad * sin(sa);
+					sa += angleOff_;
 
-					__CreateShot(sx, sy, ss, sa);
+					size_t ws = bInterlace_ ? vee : iShot;
+
+					__CreateShot(sx, sy, ss, sa, ws, iStack);
 				}
 			}
 			break;
