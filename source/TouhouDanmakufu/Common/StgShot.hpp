@@ -747,6 +747,10 @@ public:
 		BASEPOINT_RESET = -256 * 256,
 	};
 private:
+	void* scriptData_;
+	StgStageController* controller_;
+	// ---
+
 	ref_unsync_weak_ptr<StgMoveObject> parent_;
 	ref_unsync_weak_ptr<StgMoveParent> shotParent_;
 
@@ -757,10 +761,21 @@ private:
 
 	size_t shotWay_;
 	size_t shotStack_;
+	int shotCutoff_;
 	bool bInterlace_;
 
 	float wayScale_;
 	float stackScale_;
+	Math::Lerp::funcLerp<float, float> lerpScale_;
+
+	int wayWait_;
+	int stackWait_;
+	std::vector<std::tuple<size_t, ref_unsync_ptr<StgShotObject>, ref_unsync_weak_ptr<StgMoveParent>, StgShotManager*>> shotsWaiting_;
+
+	int repeatNext_;
+	int repeatWait_;
+	int repeatTimes_;
+	bool bFireEvent_;
 
 	//Calculate the sets in order-------------------------------------
 	//Set 1
@@ -771,12 +786,15 @@ private:
 	float basePointOffsetY_;
 	//Set 4
 	float fireRadiusOffset_;
-	float fireRadiusChange_;
+	float fireRadiusScale_;
+	Math::Lerp::funcLerp<float, float> lerpRadius_;
 	//-----------------------------------------------------------------
 
 	double speedBase_;
 	double speedArgument_;
 	double speedOff_;
+	Math::Lerp::funcLerp<double, double> lerpSpeed_;
+
 	double angleBase_;
 	double angleArgument_;
 	double angleOff_;
@@ -791,6 +809,7 @@ public:
 
 	virtual void Clone(DxScriptObjectBase* src, bool deepCopy = true);
 
+	virtual void Work();
 	virtual void Render(BlendMode targetBlend) {}
 	virtual void SetRenderState() {}
 	virtual void CleanUp();
@@ -803,21 +822,46 @@ public:
 
 	void SetAutoDeletePattern(bool bAutoDeletePattern) { bAutoDeletePattern_ = bAutoDeletePattern; }
 
+	void SetCaller(void* scriptData, StgStageController* controller) {
+		scriptData_ = scriptData;
+		controller_ = controller;
+	}
+
+	void SetRepeat(int repeatWait, int repeatTimes, bool bFireEvent) {
+		repeatNext_ = 0;
+		repeatWait_ = repeatWait;
+		repeatTimes_ = repeatTimes;
+		bFireEvent_ = bFireEvent;
+	}
+
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);
+
+	void ClearWaiting() {
+		shotsWaiting_.clear();
+		repeatNext_ = 0;
+		repeatWait_ = 0;
+		repeatTimes_ = 0;
+		bFireEvent_ = false;
+	}
 
 	void SetTypeOwner(int type) { typeOwner_ = type; }
 	void SetTypePattern(int type) { typePattern_ = type; }
 	void SetTypeShot(TypeObject type) { typeShot_ = type; }
 
-	void SetWayStack(size_t way, size_t stack, bool bInterlace) {
+	void SetWayStack(size_t way, size_t stack, int cutoff, bool bInterlace) {
 		shotWay_ = way;
 		shotStack_ = stack;
+		shotCutoff_ = cutoff;
 		bInterlace_ = bInterlace;
-	};
-
-	void SetWayStackScale(float wayScale, float stackScale) {
+	}
+	void SetWayStackScale(float wayScale, float stackScale, Math::Lerp::Type lerpType) {
 		wayScale_ = wayScale;
 		stackScale_ = stackScale;
+		lerpScale_ = Math::Lerp::GetFunc<float, float>(lerpType);
+	}
+	void SetWayStackWait(int wayWait, int stackWait) {
+		wayWait_ = wayWait;
+		stackWait_ = stackWait;
 	}
 
 	void SetBasePoint(float bx, float by) {
@@ -828,15 +872,17 @@ public:
 		basePointOffsetX_ = ox;
 		basePointOffsetY_ = oy;
 	}
-	void SetRadiusFromFirePoint(float r, float off) {
+	void SetRadiusFromFirePoint(float r, float off, Math::Lerp::Type lerpType) {
 		fireRadiusOffset_ = r;
-		fireRadiusChange_ = off;
+		fireRadiusScale_ = off;
+		lerpRadius_ = Math::Lerp::GetFunc<float, float>(lerpType);
 	}
 
-	void SetSpeed(double base, double arg, double off) {
+	void SetSpeed(double base, double arg, double off, Math::Lerp::Type lerpType) {
 		speedBase_ = base;
 		speedArgument_ = arg;
 		speedOff_ = off;
+		lerpSpeed_ = Math::Lerp::GetFunc<double, double>(lerpType);
 	}
 	void SetAngle(double base, double arg, double off) {
 		angleBase_ = base;

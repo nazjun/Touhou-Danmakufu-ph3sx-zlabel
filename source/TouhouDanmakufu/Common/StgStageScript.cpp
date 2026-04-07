@@ -578,24 +578,27 @@ static const std::vector<function> stgStageFunction = {
 
 	{ "ObjPatternShot_Create", StgStageScript::Func_ObjPatternShot_Create, 0 },
 	{ "ObjPatternShot_Fire", StgStageScript::Func_ObjPatternShot_Fire, 1 },
+	{ "ObjPatternShot_Fire", StgStageScript::Func_ObjPatternShot_Fire, 4 },
 	{ "ObjPatternShot_FireReturn", StgStageScript::Func_ObjPatternShot_FireReturn, 1 },
+	{ "ObjPatternShot_ClearWaiting", StgStageScript::Func_ObjPatternShot_ClearWaiting, 1 },
 	{ "ObjPatternShot_SetParentObject", StgStageScript::Func_ObjPatternShot_SetParentObject, 2 },
 	{ "ObjPatternShot_SetShotParent", StgStageScript::Func_ObjPatternShot_SetShotParent, 2 },
 	{ "ObjPatternShot_SetAutoDelete", StgStageScript::Func_ObjPatternShot_SetAutoDelete, 2 },
 	{ "ObjPatternShot_SetPatternType", StgStageScript::Func_ObjPatternShot_SetPatternType, 2 },
 	{ "ObjPatternShot_SetShotType", StgStageScript::Func_ObjPatternShot_SetShotType, 2 },
 	{ "ObjPatternShot_SetShotCount", StgStageScript::Func_ObjPatternShot_SetShotCount, 3 },
-	{ "ObjPatternShot_SetShotCount", StgStageScript::Func_ObjPatternShot_SetShotCount, 4 },
-	{ "ObjPatternShot_SetScale", StgStageScript::Func_ObjPatternShot_SetScale, 3 },
+	{ "ObjPatternShot_SetShotCount", StgStageScript::Func_ObjPatternShot_SetShotCount, 5 },
+	{ "ObjPatternShot_SetScale", StgStageScript::Func_ObjPatternShot_SetScale, 4 },
+	{ "ObjPatternShot_SetWait", StgStageScript::Func_ObjPatternShot_SetWait, 3 },
 	{ "ObjPatternShot_SetSpeed", StgStageScript::Func_ObjPatternShot_SetSpeed, 3 },
-	{ "ObjPatternShot_SetSpeed", StgStageScript::Func_ObjPatternShot_SetSpeed, 4 },
+	{ "ObjPatternShot_SetSpeed", StgStageScript::Func_ObjPatternShot_SetSpeed, 5 },
 	{ "ObjPatternShot_SetAngle", StgStageScript::Func_ObjPatternShot_SetAngle, 3 },
 	{ "ObjPatternShot_SetAngle", StgStageScript::Func_ObjPatternShot_SetAngle, 4 },
 	{ "ObjPatternShot_SetBasePoint", StgStageScript::Func_ObjPatternShot_SetBasePoint, 3 },
 	{ "ObjPatternShot_SetBasePointOffset", StgStageScript::Func_ObjPatternShot_SetBasePointOffset, 3 },
 	{ "ObjPatternShot_SetBasePointOffsetCircle", StgStageScript::Func_ObjPatternShot_SetBasePointOffsetCircle, 3 },
 	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 2 },
-	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 3 },
+	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 4 },
 	{ "ObjPatternShot_SetSpinParameter", StgStageScript::Func_ObjPatternShot_SetSpinParameter, 3 },
 	{ "ObjPatternShot_SetLaserParameter", StgStageScript::Func_ObjPatternShot_SetLaserParameter, 3 },
 	{ "ObjPatternShot_GetParentObject", StgStageScript::Func_ObjPatternShot_GetParentObject, 1 },
@@ -782,6 +785,9 @@ static const std::vector<constant> stgStageConstant = {
 	constant("EV_PLAYER_REBIRTH", StgStageScript::EV_PLAYER_REBIRTH),
 
 	constant("REBIRTH_DEFAULT", StgPlayerObject::REBIRTH_DEFAULT),
+
+	//Pattern shot events
+	constant("EV_PATTERN_SHOT_FIRE", StgStageScript::EV_PATTERN_SHOT_FIRE),
 
 	//Pause events
 	constant("EV_PAUSE_ENTER", StgStageScript::EV_PAUSE_ENTER),
@@ -5717,8 +5723,17 @@ gstd::value StgStageScript::Func_ObjPatternShot_Fire(gstd::script_machine* machi
 
 	int id = argv[0].as_int();
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
-	if (obj)
-		obj->FireSet(machine->data, stageController, nullptr);
+	if (obj) {
+		if (argc == 4) {
+			int repeatWait = argv[1].as_int();
+			int repeatTimes = argv[2].as_int();
+			bool bFireEvent = argv[3].as_boolean();
+			obj->SetCaller(machine->data, stageController);
+			obj->SetRepeat(repeatWait, repeatTimes, bFireEvent);
+		}
+		else
+			obj->FireSet(machine->data, stageController, nullptr);
+	}
 	return value();
 }
 gstd::value StgStageScript::Func_ObjPatternShot_FireReturn(gstd::script_machine* machine, int argc, const gstd::value* argv) {
@@ -5733,6 +5748,16 @@ gstd::value StgStageScript::Func_ObjPatternShot_FireReturn(gstd::script_machine*
 		obj->FireSet(machine->data, stageController, &res);
 
 	return script->CreateIntArrayValue(res);
+}
+gstd::value StgStageScript::Func_ObjPatternShot_ClearWaiting(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	StgStageController* stageController = script->stageController_;
+
+	int id = argv[0].as_int();
+	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
+	if (obj)
+		obj->ClearWaiting();
+	return value();
 }
 gstd::value StgStageScript::Func_ObjPatternShot_SetParentObject(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;
@@ -5805,8 +5830,9 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetShotCount(gstd::script_machin
 	if (obj) {
 		int way = argv[1].as_int();
 		int stack = argv[2].as_int();
-		bool bInterlace = (argc == 4) ? argv[3].as_boolean() : false;
-		obj->SetWayStack((size_t)std::max(0, way), (size_t)std::max(0, stack), bInterlace);
+		int cutoff = (argc == 5) ? argv[3].as_int() : way;
+		bool bInterlace = (argc == 5) ? argv[4].as_boolean() : false;
+		obj->SetWayStack((size_t)std::max(0, way), (size_t)std::max(0, stack), cutoff, bInterlace);
 	}
 	return value();
 }
@@ -5819,7 +5845,21 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetScale(gstd::script_machine* m
 	if (obj) {
 		float wayScale = argv[1].as_float();
 		float stackScale = argv[2].as_float();
-		obj->SetWayStackScale(wayScale, stackScale);
+		Math::Lerp::Type type = (Math::Lerp::Type)argv[3].as_int();
+		obj->SetWayStackScale(wayScale, stackScale, type);
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjPatternShot_SetWait(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	StgStageController* stageController = script->stageController_;
+
+	int id = argv[0].as_int();
+	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
+	if (obj) {
+		int wayWait = argv[1].as_int();
+		int stackWait = argv[2].as_int();
+		obj->SetWayStackWait(wayWait, stackWait);
 	}
 	return value();
 }
@@ -5832,8 +5872,9 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetSpeed(gstd::script_machine* m
 	if (obj) {
 		float base = argv[1].as_float();
 		float arg = argv[2].as_float();
-		float off = (argc == 4) ? argv[3].as_float() : base;
-		obj->SetSpeed(base, arg, off);
+		float off = (argc == 5) ? argv[3].as_float() : 0;
+		Math::Lerp::Type type = (argc == 5) ? (Math::Lerp::Type)argv[4].as_int() : Math::Lerp::LINEAR;
+		obj->SetSpeed(base, arg, off, type);
 	}
 	return value();
 }
@@ -5898,8 +5939,9 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetShootRadius(gstd::script_mach
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
 	if (obj) {
 		float r = argv[1].as_float();
-		float off = (argc == 3) ? argv[2].as_float() : r;
-		obj->SetRadiusFromFirePoint(r, off);
+		float off = (argc == 4) ? argv[2].as_float() : 0;
+		Math::Lerp::Type type = (argc == 4) ? (Math::Lerp::Type)argv[3].as_int() : Math::Lerp::LINEAR;
+		obj->SetRadiusFromFirePoint(r, off, type);
 	}
 	return value();
 }

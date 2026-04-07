@@ -157,6 +157,8 @@ public:
 		EV_DELETE_SHOT_TO_ITEM,
 		EV_DELETE_SHOT_FADE,
 
+		EV_PATTERN_SHOT_FIRE,
+
 		TARGET_ALL,
 		TARGET_ENEMY,
 		TARGET_PLAYER,
@@ -520,6 +522,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_Create);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_Fire);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_FireReturn);
+	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_ClearWaiting);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetParentObject);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetShotParent);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetAutoDelete);
@@ -527,6 +530,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetShotType);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetShotCount);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetScale);
+	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetWait);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetSpeed);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetAngle);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetBasePoint);
