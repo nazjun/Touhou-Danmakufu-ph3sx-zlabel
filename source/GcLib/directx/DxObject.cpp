@@ -2032,6 +2032,7 @@ void DxScriptObjectManager::_DeleteObject(int id) {
 	if (pObj == nullptr) return;
 
 	for (auto& callback : pObj->deleteCallback_) {
+		if (callback.second == NULL) continue;
 		script_block* subIvk = (script_block*)(callback.second & 0xffffffff);
 		script_machine* machine = (script_machine*)callback.first;
 		script_machine::environment* e = machine->add_child_block(subIvk);

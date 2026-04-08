@@ -782,7 +782,7 @@ private:
 	int repeatNext_;
 	int repeatWait_;
 	int repeatTimes_;
-	bool bFireEvent_;
+	std::vector<std::pair<void*, uint64_t>> fireCallback_;
 
 	//Calculate the sets in order-------------------------------------
 	//Set 1
@@ -834,11 +834,11 @@ public:
 		controller_ = controller;
 	}
 
-	void SetRepeat(int repeatWait, int repeatTimes, bool bFireEvent) {
+	void SetRepeat(int repeatWait, int repeatTimes, void* machine, uint64_t funcptr) {
 		repeatNext_ = 0;
 		repeatWait_ = repeatWait;
 		repeatTimes_ = repeatTimes;
-		bFireEvent_ = bFireEvent;
+		fireCallback_.push_back(std::pair<void*, uint64_t>(machine, funcptr));
 	}
 
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);
@@ -848,7 +848,7 @@ public:
 		repeatNext_ = 0;
 		repeatWait_ = 0;
 		repeatTimes_ = 0;
-		bFireEvent_ = false;
+		fireCallback_.clear();
 	}
 
 	void SetTypeOwner(int type) { typeOwner_ = type; }

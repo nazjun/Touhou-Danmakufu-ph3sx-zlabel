@@ -792,9 +792,6 @@ static const std::vector<constant> stgStageConstant = {
 
 	constant("REBIRTH_DEFAULT", StgPlayerObject::REBIRTH_DEFAULT),
 
-	//Pattern shot events
-	constant("EV_PATTERN_SHOT_FIRE", StgStageScript::EV_PATTERN_SHOT_FIRE),
-
 	//Pause events
 	constant("EV_PAUSE_ENTER", StgStageScript::EV_PAUSE_ENTER),
 	constant("EV_PAUSE_LEAVE", StgStageScript::EV_PAUSE_LEAVE),
@@ -5794,9 +5791,8 @@ gstd::value StgStageScript::Func_ObjPatternShot_Fire(gstd::script_machine* machi
 		if (argc == 4) {
 			int repeatWait = argv[1].as_int();
 			int repeatTimes = argv[2].as_int();
-			bool bFireEvent = argv[3].as_boolean();
 			obj->SetCaller(machine->data, stageController);
-			obj->SetRepeat(repeatWait, repeatTimes, bFireEvent);
+			obj->SetRepeat(repeatWait, repeatTimes, (void*)machine, (uint64_t)argv[3].as_int());
 		}
 		else
 			obj->FireSet(machine->data, stageController, nullptr);

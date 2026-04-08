@@ -2823,7 +2823,7 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	repeatNext_ = 0;
 	repeatWait_ = 0;
 	repeatTimes_ = 0;
-	bFireEvent_ = false;
+	fireCallback_.clear();
 
 	basePointX_ = BASEPOINT_RESET;
 	basePointY_ = BASEPOINT_RESET;
@@ -2887,7 +2887,7 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 	repeatNext_ = src->repeatNext_;
 	repeatWait_ = src->repeatWait_;
 	repeatTimes_ = src->repeatTimes_;
-	bFireEvent_ = src->bFireEvent_;
+	fireCallback_ = src->fireCallback_;
 
 	basePointX_ = src->basePointX_;
 	basePointY_ = src->basePointY_;
@@ -2920,16 +2920,18 @@ void StgShotPatternGeneratorObject::Work() {
 		repeatNext_ = repeatWait_ + frameExist_;
 		repeatTimes_--;
 
-		if (bFireEvent_) {
+		if (!fireCallback_.empty()) {
 			std::vector<int> res;
 			FireSet(scriptData_, controller_, &res);
-
-			gstd::value eventArg[2];
-			eventArg[0] = DxScript::CreateIntValue(idObject_);
-			eventArg[1] = DxScript::CreateIntArrayValue(res);
-
-			StgStageScript* script = (StgStageScript*)scriptData_;
-			script->RequestEvent(StgStageScript::EV_PATTERN_SHOT_FIRE, eventArg, 2U);
+			for (auto& callback : fireCallback_) {
+				if (callback.second == NULL) continue;
+				script_block* subIvk = (script_block*)(callback.second & 0xffffffff);
+				script_machine* machine = (script_machine*)callback.first;
+				script_machine::environment* e = machine->add_child_block(subIvk);
+				DxScript* script = (DxScript*)machine->data;
+				e->stack.push_back(script->CreateIntArrayValue(res));
+				e->stack.push_back(script->CreateIntValue(idObject_));
+			}
 		}
 		else
 			FireSet(scriptData_, controller_, nullptr);
