@@ -20,6 +20,8 @@ DxScriptObjectBase::DxScriptObjectBase() {
 	idScript_ = ScriptClientBase::ID_SCRIPT_FREE;
 	typeObject_ = TypeObject::Base;
 
+	deleteCallback_.clear();
+
 	bDelete_ = false;
 	bActive_ = false;
 	bVisible_ = true;
@@ -34,6 +36,8 @@ DxScriptObjectBase::~DxScriptObjectBase() {
 
 void DxScriptObjectBase::Clone(DxScriptObjectBase* src, bool deepCopy) {
 	idScript_ = src->idScript_;
+
+	deleteCallback_ = src->deleteCallback_;
 
 	bActive_ = src->bActive_;
 	bVisible_ = src->bVisible_;
@@ -2026,6 +2030,14 @@ void DxScriptObjectManager::_DeleteObject(int id) {
 
 	ref_unsync_ptr<DxScriptObjectBase> pObj = obj_[id];
 	if (pObj == nullptr) return;
+
+	for (auto& callback : pObj->deleteCallback_) {
+		script_block* subIvk = (script_block*)(callback.second & 0xffffffff);
+		script_machine* machine = (script_machine*)callback.first;
+		script_machine::environment* e = machine->add_child_block(subIvk);
+		DxScript* script = (DxScript*)machine->data;
+		e->stack.push_back(script->CreateIntValue(id));
+	}
 
 	pObj->bDelete_ = true;
 	if (pObj->manager_)

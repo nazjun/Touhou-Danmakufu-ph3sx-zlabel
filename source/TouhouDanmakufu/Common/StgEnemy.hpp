@@ -58,6 +58,9 @@ protected:
 	double life_;
 	double lifePrev_;
 	double lifeDelta_;
+
+	std::vector<std::pair<void*, uint64_t>> lifeCallback_;
+
 	double rateDamageShot_;
 	double rateDamageSpell_;
 
@@ -105,6 +108,8 @@ public:
 	void SetLife(double life) { life_ = lifePrev_ = life; }
 	void AddLife(double inc);
 	void AddLife2(double inc);
+
+	void SetLifeCallback(void* machine, uint64_t funcptr) { lifeCallback_.push_back(std::pair<void*, uint64_t>(machine, funcptr)); }
 
 	void SetDamageRate(double rateShot, double rateSpell) { rateDamageShot_ = rateShot; rateDamageSpell_ = rateSpell; }
 	double GetShotDamageRate() { return rateDamageShot_; }

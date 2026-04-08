@@ -462,6 +462,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjEnemy_SetLife", StgStageScript::Func_ObjEnemy_SetLife, 2 },
 	{ "ObjEnemy_AddLife", StgStageScript::Func_ObjEnemy_AddLife<false>, 2 },
 	{ "ObjEnemy_AddLifeEx", StgStageScript::Func_ObjEnemy_AddLife<true>, 2 },
+	{ "ObjEnemy_SetDeathCallback", StgStageScript::Func_ObjEnemy_SetDeathCallback, 2 },
 	{ "ObjEnemy_SetDamageRate", StgStageScript::Func_ObjEnemy_SetDamageRate, 3 },
 	{ "ObjEnemy_SetDamageRateByShotDataID", StgStageScript::Func_ObjEnemy_SetDamageRateByShotDataID, 3 },
 	{ "ObjEnemy_SetMaximumDamage", StgStageScript::Func_ObjEnemy_SetMaximumDamage, 2 },
@@ -4250,6 +4251,15 @@ gstd::value StgStageScript::Func_ObjEnemy_AddLife(gstd::script_machine* machine,
 			obj->AddLife2(inc);
 		else
 			obj->AddLife(inc);
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjEnemy_SetDeathCallback(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	StgEnemyObject* obj = script->GetObjectPointerAs<StgEnemyObject>(id);
+	if (obj) {
+		obj->SetLifeCallback((void*)machine, (uint64_t)argv[1].as_int());
 	}
 	return value();
 }

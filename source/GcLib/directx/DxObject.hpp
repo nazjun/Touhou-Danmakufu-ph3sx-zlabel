@@ -28,6 +28,8 @@ namespace directx {
 		TypeObject typeObject_;
 		int64_t idScript_;
 
+		std::vector<std::pair<void*, uint64_t>> deleteCallback_;
+
 		bool bDelete_;
 		bool bActive_;
 		bool bVisible_;

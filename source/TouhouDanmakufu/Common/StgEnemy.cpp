@@ -139,6 +139,9 @@ StgEnemyObject::StgEnemyObject(StgStageController* stageController) : StgMoveObj
 
 	life_ = 0;
 	lifePrev_ = 0;
+
+	lifeCallback_.clear();
+
 	rateDamageShot_ = 1;
 	rateDamageSpell_ = 1;
 
@@ -166,6 +169,8 @@ void StgEnemyObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
 	lifePrev_ = src->lifePrev_;
 	lifeDelta_ = src->lifeDelta_;
 
+	lifeCallback_ = src->lifeCallback_;
+
 	rateDamageShot_ = src->rateDamageShot_;
 	rateDamageSpell_ = src->rateDamageSpell_;
 	maximumDamage_ = src->maximumDamage_;
@@ -191,6 +196,17 @@ void StgEnemyObject::Work() {
 	lifeDelta_ = lifePrev_ - life_;
 	lifePrev_ = life_;
 	damageAccumFrame_ = 0;
+
+	if (life_ <= 0 && !lifeCallback_.empty()) {
+		for (auto& callback : lifeCallback_) {
+			script_block* subIvk = (script_block*)(callback.second & 0xffffffff);
+			script_machine* machine = (script_machine*)callback.first;
+			script_machine::environment* e = machine->add_child_block(subIvk);
+			DxScript* script = (DxScript*)machine->data;
+			e->stack.push_back(script->CreateIntValue(idObject_));
+		}
+		lifeCallback_.clear();
+	}
 
 	_Move();
 

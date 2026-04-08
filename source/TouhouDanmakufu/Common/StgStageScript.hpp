@@ -410,6 +410,7 @@ public:
 	static gstd::value Func_ObjEnemy_SetLife(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	template<bool CHECK_MAX_DMG>
 	static gstd::value Func_ObjEnemy_AddLife(gstd::script_machine* machine, int argc, const gstd::value* argv);
+	DNH_FUNCAPI_DECL_(Func_ObjEnemy_SetDeathCallback);
 	static gstd::value Func_ObjEnemy_SetDamageRate(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	DNH_FUNCAPI_DECL_(Func_ObjEnemy_SetDamageRateByShotDataID);
 	DNH_FUNCAPI_DECL_(Func_ObjEnemy_SetMaximumDamage);

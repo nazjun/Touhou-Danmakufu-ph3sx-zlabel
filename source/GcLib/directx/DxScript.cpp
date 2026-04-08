@@ -250,6 +250,7 @@ static const std::vector<function> dxFunction = {
 	{ "Obj_Delete", DxScript::Func_Obj_Delete, 1 },
 	{ "Obj_IsDeleted", DxScript::Func_Obj_IsDeleted, 1 },
 	{ "Obj_IsExists", DxScript::Func_Obj_IsExists, 1 },
+	{ "Obj_SetDeleteCallback", DxScript::Func_Obj_SetDeleteCallback, 2 },
 	{ "Obj_SetVisible", DxScript::Func_Obj_SetVisible, 2 },
 	{ "Obj_IsVisible", DxScript::Func_Obj_IsVisible, 1 },
 	{ "Obj_SetRenderPriority", DxScript::Func_Obj_SetRenderPriority, 2 },
@@ -2680,6 +2681,15 @@ value DxScript::Func_Obj_IsExists(script_machine* machine, int argc, const value
 	int id = argv[0].as_int();
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
 	return script->CreateBooleanValue(obj != nullptr);
+}
+value DxScript::Func_Obj_SetDeleteCallback(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	DxScriptObjectBase* obj = script->GetObjectPointer(id);
+	if (obj) {
+		obj->deleteCallback_.push_back(std::pair<void*, uint64_t>((void*)machine, (uint64_t)argv[1].as_int()));
+	}
+	return value();
 }
 value DxScript::Func_Obj_SetVisible(script_machine* machine, int argc, const value* argv) {
 	DxScript* script = (DxScript*)machine->data;
