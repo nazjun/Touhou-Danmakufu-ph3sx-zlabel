@@ -782,7 +782,7 @@ private:
 	int repeatNext_;
 	int repeatWait_;
 	int repeatTimes_;
-	std::vector<std::pair<void*, uint64_t>> fireCallback_;
+	std::vector<std::tuple<void*, ptrdiff_t, uint64_t>> fireCallback_;
 
 	//Calculate the sets in order-------------------------------------
 	//Set 1
@@ -834,11 +834,11 @@ public:
 		controller_ = controller;
 	}
 
-	void SetRepeat(int repeatWait, int repeatTimes, void* machine, uint64_t funcptr) {
+	void SetRepeat(int repeatWait, int repeatTimes, void* machine, ptrdiff_t threadIndex, uint64_t funcptr) {
 		repeatNext_ = 0;
 		repeatWait_ = repeatWait;
 		repeatTimes_ = repeatTimes;
-		fireCallback_.push_back(std::pair<void*, uint64_t>(machine, funcptr));
+		fireCallback_.push_back(std::tuple<void*, ptrdiff_t, uint64_t>(machine, threadIndex, funcptr));
 	}
 
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);

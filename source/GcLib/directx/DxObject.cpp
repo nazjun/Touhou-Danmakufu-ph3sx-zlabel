@@ -2032,12 +2032,18 @@ void DxScriptObjectManager::_DeleteObject(int id) {
 	if (pObj == nullptr) return;
 
 	for (auto& callback : pObj->deleteCallback_) {
-		if (callback.second == NULL) continue;
-		script_block* subIvk = (script_block*)(callback.second & 0xffffffff);
-		script_machine* machine = (script_machine*)callback.first;
+		if (std::get<2>(callback) == NULL) continue;
+		script_block* subIvk = (script_block*)(std::get<2>(callback) & 0xffffffff);
+		script_machine* machine = (script_machine*)std::get<0>(callback);
+
+		ptrdiff_t threadAdvance = std::get<1>(callback) - std::distance(machine->threads.begin(), machine->current_thread_index);
+		std::advance(machine->current_thread_index, threadAdvance);
+
 		script_machine::environment* e = machine->add_child_block(subIvk);
 		DxScript* script = (DxScript*)machine->data;
 		e->stack.push_back(script->CreateIntValue(id));
+
+		std::advance(machine->current_thread_index, -threadAdvance);
 	}
 
 	pObj->bDelete_ = true;

@@ -2687,7 +2687,8 @@ value DxScript::Func_Obj_SetDeleteCallback(script_machine* machine, int argc, co
 	int id = argv[0].as_int();
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
 	if (obj) {
-		obj->deleteCallback_.push_back(std::pair<void*, uint64_t>((void*)machine, (uint64_t)argv[1].as_int()));
+		ptrdiff_t threadIndex = std::distance(machine->threads.begin(), machine->current_thread_index);
+		obj->deleteCallback_.push_back(std::tuple<void*, ptrdiff_t, uint64_t>((void*)machine, threadIndex, (uint64_t)argv[1].as_int()));
 	}
 	return value();
 }

@@ -4256,7 +4256,8 @@ gstd::value StgStageScript::Func_ObjEnemy_SetDeathCallback(gstd::script_machine*
 	int id = argv[0].as_int();
 	StgEnemyObject* obj = script->GetObjectPointerAs<StgEnemyObject>(id);
 	if (obj) {
-		obj->SetLifeCallback((void*)machine, (uint64_t)argv[1].as_int());
+		ptrdiff_t threadIndex = std::distance(machine->threads.begin(), machine->current_thread_index);
+		obj->SetLifeCallback((void*)machine, threadIndex, (uint64_t)argv[1].as_int());
 	}
 	return value();
 }
@@ -5791,8 +5792,9 @@ gstd::value StgStageScript::Func_ObjPatternShot_Fire(gstd::script_machine* machi
 		if (argc == 4) {
 			int repeatWait = argv[1].as_int();
 			int repeatTimes = argv[2].as_int();
+			ptrdiff_t threadIndex = std::distance(machine->threads.begin(), machine->current_thread_index);
 			obj->SetCaller(machine->data, stageController);
-			obj->SetRepeat(repeatWait, repeatTimes, (void*)machine, (uint64_t)argv[3].as_int());
+			obj->SetRepeat(repeatWait, repeatTimes, (void*)machine, threadIndex, (uint64_t)argv[3].as_int());
 		}
 		else
 			obj->FireSet(machine->data, stageController, nullptr);
