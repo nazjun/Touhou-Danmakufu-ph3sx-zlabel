@@ -3147,10 +3147,17 @@ value DxScript::Func_ObjSpring_GetNode(gstd::script_machine* machine, int argc, 
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
 	DxSpringMassSystemObject* obj = script->GetObjectPointerAs<DxSpringMassSystemObject>(id);
-	DxSpringMassSystemObjectParticle p = DxSpringMassSystemObjectParticle();
-	if (obj)
-		p = obj->GetParticle(argv[1].as_int());
-	double vals[7] = { p.pos[0], p.pos[1], p.pos[2], p.vel[0], p.vel[1], p.vel[2], p.mass };
+	double vals[7]{};
+	if (obj) {
+		DxSpringMassSystemObjectParticle* p = obj->GetParticle(argv[1].as_int());
+		vals[0] = p->pos[0];
+		vals[1] = p->pos[1];
+		vals[2] = p->pos[2];
+		vals[3] = p->vel[0];
+		vals[4] = p->vel[1];
+		vals[5] = p->vel[2];
+		vals[6] = p->mass;
+	}
 	return script->CreateFloatArrayValue(vals, 7U);
 }
 value DxScript::Func_ObjSpring_RemoveNode(gstd::script_machine* machine, int argc, const value* argv) {
@@ -3192,10 +3199,15 @@ value DxScript::Func_ObjSpring_GetSpring(gstd::script_machine* machine, int argc
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
 	DxSpringMassSystemObject* obj = script->GetObjectPointerAs<DxSpringMassSystemObject>(id);
-	DxSpringMassSystemObjectSpring s = DxSpringMassSystemObjectSpring();
-	if (obj)
-		s = obj->GetSpring(argv[1].as_int());
-	double vals[5] = { (double)s.a, (double)s.b, s.kd, s.ks, s.rest };
+	double vals[5]{}; // = { (double)s.a, (double)s.b, s.kd, s.ks, s.rest };
+	if (obj) {
+		DxSpringMassSystemObjectSpring* s = obj->GetSpring(argv[1].as_int());
+		vals[0] = (double)s->a;
+		vals[1] = (double)s->b;
+		vals[2] = s->kd;
+		vals[3] = s->ks;
+		vals[4] = s->rest;
+	}
 	return script->CreateFloatArrayValue(vals, 5U);
 }
 value DxScript::Func_ObjSpring_RemoveSpring(gstd::script_machine* machine, int argc, const value* argv) {
@@ -3239,7 +3251,7 @@ value DxScript::Func_ObjSpring_SetPlane(gstd::script_machine* machine, int argc,
 			);
 			break;
 		case 8:
-			r = &(obj->GetPlane(index));
+			r = obj->GetPlane(index);
 			q = DxSpringMassSystemObjectPlane(
 				DxVector3::DxVec3{ argv[2].as_float(), argv[3].as_float(), argv[4].as_float() }, normal,
 				r->ks, r->kd, r->epsilon
@@ -3254,10 +3266,19 @@ value DxScript::Func_ObjSpring_GetPlane(gstd::script_machine* machine, int argc,
 	DxScript* script = (DxScript*)machine->data;
 	int id = argv[0].as_int();
 	DxSpringMassSystemObject* obj = script->GetObjectPointerAs<DxSpringMassSystemObject>(id);
-	DxSpringMassSystemObjectPlane q = DxSpringMassSystemObjectPlane();
-	if (obj)
-		q = obj->GetPlane(argv[1].as_int());
-	double vals[9] = { q.pos[0], q.pos[1], q.pos[2], q.normal[0], q.normal[1], q.normal[2], q.ks, q.kd, q.epsilon };
+	double vals[9]{}; // = { q.pos[0], q.pos[1], q.pos[2], q.normal[0], q.normal[1], q.normal[2], q.ks, q.kd, q.epsilon };
+	if (obj) {
+		DxSpringMassSystemObjectPlane* q = obj->GetPlane(argv[1].as_int());
+		vals[0] = q->pos[0];
+		vals[1] = q->pos[1];
+		vals[2] = q->pos[2];
+		vals[3] = q->normal[0];
+		vals[4] = q->normal[1];
+		vals[5] = q->normal[2];
+		vals[6] = q->ks;
+		vals[7] = q->kd;
+		vals[8] = q->epsilon;
+	}
 	return script->CreateFloatArrayValue(vals, 9U);
 }
 value DxScript::Func_ObjSpring_RemovePlane(gstd::script_machine* machine, int argc, const value* argv) {

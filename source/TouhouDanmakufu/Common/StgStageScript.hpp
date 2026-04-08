@@ -368,6 +368,10 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjMove_GetDistanceFromParent);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_GetAngleFromParent);
 
+	// Move object + spring mass system
+	DNH_FUNCAPI_DECL_(Func_ObjMove_AnchorToSpringNode);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_RemoveSpringAnchor);
+
 	// Move parents
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_Create);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetParentObject);
@@ -500,6 +504,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjStLaser_SetDelayScale);
 	DNH_FUNCAPI_DECL_(Func_ObjStLaser_SetPermitExpand);
 	DNH_FUNCAPI_DECL_(Func_ObjStLaser_GetPermitExpand);
+	DNH_FUNCAPI_DECL_(Func_ObjStLaser_AnchorToSpring);
 	static gstd::value Func_ObjCrLaser_SetTipDecrement(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetTipCapping);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetAngleSmoothness);

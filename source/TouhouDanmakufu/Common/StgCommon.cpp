@@ -19,6 +19,10 @@ StgMoveObject::StgMoveObject(StgStageController* stageController) : StgObjectBas
 	parent_ = nullptr;
 	offX_ = 0;
 	offY_ = 0;
+
+	springMassSystems_.clear();
+	springMassIndexes_.clear();
+	bSpringMassAims_.clear();
 }
 StgMoveObject::~StgMoveObject() {
 	parent_ = nullptr;
@@ -66,22 +70,48 @@ void StgMoveObject::Copy(StgMoveObject* src) {
 }
 void StgMoveObject::Move() {
 	++frameMove_;
-	if (mapPattern_.size() > 0) {
-		auto itr = mapPattern_.begin();
-		while (framePattern_ >= itr->first) {
-			for (auto& ipPattern : itr->second)
-				_AttachReservedPattern(ipPattern);
-			itr = mapPattern_.erase(itr);
-			if (mapPattern_.size() == 0) break;
+	bool bStep = true;
+	if (!springMassSystems_.empty()) {
+		DxSpringMassSystemObjectParticle* particle = springMassSystems_[0]->GetParticle(springMassIndexes_[0]);
+		if (particle->bMove) {
+			bStep = false;
+			posX_ = particle->pos[0];
+			posY_ = particle->pos[1];
+			UpdateRelativePosition();
+			if (bSpringMassAims_[0]) {
+				DxSpringMassSystemObjectParticle* particle2 = springMassSystems_[0]->GetParticle(springMassIndexes_[0] - 1);
+				SetDirectionAngle(atan2(particle2->pos[1] - posY_, particle2->pos[0] - posX_));
+			}
 		}
-		if (pattern_ == nullptr)
-			pattern_.reset(new StgMovePattern_Angle(this));
 	}
-	if (pattern_ == nullptr) return;
-	pattern_->Move();
-	++framePattern_;
+	if (bStep) {
+		if (mapPattern_.size() > 0) {
+			auto itr = mapPattern_.begin();
+			while (framePattern_ >= itr->first) {
+				for (auto& ipPattern : itr->second)
+					_AttachReservedPattern(ipPattern);
+				itr = mapPattern_.erase(itr);
+				if (mapPattern_.size() == 0) break;
+			}
+			if (pattern_ == nullptr)
+				pattern_.reset(new StgMovePattern_Angle(this));
+		}
+		if (pattern_ == nullptr) return;
+		pattern_->Move();
+		++framePattern_;
+	}
 }
-void StgMoveObject::_Move() {	
+void StgMoveObject::_Move() {
+	if (!springMassSystems_.empty()) {
+		for (size_t i = 0; i < springMassSystems_.size(); ++i) {
+			DxSpringMassSystemObjectParticle* particle = springMassSystems_[i]->GetParticle(springMassIndexes_[i]);
+			if (!particle->bMove) {
+				particle->pos[0] = posX_;
+				particle->pos[1] = posY_;
+			}
+		}
+	}
+
 	if (parent_) return; // Objects with parents cannot move without parental supervision
 	if (bEnableMovement_) Move();
 

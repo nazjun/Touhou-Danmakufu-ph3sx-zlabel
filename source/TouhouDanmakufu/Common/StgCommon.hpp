@@ -39,6 +39,10 @@ protected:
 	double offY_;
 	std::vector<ref_unsync_weak_ptr<StgMoveParent>> listOwnedParent_;
 
+	std::vector<ref_unsync_weak_ptr<DxSpringMassSystemObject>> springMassSystems_;
+	std::vector<size_t> springMassIndexes_;
+	std::vector<bool> bSpringMassAims_;
+
 	uint32_t framePattern_;
 	std::map<uint32_t, std::list<ref_unsync_ptr<StgMovePattern>>> mapPattern_;
 	virtual void _Move();
@@ -77,6 +81,24 @@ public:
 	void UpdateRelativePosition(bool bUseTrans = true);
 	double GetDistanceFromParent();
 	double GetAngleFromParent();
+
+	void SetSpringMassSystem(ref_unsync_ptr<DxSpringMassSystemObject> springMassSystem, size_t index, bool bAim) {
+		springMassSystems_.push_back(springMassSystem);
+		springMassIndexes_.push_back(index);
+		bSpringMassAims_.push_back(bAim);
+	}
+
+	void RemoveSpringAnchor(ref_unsync_ptr<DxSpringMassSystemObject> springMassSystem) {
+		for (size_t i = 0; i < springMassSystems_.size(); ) {
+			if (springMassSystems_[i] == springMassSystem) {
+				springMassSystems_.erase(springMassSystems_.begin() + i);
+				springMassIndexes_.erase(springMassIndexes_.begin() + i);
+				bSpringMassAims_.erase(bSpringMassAims_.begin() + i);
+			}
+			else
+				++i;
+		}
+	}
 
 	ref_unsync_ptr<StgMovePattern> GetPattern() { return pattern_; }
 	void SetPattern(ref_unsync_ptr<StgMovePattern> pattern) {

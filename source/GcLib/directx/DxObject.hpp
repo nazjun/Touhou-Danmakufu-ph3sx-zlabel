@@ -204,17 +204,17 @@ namespace directx {
 
 		void AddParticle(DxSpringMassSystemObjectParticle particle) { particles_.push_back(particle); }
 		void SetParticle(DxSpringMassSystemObjectParticle particle, size_t index);
-		DxSpringMassSystemObjectParticle GetParticle(size_t index) { return particles_[std::clamp(index, 0U, particles_.size() - 1)]; }
+		DxSpringMassSystemObjectParticle* GetParticle(size_t index) { return &particles_[std::clamp(index, 0U, particles_.size() - 1)]; }
 		void RemoveParticle(size_t index);
 
 		void AddSpring(DxSpringMassSystemObjectSpring spring);
 		void SetSpring(DxSpringMassSystemObjectSpring spring, size_t index);
-		DxSpringMassSystemObjectSpring GetSpring(size_t index) { return springs_[std::clamp(index, 0U, springs_.size() - 1)]; }
+		DxSpringMassSystemObjectSpring* GetSpring(size_t index) { return &springs_[std::clamp(index, 0U, springs_.size() - 1)]; }
 		void RemoveSpring(size_t index) { springs_.erase(springs_.begin() + index); }
 
 		void AddPlane(DxSpringMassSystemObjectPlane plane) { planes_.push_back(plane); }
 		void SetPlane(DxSpringMassSystemObjectPlane plane, size_t index);
-		DxSpringMassSystemObjectPlane GetPlane(size_t index) { return planes_[std::clamp(index, 0U, planes_.size() - 1)]; }
+		DxSpringMassSystemObjectPlane* GetPlane(size_t index) { return &planes_[std::clamp(index, 0U, planes_.size() - 1)]; }
 		void RemovePlane(size_t index) { planes_.erase(planes_.begin() + index); }
 
 		void SpringForce(DxVector3::DxVec3 out, DxSpringMassSystemObjectParticle* pA, DxSpringMassSystemObjectParticle* pB,

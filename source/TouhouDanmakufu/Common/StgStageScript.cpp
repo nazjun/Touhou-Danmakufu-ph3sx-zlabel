@@ -419,6 +419,10 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjMove_GetDistanceFromParent", StgStageScript::Func_ObjMove_GetDistanceFromParent, 1 },
 	{ "ObjMove_GetAngleFromParent", StgStageScript::Func_ObjMove_GetAngleFromParent, 1 },
 
+	// Move object + spring mass system
+	{ "ObjMove_AnchorToSpringNode", StgStageScript::Func_ObjMove_AnchorToSpringNode, 4 },
+	{ "ObjMove_RemoveSpringAnchor", StgStageScript::Func_ObjMove_RemoveSpringAnchor, 2 },
+
 	// Move parents
 	{ "ObjMoveParent_Create", StgStageScript::Func_ObjMoveParent_Create, 0 },
 	{ "ObjMoveParent_SetParentObject", StgStageScript::Func_ObjMoveParent_SetParentObject, 2 },
@@ -555,6 +559,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjStLaser_SetDelayScale", StgStageScript::Func_ObjStLaser_SetDelayScale, 3 },
 	{ "ObjStLaser_SetPermitExpand", StgStageScript::Func_ObjStLaser_SetPermitExpand, 2 },
 	{ "ObjStLaser_GetPermitExpand", StgStageScript::Func_ObjStLaser_GetPermitExpand, 1 },
+	{ "ObjStLaser_AnchorToSpring", StgStageScript::Func_ObjStLaser_AnchorToSpring, 4 },
 	{ "ObjCrLaser_SetTipDecrement", StgStageScript::Func_ObjCrLaser_SetTipDecrement, 2 },
 	{ "ObjCrLaser_SetTipCapping", StgStageScript::Func_ObjCrLaser_SetTipCapping, 2 },
 	{ "ObjCrLaser_SetAngleSmoothness", StgStageScript::Func_ObjCrLaser_SetAngleSmoothness, 2 },
@@ -3793,6 +3798,41 @@ gstd::value StgStageScript::Func_ObjMove_GetAngleFromParent(gstd::script_machine
 	return script->CreateFloatValue(angle);
 }
 
+// Move object + spring mass system
+gstd::value StgStageScript::Func_ObjMove_AnchorToSpringNode(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
+
+	if (obj) {
+		int id2 = argv[1].as_int();
+		ref_unsync_ptr<DxSpringMassSystemObject> sms = ref_unsync_ptr<DxSpringMassSystemObject>::Cast(script->GetObject(id2));
+		if (sms) {
+			size_t index = argv[2].as_int();
+			bool bAim = argv[3].as_boolean();
+			obj->SetSpringMassSystem(sms, index, bAim);
+		}
+		else
+			obj->SetSpringMassSystem(nullptr, 0, false);
+	}
+
+	return value();
+}
+gstd::value StgStageScript::Func_ObjMove_RemoveSpringAnchor(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
+
+	if (obj) {
+		int id2 = argv[1].as_int();
+		ref_unsync_ptr<DxSpringMassSystemObject> sms = ref_unsync_ptr<DxSpringMassSystemObject>::Cast(script->GetObject(id2));
+		if (sms)
+			obj->RemoveSpringAnchor(sms);
+	}
+
+	return value();
+}
+
 // Move parent
 gstd::value StgStageScript::Func_ObjMoveParent_Create(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;
@@ -5447,6 +5487,23 @@ gstd::value StgStageScript::Func_ObjStLaser_GetPermitExpand(gstd::script_machine
 	if (obj)
 		res = obj->GetLaserExpand();
 	return script->CreateBooleanValue(res);
+}
+gstd::value StgStageScript::Func_ObjStLaser_AnchorToSpring(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgStraightLaserObject* obj = script->GetObjectPointerAs<StgStraightLaserObject>(id);
+	if (obj) {
+		int id2 = argv[1].as_int();
+		ref_unsync_ptr<DxSpringMassSystemObject> sms = ref_unsync_ptr<DxSpringMassSystemObject>::Cast(script->GetObject(id2));
+		if (sms) {
+			size_t index1 = argv[2].as_int();
+			size_t index2 = argv[3].as_int();
+			obj->SetSpringMassSystem(sms, index1, index2, true);
+		}
+		else
+			obj->SetSpringMassSystem(nullptr, 0, 0, false);
+	}
+	return value();
 }
 gstd::value StgStageScript::Func_ObjCrLaser_SetTipDecrement(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;

@@ -1981,6 +1981,8 @@ StgStraightLaserObject::StgStraightLaserObject(StgStageController* stageControll
 
 	bLaserExpand_ = true;
 
+	springMassIndexes2_.clear();
+
 	move_ = D3DXVECTOR2(1, 0);
 
 	listIntersectionTarget_.push_back(CreateEmptyIntersection());
@@ -2007,17 +2009,32 @@ void StgStraightLaserObject::Work() {
 		scaleX_ = 1.0f;
 
 	if (bEnableMovement_) {
-		_Move();
-		_ExtendLength();
-		
-		if (angVelLaser_ != 0) angLaser_ += angVelLaser_;
-		
-		if (!bLaserExpand_ || delay_.time > 0) {
-			if (delay_.time > 0) --(delay_.time);
-			scaleX_ = std::max(0.05f, scaleX_ - 0.1f);
+		if (!springMassSystems_.empty()) {
+			DxSpringMassSystemObjectParticle* particle1 = springMassSystems_[0]->GetParticle(springMassIndexes_[0]);
+			DxSpringMassSystemObjectParticle* particle2 = springMassSystems_[0]->GetParticle(springMassIndexes2_[0]);
+			posX_ = particle1->pos[0];
+			posY_ = particle1->pos[1];
+			double dx = particle2->pos[0] - posX_;
+			double dy = particle2->pos[1] - posY_;
+			angLaser_ = atan2(dy, dx);
+			SetLength(hypot(dy, dx));
+			UpdateRelativePosition();
+			SetX(posX_);
+			SetY(posY_);
 		}
-		else if (bLaserExpand_)
-			scaleX_ = std::min(1.0f, scaleX_ + 0.1f);
+		else {
+			_Move();
+			_ExtendLength();
+
+			if (angVelLaser_ != 0) angLaser_ += angVelLaser_;
+
+			if (!bLaserExpand_ || delay_.time > 0) {
+				if (delay_.time > 0) --(delay_.time);
+				scaleX_ = std::max(0.05f, scaleX_ - 0.1f);
+			}
+			else if (bLaserExpand_)
+				scaleX_ = std::min(1.0f, scaleX_ + 0.1f);
+		}
 
 		delay_.angle.x += delay_.angle.y;
 

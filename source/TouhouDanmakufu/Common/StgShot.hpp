@@ -618,6 +618,8 @@ protected:
 
 	bool bLaserExpand_;
 
+	std::vector<size_t> springMassIndexes2_;
+
 	virtual void _DeleteInAutoClip();
 	virtual void _SendDeleteEvent(TypeDelete type);
 public:
@@ -654,6 +656,11 @@ public:
 
 	void SetLaserExpand(bool b) { bLaserExpand_ = b; }
 	bool GetLaserExpand() { return bLaserExpand_; }
+
+	void SetSpringMassSystem(ref_unsync_ptr<DxSpringMassSystemObject> springMassSystem, size_t index1, size_t index2, bool bAim) {
+		StgMoveObject::SetSpringMassSystem(springMassSystem, index1, bAim);
+		springMassIndexes2_.push_back(index2);
+	}
 	
 };
 
