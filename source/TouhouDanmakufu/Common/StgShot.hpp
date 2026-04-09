@@ -843,13 +843,7 @@ public:
 
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);
 
-	void ClearWaiting() {
-		shotsWaiting_.clear();
-		repeatNext_ = 0;
-		repeatWait_ = 0;
-		repeatTimes_ = 0;
-		fireCallback_.clear();
-	}
+	void ClearWaiting();
 
 	void SetTypeOwner(int type) { typeOwner_ = type; }
 	void SetTypePattern(int type) { typePattern_ = type; }

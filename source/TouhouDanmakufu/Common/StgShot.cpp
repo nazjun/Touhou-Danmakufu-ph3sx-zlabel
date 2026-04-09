@@ -2850,13 +2850,13 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	laserWidth_ = 16;
 	laserLength_ = 64;
 }
+
 void StgShotPatternGeneratorObject::CleanUp() {
 	if (parent_ == nullptr && bAutoDeletePattern_) {
 		auto objectManager = stageController_->GetMainObjectManager();
 		objectManager->DeleteObject(this);
 	}
 }
-
 
 void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
 	StgShotObject::Clone(_src, deepCopy);
@@ -3440,4 +3440,18 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 		}
 		}
 	}
+}
+
+void StgShotPatternGeneratorObject::ClearWaiting() {
+	auto objectManager = stageController_->GetMainObjectManager();
+
+	for (auto& shot : shotsWaiting_)
+		objectManager->DeleteObject(std::get<1>(shot));
+
+	shotsWaiting_.clear();
+
+	repeatNext_ = 0;
+	repeatWait_ = 0;
+	repeatTimes_ = 0;
+	fireCallback_.clear();
 }
