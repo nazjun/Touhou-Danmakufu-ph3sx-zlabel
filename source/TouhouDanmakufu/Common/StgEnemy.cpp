@@ -199,7 +199,6 @@ void StgEnemyObject::Work() {
 
 	if (life_ <= 0 && !lifeCallback_.empty()) {
 		for (auto& callback : lifeCallback_) {
-			if (std::get<2>(callback) == NULL) continue;
 			script_block* subIvk = (script_block*)(std::get<2>(callback) & 0xffffffff);
 			script_machine* machine = (script_machine*)std::get<0>(callback);
 

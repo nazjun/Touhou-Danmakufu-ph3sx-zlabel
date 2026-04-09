@@ -2032,7 +2032,6 @@ void DxScriptObjectManager::_DeleteObject(int id) {
 	if (pObj == nullptr) return;
 
 	for (auto& callback : pObj->deleteCallback_) {
-		if (std::get<2>(callback) == NULL) continue;
 		script_block* subIvk = (script_block*)(std::get<2>(callback) & 0xffffffff);
 		script_machine* machine = (script_machine*)std::get<0>(callback);
 

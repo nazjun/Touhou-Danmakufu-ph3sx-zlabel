@@ -584,7 +584,7 @@ static const std::vector<function> stgStageFunction = {
 
 	{ "ObjPatternShot_Create", StgStageScript::Func_ObjPatternShot_Create, 0 },
 	{ "ObjPatternShot_Fire", StgStageScript::Func_ObjPatternShot_Fire, 1 },
-	{ "ObjPatternShot_Fire", StgStageScript::Func_ObjPatternShot_Fire, 4 },
+	{ "ObjPatternShot_Fire", StgStageScript::Func_ObjPatternShot_Fire, 5 },
 	{ "ObjPatternShot_FireReturn", StgStageScript::Func_ObjPatternShot_FireReturn, 1 },
 	{ "ObjPatternShot_ClearWaiting", StgStageScript::Func_ObjPatternShot_ClearWaiting, 1 },
 	{ "ObjPatternShot_SetParentObject", StgStageScript::Func_ObjPatternShot_SetParentObject, 2 },
@@ -5789,12 +5789,14 @@ gstd::value StgStageScript::Func_ObjPatternShot_Fire(gstd::script_machine* machi
 	int id = argv[0].as_int();
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
 	if (obj) {
-		if (argc == 4) {
+		if (argc == 5) {
 			int repeatWait = argv[1].as_int();
 			int repeatTimes = argv[2].as_int();
 			ptrdiff_t threadIndex = std::distance(machine->threads.begin(), machine->current_thread_index);
+			uint64_t fireCallback = (uint64_t)argv[3].as_int();
+			uint64_t tickCallback = (uint64_t)argv[4].as_int();
 			obj->SetCaller(machine->data, stageController);
-			obj->SetRepeat(repeatWait, repeatTimes, (void*)machine, threadIndex, (uint64_t)argv[3].as_int());
+			obj->SetRepeat(repeatWait, repeatTimes, (void*)machine, threadIndex, fireCallback, tickCallback);
 		}
 		else
 			obj->FireSet(machine->data, stageController, nullptr);

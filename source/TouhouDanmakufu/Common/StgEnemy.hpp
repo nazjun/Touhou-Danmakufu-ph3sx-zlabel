@@ -110,7 +110,8 @@ public:
 	void AddLife2(double inc);
 
 	void SetLifeCallback(void* machine, ptrdiff_t threadIndex, uint64_t funcptr) {
-		lifeCallback_.push_back(std::tuple<void*, ptrdiff_t, uint64_t>(machine, threadIndex, funcptr));
+		if (funcptr != NULL)
+			lifeCallback_.push_back(std::tuple<void*, ptrdiff_t, uint64_t>(machine, threadIndex, funcptr));
 	}
 
 	void SetDamageRate(double rateShot, double rateSpell) { rateDamageShot_ = rateShot; rateDamageSpell_ = rateSpell; }

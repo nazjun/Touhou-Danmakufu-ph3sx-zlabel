@@ -2824,6 +2824,8 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	repeatWait_ = 0;
 	repeatTimes_ = 0;
 	fireCallback_.clear();
+	tickCallback_.clear();
+	tickRes_.clear();
 
 	basePointX_ = BASEPOINT_RESET;
 	basePointY_ = BASEPOINT_RESET;
@@ -2888,6 +2890,8 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 	repeatWait_ = src->repeatWait_;
 	repeatTimes_ = src->repeatTimes_;
 	fireCallback_ = src->fireCallback_;
+	tickCallback_ = src->tickCallback_;
+	tickRes_ = src->tickRes_;
 
 	basePointX_ = src->basePointX_;
 	basePointY_ = src->basePointY_;
@@ -2924,7 +2928,6 @@ void StgShotPatternGeneratorObject::Work() {
 			std::vector<int> res;
 			FireSet(scriptData_, controller_, &res);
 			for (auto& callback : fireCallback_) {
-				if (std::get<2>(callback) == NULL) continue;
 				script_block* subIvk = (script_block*)(std::get<2>(callback) & 0xffffffff);
 				script_machine* machine = (script_machine*)std::get<0>(callback);
 
@@ -2943,6 +2946,8 @@ void StgShotPatternGeneratorObject::Work() {
 			FireSet(scriptData_, controller_, nullptr);
 	}
 
+	bool bTick = !tickCallback_.empty();
+
 	size_t sz = shotsWaiting_.size();
 	for (size_t i = 0U; i < sz; ) {
 		if (std::get<0>(shotsWaiting_[i]) <= frameExist_) {
@@ -2955,11 +2960,34 @@ void StgShotPatternGeneratorObject::Work() {
 			if (shotParent) shotParent->AddChild(shotParent, objShot);
 
 			shotsWaiting_.erase(shotsWaiting_.begin() + i);
+
+			if (bTick)
+				tickRes_.push_back(objShot->GetObjectID());
+
 			--sz;
 		}
 		else {
 			++i;
 		}
+	}
+
+	if (bTick) {
+		for (auto& callback : tickCallback_) {
+			script_block* subIvk = (script_block*)(std::get<2>(callback) & 0xffffffff);
+			script_machine* machine = (script_machine*)std::get<0>(callback);
+
+			ptrdiff_t threadAdvance = std::get<1>(callback) - std::distance(machine->threads.begin(), machine->current_thread_index);
+			std::advance(machine->current_thread_index, threadAdvance);
+
+			script_machine::environment* e = machine->add_child_block(subIvk);
+			DxScript* script = (DxScript*)machine->data;
+			e->stack.push_back(script->CreateIntArrayValue(tickRes_));
+			e->stack.push_back(script->CreateIntValue(idObject_));
+
+			std::advance(machine->current_thread_index, -threadAdvance);
+		}
+
+		tickRes_.clear();
 	}
 }
 
@@ -3454,4 +3482,5 @@ void StgShotPatternGeneratorObject::ClearWaiting() {
 	repeatWait_ = 0;
 	repeatTimes_ = 0;
 	fireCallback_.clear();
+	tickCallback_.clear();
 }
