@@ -756,7 +756,6 @@ public:
 private:
 	void* scriptData_;
 	StgStageController* controller_;
-	// ---
 
 	ref_unsync_weak_ptr<StgMoveObject> parent_;
 	ref_unsync_weak_ptr<StgMoveParent> shotParent_;

@@ -211,6 +211,7 @@ public:
 		TYPE_XY,
 		TYPE_XY_ANG,
 		TYPE_LINE,
+		TYPE_SPLINE,
 
 		NO_CHANGE = -0x1000000,
 		TOPLAYER_CHANGE = 0x1000000,
@@ -534,4 +535,42 @@ public:
 	virtual void Move();
 
 	void SetAtWeight(double tx, double ty, double weight, double maxSpeed);
+};
+
+class StgMovePattern_Spline : public StgMovePattern {
+	friend class StgMoveObject;
+public:
+	enum : int8_t {
+		SET_FR,
+		SET_LP,
+		SET_ARC,
+	};
+public:
+	using lerp_func = Math::Lerp::funcLerp<double, double>;
+protected:
+	double speed_;
+	void* scriptData_;
+	ref_unsync_weak_ptr<DxSplineObject> spline_;
+	uint32_t maxFrame_;
+	lerp_func moveLerpFunc;
+	bool arc_;
+public:
+	StgMovePattern_Spline(StgMoveObject* target);
+
+	virtual void CopyFrom(StgMovePattern* src);
+	virtual StgMovePattern* CreateCopy(StgMoveObject* target) {
+		return new StgMovePattern_Spline(target);
+	}
+
+	virtual void Activate(StgMovePattern* src);
+	virtual void Move();
+
+	void SetCaller(void* script) { scriptData_ = script; }
+	void SetSpline(ref_unsync_weak_ptr<DxSplineObject> spline) { spline_ = spline; }
+
+	virtual inline double GetSpeed() { return speed_; }
+	// virtual inline double GetDirectionAngle() { return angDirection_; }
+
+	virtual double GetSpeedX() { return (speed_ * c_); }
+	virtual double GetSpeedY() { return (speed_ * s_); }
 };

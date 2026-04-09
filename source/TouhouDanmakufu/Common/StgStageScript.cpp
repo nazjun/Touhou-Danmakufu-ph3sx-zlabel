@@ -406,6 +406,10 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjMove_AddPatternD2", StgStageScript::Func_ObjMove_AddPatternD2, 5 },
 	{ "ObjMove_AddPatternD2", StgStageScript::Func_ObjMove_AddPatternD2, 6 }, //Overloaded
 	{ "ObjMove_AddPatternD3", StgStageScript::Func_ObjMove_AddPatternD3, 6 },
+	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 4 },
+	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 5 },
+	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 6 },
+	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 7 },
 	{ "ObjMove_SetProcessMovement", StgStageScript::Func_ObjMove_SetProcessMovement, 2 },
 	{ "ObjMove_GetProcessMovement", StgStageScript::Func_ObjMove_GetProcessMovement, 1 },
 	{ "ObjMove_GetMoveFrame", StgStageScript::Func_ObjMove_GetMoveFrame, 1 },
@@ -807,6 +811,7 @@ static const std::vector<constant> stgStageConstant = {
 	constant("MOVE_XY", StgMovePattern::TYPE_XY),
 	constant("MOVE_XY_ANGLE", StgMovePattern::TYPE_XY_ANG),
 	constant("MOVE_LINE", StgMovePattern::TYPE_LINE),
+	constant("MOVE_SPLINE", StgMovePattern::TYPE_SPLINE),
 
 	//AddPattern constants
 	constant("TOPLAYER_CHANGE", StgMovePattern::TOPLAYER_CHANGE),
@@ -3686,6 +3691,35 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternD3(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_Line::SET_DY, ty);
 		ADD_CMD(StgMovePattern_Line::SET_WG, weight);
 		ADD_CMD(StgMovePattern_Line::SET_MS, maxSpeed);
+
+		obj->AddPattern(frame, pattern);
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjMove_AddPatternE1(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
+	if (obj) {
+		int frame = argv[1].as_int();
+
+		ref_unsync_ptr<DxSplineObject> sp = ref_unsync_ptr<DxSplineObject>::Cast(script->GetObject(argv[2].as_int()));
+
+		double frameEnd = argv[3].as_float();
+		double lerpMode = (argc >= 5) ? argv[4].as_float() : Math::Lerp::LINEAR;
+		double arc = (argc >= 6) ? argv[5].as_float() : false;
+
+		ref_unsync_ptr<StgMovePattern_Spline> pattern(new StgMovePattern_Spline(obj));
+
+		bool bDelete = (argc == 7) ? argv[6].as_boolean() : false;
+		if (bDelete)
+			pattern->SetCaller(machine->data);
+
+		pattern->SetSpline(sp);
+
+		ADD_CMD(StgMovePattern_Spline::SET_FR, frameEnd);
+		ADD_CMD(StgMovePattern_Spline::SET_LP, lerpMode);
+		ADD_CMD(StgMovePattern_Spline::SET_ARC, arc);
 
 		obj->AddPattern(frame, pattern);
 	}

@@ -2855,6 +2855,7 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 
 void StgShotPatternGeneratorObject::CleanUp() {
 	if (parent_ == nullptr && bAutoDeletePattern_) {
+		ClearWaiting();
 		auto objectManager = stageController_->GetMainObjectManager();
 		objectManager->DeleteObject(this);
 	}
@@ -2864,6 +2865,9 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 	StgShotObject::Clone(_src, deepCopy);
 
 	auto src = (StgShotPatternGeneratorObject*)_src;
+
+	scriptData_ = src->scriptData_;
+	controller_ = src->controller_;
 
 	parent_ = src->parent_;
 	shotParent_ = src->shotParent_;

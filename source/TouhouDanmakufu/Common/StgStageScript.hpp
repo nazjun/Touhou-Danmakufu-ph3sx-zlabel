@@ -343,6 +343,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjMove_AddPatternD1);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_AddPatternD2);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_AddPatternD3);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_AddPatternE1);
 	static gstd::value Func_ObjMove_GetX(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjMove_GetY(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_GetPosition);

@@ -725,6 +725,11 @@ void StgMovePattern_Angle::Activate(StgMovePattern* _src) {
 			speed_ = src->GetSpeed();
 			angDirection_ = src->GetDirectionAngle();
 		}
+		else if (_src->GetType() == TYPE_SPLINE) {
+			StgMovePattern_Spline* src = dynamic_cast<StgMovePattern_Spline*>(_src);
+			speed_ = src->GetSpeed();
+			angDirection_ = src->GetDirectionAngle();
+		}
 	}
 
 	bool bMaxSpeed2 = false;
@@ -902,6 +907,11 @@ void StgMovePattern_XY::Activate(StgMovePattern* _src) {
 			c_ = src->GetSpeedX();
 			s_ = src->GetSpeedY();
 		}
+		else if (_src->GetType() == TYPE_SPLINE) {
+			StgMovePattern_Spline* src = dynamic_cast<StgMovePattern_Spline*>(_src);
+			c_ = src->GetSpeedX();
+			s_ = src->GetSpeedY();
+		}
 	}
 
 	for (auto& [cmd, arg] : listCommand_) {
@@ -1061,6 +1071,11 @@ void StgMovePattern_XY_Angle::Activate(StgMovePattern* _src) {
 		}
 		else if (_src->GetType() == TYPE_LINE) {
 			StgMovePattern_Line* src = dynamic_cast<StgMovePattern_Line*>(_src);
+			c_ = src->GetSpeedX();
+			s_ = src->GetSpeedY();
+		}
+		else if (_src->GetType() == TYPE_SPLINE) {
+			StgMovePattern_Spline* src = dynamic_cast<StgMovePattern_Spline*>(_src);
 			c_ = src->GetSpeedX();
 			s_ = src->GetSpeedY();
 		}
@@ -1333,4 +1348,85 @@ void StgMovePattern_Line_Weight::Move() {
 	target_->SetPositionX(tPos[0]);
 	target_->SetPositionY(tPos[1]);
 	++frameWork_;
+}
+
+//****************************************************************************
+//StgMovePattern_Spline
+//****************************************************************************
+StgMovePattern_Spline::StgMovePattern_Spline(StgMoveObject* target) : StgMovePattern(target) {
+	typeMove_ = TYPE_SPLINE;
+	maxFrame_ = -1;
+	speed_ = 0;
+	angDirection_ = 0;
+	scriptData_ = nullptr;
+	spline_ = nullptr;
+	moveLerpFunc = Math::Lerp::Linear<double, double>;
+}
+
+void StgMovePattern_Spline::CopyFrom(StgMovePattern* _src) {
+	StgMovePattern::CopyFrom(_src);
+	auto src = (StgMovePattern_Spline*)_src;
+
+	maxFrame_ = src->maxFrame_;
+	speed_ = src->speed_;
+	angDirection_ = src->angDirection_;
+	scriptData_ = src->scriptData_;
+	spline_ = src->spline_;
+	moveLerpFunc = src->moveLerpFunc;
+}
+
+void StgMovePattern_Spline::Move() {
+	if (frameWork_ < maxFrame_) {
+		double t = moveLerpFunc(0, 1, (double)frameWork_ / maxFrame_);
+		DxSplineObjectNode node = arc_? spline_->LerpArc(t) : spline_->Lerp(t);
+
+		angDirection_ = atan2(node[4], node[3]);
+		speed_ = hypot(node[3], node[4]);
+		c_ = node[3];
+		s_ = node[4];
+
+		target_->SetPositionX(node[0]);
+		target_->SetPositionY(node[1]);
+	}
+	else {
+		speed_ = 0;
+
+		if (scriptData_ != nullptr && spline_ != nullptr) {
+			StgStageScript* script = (StgStageScript*)scriptData_;
+			script->DeleteObject(spline_->GetObjectID());
+			scriptData_ = nullptr;
+			spline_ = nullptr;
+		}
+	}
+
+	++frameWork_;
+}
+void StgMovePattern_Spline::Activate(StgMovePattern* src) {
+	for (auto& [cmd, arg] : listCommand_) {
+		switch (cmd) {
+		case SET_FR:
+		{
+			maxFrame_ = std::max((uint32_t)arg, 1U);
+			break;
+		}
+		case SET_LP:
+		{
+			Math::Lerp::Type lerpMode = (Math::Lerp::Type)arg;
+			moveLerpFunc = Math::Lerp::GetFunc<double, double>(lerpMode);
+			break;
+		}
+		case SET_ARC:
+		{
+			arc_ = (bool)arg;
+			break;
+		}
+		}
+	}
+
+	speed_ = 0;
+	angDirection_ = 0;
+	c_ = 1;
+	s_ = 0;
+
+	_RegisterShotDataID();
 }
