@@ -821,6 +821,7 @@ public:
 	virtual void Render(BlendMode targetBlend) {}
 	virtual void SetRenderState() {}
 	virtual void CleanUp();
+	virtual void BeforeDelete();
 	virtual void RegistIntersectionTarget() {}
 
 	void SetParent(ref_unsync_ptr<StgMoveObject> obj) { parent_ = obj; }

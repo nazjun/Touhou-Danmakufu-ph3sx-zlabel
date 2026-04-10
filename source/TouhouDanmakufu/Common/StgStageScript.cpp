@@ -409,7 +409,6 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 4 },
 	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 5 },
 	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 6 },
-	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 7 },
 	{ "ObjMove_SetProcessMovement", StgStageScript::Func_ObjMove_SetProcessMovement, 2 },
 	{ "ObjMove_GetProcessMovement", StgStageScript::Func_ObjMove_GetProcessMovement, 1 },
 	{ "ObjMove_GetMoveFrame", StgStageScript::Func_ObjMove_GetMoveFrame, 1 },
@@ -3710,11 +3709,6 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternE1(gstd::script_machine* mach
 		double arc = (argc >= 6) ? argv[5].as_float() : false;
 
 		ref_unsync_ptr<StgMovePattern_Spline> pattern(new StgMovePattern_Spline(obj));
-
-		bool bDelete = (argc == 7) ? argv[6].as_boolean() : false;
-		if (bDelete)
-			pattern->SetCaller(machine->data);
-
 		pattern->SetSpline(sp);
 
 		ADD_CMD(StgMovePattern_Spline::SET_FR, frameEnd);

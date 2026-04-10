@@ -549,7 +549,6 @@ public:
 	using lerp_func = Math::Lerp::funcLerp<double, double>;
 protected:
 	double speed_;
-	void* scriptData_;
 	ref_unsync_weak_ptr<DxSplineObject> spline_;
 	uint32_t maxFrame_;
 	lerp_func moveLerpFunc;
@@ -565,11 +564,10 @@ public:
 	virtual void Activate(StgMovePattern* src);
 	virtual void Move();
 
-	void SetCaller(void* script) { scriptData_ = script; }
 	void SetSpline(ref_unsync_weak_ptr<DxSplineObject> spline) { spline_ = spline; }
 
 	virtual inline double GetSpeed() { return speed_; }
-	// virtual inline double GetDirectionAngle() { return angDirection_; }
+	virtual inline double GetDirectionAngle() { return angDirection_; }
 
 	virtual double GetSpeedX() { return (speed_ * c_); }
 	virtual double GetSpeedY() { return (speed_ * s_); }

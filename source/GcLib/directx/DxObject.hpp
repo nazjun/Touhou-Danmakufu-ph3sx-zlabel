@@ -52,6 +52,7 @@ namespace directx {
 		virtual void Render() {}
 		virtual void SetRenderState() {}
 		virtual void CleanUp() {}
+		virtual void BeforeDelete() {}
 
 		virtual bool HasNormalRendering() { return false; }
 

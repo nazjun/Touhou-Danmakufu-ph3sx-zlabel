@@ -1358,7 +1358,6 @@ StgMovePattern_Spline::StgMovePattern_Spline(StgMoveObject* target) : StgMovePat
 	maxFrame_ = -1;
 	speed_ = 0;
 	angDirection_ = 0;
-	scriptData_ = nullptr;
 	spline_ = nullptr;
 	moveLerpFunc = Math::Lerp::Linear<double, double>;
 }
@@ -1370,33 +1369,25 @@ void StgMovePattern_Spline::CopyFrom(StgMovePattern* _src) {
 	maxFrame_ = src->maxFrame_;
 	speed_ = src->speed_;
 	angDirection_ = src->angDirection_;
-	scriptData_ = src->scriptData_;
 	spline_ = src->spline_;
 	moveLerpFunc = src->moveLerpFunc;
 }
 
 void StgMovePattern_Spline::Move() {
-	if (frameWork_ < maxFrame_) {
+	if (frameWork_ < maxFrame_ && spline_ != nullptr) {
 		double t = moveLerpFunc(0, 1, (double)frameWork_ / maxFrame_);
 		DxSplineObjectNode node = arc_? spline_->LerpArc(t) : spline_->Lerp(t);
 
 		angDirection_ = atan2(node[4], node[3]);
-		speed_ = hypot(node[3], node[4]);
-		c_ = node[3];
-		s_ = node[4];
+		speed_ = hypot(node[3], node[4]) / 60.0; // this isn't quite right
+		c_ = cos(angDirection_);
+		s_ = sin(angDirection_);
 
 		target_->SetPositionX(node[0]);
 		target_->SetPositionY(node[1]);
 	}
 	else {
 		speed_ = 0;
-
-		if (scriptData_ != nullptr && spline_ != nullptr) {
-			StgStageScript* script = (StgStageScript*)scriptData_;
-			script->DeleteObject(spline_->GetObjectID());
-			scriptData_ = nullptr;
-			spline_ = nullptr;
-		}
 	}
 
 	++frameWork_;

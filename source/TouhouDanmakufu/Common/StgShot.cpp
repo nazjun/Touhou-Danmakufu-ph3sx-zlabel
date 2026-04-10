@@ -2855,10 +2855,13 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 
 void StgShotPatternGeneratorObject::CleanUp() {
 	if (parent_ == nullptr && bAutoDeletePattern_) {
-		ClearWaiting();
 		auto objectManager = stageController_->GetMainObjectManager();
 		objectManager->DeleteObject(this);
 	}
+}
+
+void StgShotPatternGeneratorObject::BeforeDelete() {
+	ClearWaiting();
 }
 
 void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
