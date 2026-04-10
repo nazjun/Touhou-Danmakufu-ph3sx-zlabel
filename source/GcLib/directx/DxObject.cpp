@@ -2031,19 +2031,7 @@ void DxScriptObjectManager::_DeleteObject(int id) {
 	ref_unsync_ptr<DxScriptObjectBase> pObj = obj_[id];
 	if (pObj == nullptr) return;
 
-	for (auto& callback : pObj->deleteCallback_) {
-		script_block* subIvk = (script_block*)(std::get<2>(callback) & 0xffffffff);
-		script_machine* machine = (script_machine*)std::get<0>(callback);
-
-		ptrdiff_t threadAdvance = std::get<1>(callback) - std::distance(machine->threads.begin(), machine->current_thread_index);
-		std::advance(machine->current_thread_index, threadAdvance);
-
-		script_machine::environment* e = machine->add_child_block(subIvk);
-		DxScript* script = (DxScript*)machine->data;
-		e->stack.push_back(script->CreateIntValue(id));
-
-		std::advance(machine->current_thread_index, -threadAdvance);
-	}
+	pObj->BeforeDelete();
 
 	pObj->bDelete_ = true;
 	if (pObj->manager_)
@@ -2063,6 +2051,21 @@ void DxScriptObjectManager::DeleteObject(ref_unsync_ptr<DxScriptObjectBase> obj)
 }
 void DxScriptObjectManager::DeleteObject(DxScriptObjectBase* obj) {
 	if (obj == nullptr) return;
+
+	for (auto& callback : obj->deleteCallback_) {
+		script_block* subIvk = (script_block*)(std::get<2>(callback) & 0xffffffff);
+		script_machine* machine = (script_machine*)std::get<0>(callback);
+
+		ptrdiff_t threadAdvance = std::get<1>(callback) - std::distance(machine->threads.begin(), machine->current_thread_index);
+		std::advance(machine->current_thread_index, threadAdvance);
+
+		script_machine::environment* e = machine->add_child_block(subIvk);
+		DxScript* script = (DxScript*)machine->data;
+		e->stack.push_back(script->CreateIntValue(obj->idObject_));
+
+		std::advance(machine->current_thread_index, -threadAdvance);
+	}
+
 	obj->bDelete_ = true;
 	obj->bActive_ = false;
 	listDeleteObject_.push_back(obj->idObject_);
