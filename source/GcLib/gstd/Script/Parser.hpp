@@ -107,7 +107,7 @@ namespace gstd {
 		pc_nop = 0xff,			//No operation
 	};
 	enum class block_kind : uint8_t {
-		bk_normal, bk_sub, bk_function, bk_microthread
+		bk_normal, bk_sub, bk_function, bk_microthread, bk_fcall, bk_tcall
 	};
 
 	struct code;

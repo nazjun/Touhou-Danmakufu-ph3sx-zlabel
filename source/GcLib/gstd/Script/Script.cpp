@@ -316,7 +316,7 @@ void script_machine::run_code() {
 					finished = true;
 				}
 				else {
-					if (current->sub->kind == block_kind::bk_microthread) {
+					if (current->sub->kind == block_kind::bk_microthread || current->sub->kind == block_kind::bk_tcall) {
 						current_thread_index = threads.erase(current_thread_index);
 						yield();
 					}
@@ -497,8 +497,11 @@ void script_machine::run_code() {
 					for (environment* i = current; i != nullptr; i = i->parent) {
 						i->ip = i->sub->codes.size();
 
-						if (i->sub->kind == block_kind::bk_sub || i->sub->kind == block_kind::bk_function
-							|| i->sub->kind == block_kind::bk_microthread)
+						if (i->sub->kind == block_kind::bk_sub
+							|| i->sub->kind == block_kind::bk_function
+							|| i->sub->kind == block_kind::bk_microthread
+							|| i->sub->kind == block_kind::bk_fcall
+							|| i->sub->kind == block_kind::bk_tcall)
 							break;
 					}
 					break;
@@ -530,6 +533,13 @@ void script_machine::run_code() {
 					};
 
 					script_block* sub = c->block; //(script_block*)c->arg0
+
+					if (sub->kind == block_kind::bk_fcall || sub->kind == block_kind::bk_tcall) {
+						std::string error = "Unexpected script error: Directly calling a callback (fcall / tcall) is forbidden.\r\n";
+						raise_error(error);
+						break;
+					}
+
 					if (sub->func) {
 						//Default functions
 

@@ -4286,16 +4286,19 @@ gstd::value StgStageScript::Func_ObjEnemy_SetDeathCallback(gstd::script_machine*
 	if (obj) {
 		uint64_t callback = (uint64_t)argv[1].as_int();
 		if (callback != NULL) {
-			// ADD CHECK FOR IS PURE FUNCTION
 			script_block* subIvk = (script_block*)(callback & 0xffffffff);
-			if (argc - 2 == subIvk->arguments) {
-				std::vector<value> args(argv + 2, argv + 2 + subIvk->arguments);
-				obj->SetLifeCallback(machine, subIvk, args);
-			}
-			else if (argc - 2 < subIvk->arguments)
+
+			if (subIvk->func == nullptr && !(subIvk->kind == block_kind::bk_fcall || subIvk->kind == block_kind::bk_tcall))
+				script->RaiseError("Callback function must be an engine function, fcall, or tcall.");
+
+			if (argc - 2 < subIvk->arguments)
 				script->RaiseError("Insufficient arguments provided for function pointer.");
-			else
+
+			if (argc - 2 > subIvk->arguments)
 				script->RaiseError("Too many arguments provided for function pointer.");
+
+			std::vector<value> args(argv + 2, argv + 2 + subIvk->arguments);
+			obj->SetLifeCallback(machine, subIvk, args);
 		}
 	}
 	return value();
@@ -5837,12 +5840,13 @@ gstd::value StgStageScript::Func_ObjPatternShot_Fire(gstd::script_machine* machi
 			script_block* subIvkFire = (fireCallback != NULL) ? (script_block*)(fireCallback & 0xffffffff) : nullptr;
 			script_block* subIvkTick = (tickCallback != NULL) ? (script_block*)(tickCallback & 0xffffffff) : nullptr;
 			
-			if (subIvkFire != nullptr && subIvkFire->arguments != 3)
-				script->RaiseError("Fire callback must be a user defined function with 3 arguments (int, int[], int).");
-			if (subIvkTick != nullptr && subIvkTick->arguments != 2)
-				script->RaiseError("Tick callback must be a user defined function with 2 arguments (int, int[]).");
+			if (subIvkFire != nullptr && (subIvkFire->kind != block_kind::bk_fcall || subIvkFire->arguments > 3))
+				script->RaiseError("Fire callback must be an fcall with at most 3 arguments ("
+					"int pattern shot object id, int[] shot object ids fired including those waiting, int fire iteration).");
 
-			// ADD CHECK FOR IS PURE FUNCTION
+			if (subIvkTick != nullptr && (subIvkFire->kind != block_kind::bk_fcall || subIvkTick->arguments > 2))
+				script->RaiseError("Tick callback must be an fcall with at most 2 arguments ("
+					"int pattern shot object id, int[] shot object ids that finished waiting this frame).");
 
 			obj->SetCaller(machine->data, stageController);
 			obj->SetRepeat(repeatWait, repeatTimes, machine, subIvkFire, subIvkTick);

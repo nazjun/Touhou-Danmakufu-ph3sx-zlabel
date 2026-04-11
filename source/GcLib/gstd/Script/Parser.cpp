@@ -400,7 +400,8 @@ parser::symbol* parser::search_in(scope_t* scope, const std::string& name, int a
 }
 parser::symbol* parser::search_result() {
 	for (auto itr = frame.rbegin(); itr != frame.rend(); ++itr) {
-		if (itr->kind == block_kind::bk_sub || itr->kind == block_kind::bk_microthread)
+		if (itr->kind == block_kind::bk_sub || itr->kind == block_kind::bk_microthread
+			|| itr->kind == block_kind::bk_fcall || itr->kind == block_kind::bk_tcall)
 			return nullptr;
 
 		auto itrSymbol = itr->find("\x01");
@@ -584,13 +585,17 @@ int parser::scan_current_scope(parser_state_t* state, int level, int initVar, co
 			case token_kind::tk_SUB:
 			case token_kind::tk_FUNCTION:
 			case token_kind::tk_TASK:
+			case token_kind::tk_FCALL:
+			case token_kind::tk_TCALL:
 			{
 				token_kind type = lex2.next;
 				lex2.advance();
 				if (cur == 0) {
 					block_kind kind = (type == token_kind::tk_SUB || type == token_kind::tk_at) ?
 						block_kind::bk_sub : (type == token_kind::tk_FUNCTION) ?
-						block_kind::bk_function : block_kind::bk_microthread;
+						block_kind::bk_function : (type == token_kind::tk_TASK) ?
+						block_kind::bk_microthread : (type == token_kind::tk_FCALL) ?
+						block_kind::bk_fcall : block_kind::bk_tcall;
 
 					type_data* funcReturnType = nullptr;
 					if (lex2.next == token_kind::tk_l) {	//<
@@ -660,6 +665,12 @@ int parser::scan_current_scope(parser_state_t* state, int level, int initVar, co
 								break;
 							case block_kind::bk_microthread:
 								typeSub = "task";
+								break;
+							case block_kind::bk_fcall:
+								typeSub = "fcall";
+								break;
+							case block_kind::bk_tcall:
+								typeSub = "tcall";
 								break;
 							case block_kind::bk_sub:
 								typeSub = "sub or an \'@\' block";
@@ -879,7 +890,7 @@ continue_as_variadic:
 		if (!s->bVariable) {
 			parse_arguments(block, state, &s->argData);
 			parser_assert(state, s->sub->kind == block_kind::bk_function,
-				"Tasks and subs cannot return values.\r\n");
+				"Only functions can return values.\r\n");
 			state->AddCode(block, code(command_kind::pc_call_and_push_result, (uint32_t)s->sub, argc));
 		}
 		else {
@@ -2209,6 +2220,8 @@ void parser::parse_single_statement(script_block* block, parser_state_t* state,
 	case token_kind::tk_SUB:
 	case token_kind::tk_FUNCTION:
 	case token_kind::tk_TASK:
+	case token_kind::tk_FCALL:
+	case token_kind::tk_TCALL:
 	{
 		token_kind token = state->next();
 
@@ -2233,6 +2246,12 @@ void parser::parse_single_statement(script_block* block, parser_state_t* state,
 				break;
 			case token_kind::tk_TASK:
 				error += " task";
+				break;
+			case token_kind::tk_FCALL:
+				error += "n fcall";
+				break;
+			case token_kind::tk_TCALL:
+				error += " tcall";
 				break;
 			}
 			error += ".\r\n";

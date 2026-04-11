@@ -209,10 +209,9 @@ void StgEnemyObject::Work() {
 				auto currItr = machine->current_thread_index;
 				machine->current_thread_index = machine->threads.begin();
 
-				script_machine::environment* e = (subIvk->kind == block_kind::bk_microthread)
+				script_machine::environment* e = (subIvk->kind == block_kind::bk_tcall)
 					? machine->add_thread(subIvk) : machine->add_child_block(subIvk);
-				// e->parent->dec_ref();
-				// e->parent = nullptr;
+
 				for (int i = args->size() - 1; i >= 0; --i)
 					e->stack.push_back((*args)[i]);
 

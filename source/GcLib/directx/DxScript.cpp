@@ -2689,16 +2689,19 @@ value DxScript::Func_Obj_SetDeleteCallback(script_machine* machine, int argc, co
 	if (obj) {
 		uint64_t callback = (uint64_t)argv[1].as_int();
 		if (callback != NULL) {
-			// ADD CHECK FOR IS PURE FUNCTION
 			script_block* subIvk = (script_block*)(callback & 0xffffffff);
-			if (argc - 2 == subIvk->arguments) {
-				std::vector<value> args(argv + 2, argv + 2 + subIvk->arguments);
-				obj->deleteCallback_.push_back(std::tuple<script_machine*, script_block*, std::vector<gstd::value>>(machine, subIvk, args));
-			}
-			else if (argc - 2 < subIvk->arguments)
+
+			if (subIvk->func == nullptr && !(subIvk->kind == block_kind::bk_fcall || subIvk->kind == block_kind::bk_tcall))
+				script->RaiseError("Callback function must be an engine function, fcall, or tcall.");
+
+			if (argc - 2 < subIvk->arguments)
 				script->RaiseError("Insufficient arguments provided for function pointer.");
-			else
+
+			if (argc - 2 > subIvk->arguments)
 				script->RaiseError("Too many arguments provided for function pointer.");
+
+			std::vector<value> args(argv + 2, argv + 2 + subIvk->arguments);
+			obj->deleteCallback_.push_back(std::tuple<script_machine*, script_block*, std::vector<gstd::value>>(machine, subIvk, args));
 		}
 	}
 	return value();

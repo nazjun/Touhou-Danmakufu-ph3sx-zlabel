@@ -2933,16 +2933,21 @@ void StgShotPatternGeneratorObject::Work() {
 		if (!fireCallback_.empty()) {
 			std::vector<int> res;
 			FireSet(scriptData_, controller_, &res);
+
 			for (auto& callback : fireCallback_) {
 				script_machine* machine = callback.first;
 				script_block* subIvk = callback.second;
 				DxScript* script = (DxScript*)machine->data;
+
 				script_machine::environment* e = machine->add_child_block(subIvk);
-				// e->parent->dec_ref();
-				// e->parent = nullptr;
-				e->stack.push_back(script->CreateIntValue(repeatCount_));
-				e->stack.push_back(script->CreateIntArrayValue(res));
-				e->stack.push_back(script->CreateIntValue(idObject_));
+
+				for (int i = subIvk->arguments - 1; i >= 0; --i) {
+					switch (i) {
+					case 0: e->stack.push_back(script->CreateIntValue(idObject_)); break;
+					case 1: e->stack.push_back(script->CreateIntArrayValue(res)); break;
+					case 2: e->stack.push_back(script->CreateIntValue(repeatCount_)); break;
+					}
+				}
 			}
 		}
 		else
@@ -2988,10 +2993,13 @@ void StgShotPatternGeneratorObject::Work() {
 			machine->current_thread_index = machine->threads.begin();
 
 			script_machine::environment* e = machine->add_child_block(subIvk);
-			// e->parent->dec_ref();
-			// e->parent = nullptr;
-			e->stack.push_back(script->CreateIntArrayValue(tickRes_));
-			e->stack.push_back(script->CreateIntValue(idObject_));
+
+			for (int i = subIvk->arguments - 1; i >= 0; --i) {
+				switch (i) {
+				case 0: e->stack.push_back(script->CreateIntValue(idObject_)); break;
+				case 1: e->stack.push_back(script->CreateIntArrayValue(tickRes_)); break;
+				}
+			}
 
 			machine->current_thread_index = currItr;
 		}
