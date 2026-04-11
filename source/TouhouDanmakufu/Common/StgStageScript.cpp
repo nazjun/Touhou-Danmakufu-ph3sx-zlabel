@@ -564,6 +564,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjStLaser_SetPermitExpand", StgStageScript::Func_ObjStLaser_SetPermitExpand, 2 },
 	{ "ObjStLaser_GetPermitExpand", StgStageScript::Func_ObjStLaser_GetPermitExpand, 1 },
 	{ "ObjStLaser_AnchorToSpring", StgStageScript::Func_ObjStLaser_AnchorToSpring, 4 },
+	{ "ObjStLaser_RemoveSpringAnchor", StgStageScript::Func_ObjStLaser_RemoveSpringAnchor, 2 },
 	{ "ObjCrLaser_SetTipDecrement", StgStageScript::Func_ObjCrLaser_SetTipDecrement, 2 },
 	{ "ObjCrLaser_SetTipCapping", StgStageScript::Func_ObjCrLaser_SetTipCapping, 2 },
 	{ "ObjCrLaser_SetAngleSmoothness", StgStageScript::Func_ObjCrLaser_SetAngleSmoothness, 2 },
@@ -5553,6 +5554,20 @@ gstd::value StgStageScript::Func_ObjStLaser_AnchorToSpring(gstd::script_machine*
 		else
 			obj->SetSpringMassSystem(nullptr, 0, 0, false);
 	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjStLaser_RemoveSpringAnchor(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgStraightLaserObject* obj = script->GetObjectPointerAs<StgStraightLaserObject>(id);
+
+	if (obj) {
+		int id2 = argv[1].as_int();
+		ref_unsync_ptr<DxSpringMassSystemObject> sms = ref_unsync_ptr<DxSpringMassSystemObject>::Cast(script->GetObject(id2));
+		if (sms)
+			obj->RemoveSpringAnchor(sms);
+	}
+
 	return value();
 }
 gstd::value StgStageScript::Func_ObjCrLaser_SetTipDecrement(gstd::script_machine* machine, int argc, const gstd::value* argv) {

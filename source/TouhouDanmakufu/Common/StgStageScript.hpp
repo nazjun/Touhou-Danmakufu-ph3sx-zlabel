@@ -505,6 +505,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjStLaser_SetPermitExpand);
 	DNH_FUNCAPI_DECL_(Func_ObjStLaser_GetPermitExpand);
 	DNH_FUNCAPI_DECL_(Func_ObjStLaser_AnchorToSpring);
+	DNH_FUNCAPI_DECL_(Func_ObjStLaser_RemoveSpringAnchor);
 	static gstd::value Func_ObjCrLaser_SetTipDecrement(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetTipCapping);
 	DNH_FUNCAPI_DECL_(Func_ObjCrLaser_SetAngleSmoothness);

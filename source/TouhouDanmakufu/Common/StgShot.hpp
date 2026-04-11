@@ -661,6 +661,19 @@ public:
 		StgMoveObject::SetSpringMassSystem(springMassSystem, index1, bAim);
 		springMassIndexes2_.push_back(index2);
 	}
+
+	void RemoveSpringAnchor(ref_unsync_ptr<DxSpringMassSystemObject> springMassSystem) {
+		for (size_t i = 0; i < springMassSystems_.size(); ) {
+			if (springMassSystems_[i] == springMassSystem) {
+				springMassSystems_.erase(springMassSystems_.begin() + i);
+				springMassIndexes_.erase(springMassIndexes_.begin() + i);
+				springMassIndexes2_.erase(springMassIndexes2_.begin() + i);
+				bSpringMassAims_.erase(bSpringMassAims_.begin() + i);
+			}
+			else
+				++i;
+		}
+	}
 	
 };
 
