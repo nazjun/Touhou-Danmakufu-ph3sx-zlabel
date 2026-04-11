@@ -2823,6 +2823,7 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	repeatNext_ = 0;
 	repeatWait_ = 0;
 	repeatTimes_ = 0;
+	repeatCount_ = 0;
 	fireCallback_.clear();
 	tickCallback_.clear();
 	tickRes_.clear();
@@ -2896,6 +2897,7 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 	repeatNext_ = src->repeatNext_;
 	repeatWait_ = src->repeatWait_;
 	repeatTimes_ = src->repeatTimes_;
+	repeatCount_ = src->repeatCount_;
 	fireCallback_ = src->fireCallback_;
 	tickCallback_ = src->tickCallback_;
 	tickRes_ = src->tickRes_;
@@ -2928,29 +2930,27 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 
 void StgShotPatternGeneratorObject::Work() {
 	if (repeatTimes_ != 0 && repeatNext_ <= frameExist_) {
-		repeatNext_ = repeatWait_ + frameExist_;
-		repeatTimes_--;
-
 		if (!fireCallback_.empty()) {
 			std::vector<int> res;
 			FireSet(scriptData_, controller_, &res);
 			for (auto& callback : fireCallback_) {
-				script_block* subIvk = (script_block*)(std::get<2>(callback) & 0xffffffff);
-				script_machine* machine = (script_machine*)std::get<0>(callback);
-
-				ptrdiff_t threadAdvance = std::get<1>(callback) - std::distance(machine->threads.begin(), machine->current_thread_index);
-				std::advance(machine->current_thread_index, threadAdvance);
-
-				script_machine::environment* e = machine->add_child_block(subIvk);
+				script_machine* machine = callback.first;
+				script_block* subIvk = callback.second;
 				DxScript* script = (DxScript*)machine->data;
+				script_machine::environment* e = machine->add_child_block(subIvk);
+				// e->parent->dec_ref();
+				// e->parent = nullptr;
+				e->stack.push_back(script->CreateIntValue(repeatCount_));
 				e->stack.push_back(script->CreateIntArrayValue(res));
 				e->stack.push_back(script->CreateIntValue(idObject_));
-
-				std::advance(machine->current_thread_index, -threadAdvance);
 			}
 		}
 		else
 			FireSet(scriptData_, controller_, nullptr);
+
+		repeatNext_ = repeatWait_ + frameExist_;
+		repeatTimes_--;
+		repeatCount_++;
 	}
 
 	bool bTick = !tickCallback_.empty();
@@ -2980,18 +2980,20 @@ void StgShotPatternGeneratorObject::Work() {
 
 	if (bTick) {
 		for (auto& callback : tickCallback_) {
-			script_block* subIvk = (script_block*)(std::get<2>(callback) & 0xffffffff);
-			script_machine* machine = (script_machine*)std::get<0>(callback);
+			script_machine* machine = callback.first;
+			script_block* subIvk = callback.second;
+			DxScript* script = (DxScript*)machine->data;
 
-			ptrdiff_t threadAdvance = std::get<1>(callback) - std::distance(machine->threads.begin(), machine->current_thread_index);
-			std::advance(machine->current_thread_index, threadAdvance);
+			auto currItr = machine->current_thread_index;
+			machine->current_thread_index = machine->threads.begin();
 
 			script_machine::environment* e = machine->add_child_block(subIvk);
-			DxScript* script = (DxScript*)machine->data;
+			// e->parent->dec_ref();
+			// e->parent = nullptr;
 			e->stack.push_back(script->CreateIntArrayValue(tickRes_));
 			e->stack.push_back(script->CreateIntValue(idObject_));
 
-			std::advance(machine->current_thread_index, -threadAdvance);
+			machine->current_thread_index = currItr;
 		}
 
 		tickRes_.clear();
@@ -3488,6 +3490,7 @@ void StgShotPatternGeneratorObject::ClearWaiting() {
 	repeatNext_ = 0;
 	repeatWait_ = 0;
 	repeatTimes_ = 0;
+	repeatCount_ = 0;
 	fireCallback_.clear();
 	tickCallback_.clear();
 }

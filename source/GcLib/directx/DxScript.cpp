@@ -250,7 +250,7 @@ static const std::vector<function> dxFunction = {
 	{ "Obj_Delete", DxScript::Func_Obj_Delete, 1 },
 	{ "Obj_IsDeleted", DxScript::Func_Obj_IsDeleted, 1 },
 	{ "Obj_IsExists", DxScript::Func_Obj_IsExists, 1 },
-	{ "Obj_SetDeleteCallback", DxScript::Func_Obj_SetDeleteCallback, 2 },
+	{ "Obj_SetDeleteCallback", DxScript::Func_Obj_SetDeleteCallback, -3 }, //2 fixed + ... -> 2 minimum
 	{ "Obj_SetVisible", DxScript::Func_Obj_SetVisible, 2 },
 	{ "Obj_IsVisible", DxScript::Func_Obj_IsVisible, 1 },
 	{ "Obj_SetRenderPriority", DxScript::Func_Obj_SetRenderPriority, 2 },
@@ -2687,10 +2687,19 @@ value DxScript::Func_Obj_SetDeleteCallback(script_machine* machine, int argc, co
 	int id = argv[0].as_int();
 	DxScriptObjectBase* obj = script->GetObjectPointer(id);
 	if (obj) {
-		ptrdiff_t threadIndex = std::distance(machine->threads.begin(), machine->current_thread_index);
 		uint64_t callback = (uint64_t)argv[1].as_int();
-		if (callback != NULL)
-			obj->deleteCallback_.push_back(std::tuple<void*, ptrdiff_t, uint64_t>((void*)machine, threadIndex, callback));
+		if (callback != NULL) {
+			// ADD CHECK FOR IS PURE FUNCTION
+			script_block* subIvk = (script_block*)(callback & 0xffffffff);
+			if (argc - 2 == subIvk->arguments) {
+				std::vector<value> args(argv + 2, argv + 2 + subIvk->arguments);
+				obj->deleteCallback_.push_back(std::tuple<script_machine*, script_block*, std::vector<gstd::value>>(machine, subIvk, args));
+			}
+			else if (argc - 2 < subIvk->arguments)
+				script->RaiseError("Insufficient arguments provided for function pointer.");
+			else
+				script->RaiseError("Too many arguments provided for function pointer.");
+		}
 	}
 	return value();
 }

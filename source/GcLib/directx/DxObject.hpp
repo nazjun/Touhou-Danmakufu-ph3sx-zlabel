@@ -28,7 +28,7 @@ namespace directx {
 		TypeObject typeObject_;
 		int64_t idScript_;
 
-		std::vector<std::tuple<void*, ptrdiff_t, uint64_t>> deleteCallback_;
+		std::vector<std::tuple<gstd::script_machine*, gstd::script_block*, std::vector<gstd::value>>> deleteCallback_;
 
 		bool bDelete_;
 		bool bActive_;

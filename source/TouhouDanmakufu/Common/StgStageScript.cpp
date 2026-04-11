@@ -465,7 +465,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjEnemy_SetLife", StgStageScript::Func_ObjEnemy_SetLife, 2 },
 	{ "ObjEnemy_AddLife", StgStageScript::Func_ObjEnemy_AddLife<false>, 2 },
 	{ "ObjEnemy_AddLifeEx", StgStageScript::Func_ObjEnemy_AddLife<true>, 2 },
-	{ "ObjEnemy_SetDeathCallback", StgStageScript::Func_ObjEnemy_SetDeathCallback, 2 },
+	{ "ObjEnemy_SetDeathCallback", StgStageScript::Func_ObjEnemy_SetDeathCallback, -3 }, //2 fixed + ... -> 2 minimum
 	{ "ObjEnemy_SetDamageRate", StgStageScript::Func_ObjEnemy_SetDamageRate, 3 },
 	{ "ObjEnemy_SetDamageRateByShotDataID", StgStageScript::Func_ObjEnemy_SetDamageRateByShotDataID, 3 },
 	{ "ObjEnemy_SetMaximumDamage", StgStageScript::Func_ObjEnemy_SetMaximumDamage, 2 },
@@ -4284,8 +4284,19 @@ gstd::value StgStageScript::Func_ObjEnemy_SetDeathCallback(gstd::script_machine*
 	int id = argv[0].as_int();
 	StgEnemyObject* obj = script->GetObjectPointerAs<StgEnemyObject>(id);
 	if (obj) {
-		ptrdiff_t threadIndex = std::distance(machine->threads.begin(), machine->current_thread_index);
-		obj->SetLifeCallback((void*)machine, threadIndex, (uint64_t)argv[1].as_int());
+		uint64_t callback = (uint64_t)argv[1].as_int();
+		if (callback != NULL) {
+			// ADD CHECK FOR IS PURE FUNCTION
+			script_block* subIvk = (script_block*)(callback & 0xffffffff);
+			if (argc - 2 == subIvk->arguments) {
+				std::vector<value> args(argv + 2, argv + 2 + subIvk->arguments);
+				obj->SetLifeCallback(machine, subIvk, args);
+			}
+			else if (argc - 2 < subIvk->arguments)
+				script->RaiseError("Insufficient arguments provided for function pointer.");
+			else
+				script->RaiseError("Too many arguments provided for function pointer.");
+		}
 	}
 	return value();
 }
@@ -5820,11 +5831,21 @@ gstd::value StgStageScript::Func_ObjPatternShot_Fire(gstd::script_machine* machi
 		if (argc == 5) {
 			int repeatWait = argv[1].as_int();
 			int repeatTimes = argv[2].as_int();
-			ptrdiff_t threadIndex = std::distance(machine->threads.begin(), machine->current_thread_index);
+
 			uint64_t fireCallback = (uint64_t)argv[3].as_int();
 			uint64_t tickCallback = (uint64_t)argv[4].as_int();
+			script_block* subIvkFire = (fireCallback != NULL) ? (script_block*)(fireCallback & 0xffffffff) : nullptr;
+			script_block* subIvkTick = (tickCallback != NULL) ? (script_block*)(tickCallback & 0xffffffff) : nullptr;
+			
+			if (subIvkFire != nullptr && subIvkFire->arguments != 3)
+				script->RaiseError("Fire callback must be a user defined function with 3 arguments (int, int[], int).");
+			if (subIvkTick != nullptr && subIvkTick->arguments != 2)
+				script->RaiseError("Tick callback must be a user defined function with 2 arguments (int, int[]).");
+
+			// ADD CHECK FOR IS PURE FUNCTION
+
 			obj->SetCaller(machine->data, stageController);
-			obj->SetRepeat(repeatWait, repeatTimes, (void*)machine, threadIndex, fireCallback, tickCallback);
+			obj->SetRepeat(repeatWait, repeatTimes, machine, subIvkFire, subIvkTick);
 		}
 		else
 			obj->FireSet(machine->data, stageController, nullptr);

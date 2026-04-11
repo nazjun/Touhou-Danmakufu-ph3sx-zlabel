@@ -59,7 +59,7 @@ protected:
 	double lifePrev_;
 	double lifeDelta_;
 
-	std::vector<std::tuple<void*, ptrdiff_t, uint64_t>> lifeCallback_;
+	std::vector<std::tuple<gstd::script_machine*, gstd::script_block*, std::vector<gstd::value>>> lifeCallback_;
 
 	double rateDamageShot_;
 	double rateDamageSpell_;
@@ -109,9 +109,8 @@ public:
 	void AddLife(double inc);
 	void AddLife2(double inc);
 
-	void SetLifeCallback(void* machine, ptrdiff_t threadIndex, uint64_t funcptr) {
-		if (funcptr != NULL)
-			lifeCallback_.push_back(std::tuple<void*, ptrdiff_t, uint64_t>(machine, threadIndex, funcptr));
+	void SetLifeCallback(gstd::script_machine* machine, gstd::script_block* subIvk, std::vector<gstd::value> args) {
+		lifeCallback_.push_back(std::tuple<gstd::script_machine*, gstd::script_block*, std::vector<gstd::value>>(machine, subIvk, args));
 	}
 
 	void SetDamageRate(double rateShot, double rateSpell) { rateDamageShot_ = rateShot; rateDamageSpell_ = rateSpell; }

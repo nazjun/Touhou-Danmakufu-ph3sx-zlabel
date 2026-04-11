@@ -781,8 +781,9 @@ private:
 	int repeatNext_;
 	int repeatWait_;
 	int repeatTimes_;
-	std::vector<std::tuple<void*, ptrdiff_t, uint64_t>> fireCallback_;
-	std::vector<std::tuple<void*, ptrdiff_t, uint64_t>> tickCallback_;
+	int repeatCount_;
+	std::vector<std::pair<gstd::script_machine*, gstd::script_block*>> fireCallback_;
+	std::vector<std::pair<gstd::script_machine*, gstd::script_block*>> tickCallback_;
 	std::vector<int> tickRes_;
 
 	//Calculate the sets in order-------------------------------------
@@ -836,14 +837,15 @@ public:
 		controller_ = controller;
 	}
 
-	void SetRepeat(int repeatWait, int repeatTimes, void* machine, ptrdiff_t threadIndex, uint64_t funcptrFire, uint64_t funcptrTick) {
+	void SetRepeat(int repeatWait, int repeatTimes, gstd::script_machine* machine, gstd::script_block* subIvkFire, gstd::script_block* subIvkTick) {
 		repeatNext_ = 0;
 		repeatWait_ = repeatWait;
 		repeatTimes_ = repeatTimes;
-		if (funcptrFire != NULL)
-			fireCallback_.push_back(std::tuple<void*, ptrdiff_t, uint64_t>(machine, threadIndex, funcptrFire));
-		if (funcptrTick != NULL)
-			tickCallback_.push_back(std::tuple<void*, ptrdiff_t, uint64_t>(machine, threadIndex, funcptrTick));
+		repeatCount_ = 0;
+		if (subIvkFire != nullptr)
+			fireCallback_.push_back(std::pair<gstd::script_machine*, gstd::script_block*>(machine, subIvkFire));
+		if (subIvkTick != nullptr)
+			tickCallback_.push_back(std::pair<gstd::script_machine*, gstd::script_block*>(machine, subIvkTick));
 	}
 
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);
