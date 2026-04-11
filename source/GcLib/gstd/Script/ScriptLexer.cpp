@@ -137,6 +137,9 @@ void script_scanner::advance() {
 	case L'@':
 		next = token_kind::tk_at;
 		ch = next_char();
+		if (ch == L'(') {
+			next = token_kind::tk_GET_FUNC;
+		}
 		break;
 	case L',':
 		next = token_kind::tk_comma;
