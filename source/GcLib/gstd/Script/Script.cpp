@@ -79,9 +79,9 @@ void script_engine::init(const wchar_t* source, const wchar_t* end, std::vector<
 	script_scanner s(source, end);
 	parser p(this, &s);
 
-	if (list_func) p.load_functions(list_func);
-	if (list_const) p.load_constants(list_const);
-	p.begin_parse();
+	if (list_func) p.load_functions(list_func); // this part is long x1
+	if (list_const) p.load_constants(list_const); // this part is long x1
+	p.begin_parse(); // this part is long x100
 
 	events = p.events;
 

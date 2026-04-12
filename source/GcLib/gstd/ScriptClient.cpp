@@ -477,6 +477,77 @@ std::vector<char> ScriptClientBase::_ParseScriptSource(std::vector<char>& source
 
 	return scriptLoader.GetResult();
 }
+bool ScriptClientBase::_SaveScriptSource(std::wstring compilePath, const std::vector<char>& src) {
+	ScriptFileLineMap* lineMap = engineData_->GetScriptFileLineMap();
+
+	std::ofstream ofs(compilePath, std::ios::binary);
+	if (ofs.is_open()) {
+		size_t entryCount = lineMap->GetEntryList().size();
+		ofs.write(reinterpret_cast<const char*>(&entryCount), sizeof(size_t));
+		for (auto& entry : lineMap->GetEntryList()) {
+			std::wstring entryPath = PathProperty::GetPathWithoutModuleDirectory(entry.path_);
+			size_t pathSize = entryPath.size();
+			ofs.write(reinterpret_cast<const char*>(&pathSize), sizeof(size_t));
+			ofs.write(reinterpret_cast<const char*>(entryPath.data()), static_cast<std::streamsize>(pathSize * sizeof(wchar_t)));
+			ofs.write(reinterpret_cast<const char*>(&entry.lineStart_), sizeof(int));
+			ofs.write(reinterpret_cast<const char*>(&entry.lineStartOriginal_), sizeof(int));
+			ofs.write(reinterpret_cast<const char*>(&entry.lineEnd_), sizeof(int));
+			ofs.write(reinterpret_cast<const char*>(&entry.lineEndOriginal_), sizeof(int));
+		}
+
+		size_t size = src.size();
+		ofs.write(reinterpret_cast<const char*>(&size), sizeof(size));
+		ofs.write(src.data(), size);
+		ofs.close();
+
+		return true;
+	}
+
+	return false;
+}
+std::vector<char> ScriptClientBase::_LoadScriptSource(std::wstring compilePath) {
+	ScriptFileLineMap* lineMap = engineData_->GetScriptFileLineMap();
+
+	lineMap->Clear();
+
+	std::list<ScriptFileLineMap::Entry>& entryList = lineMap->GetEntryList();
+
+	std::ifstream ifs(compilePath, std::ios::binary);
+
+	if (ifs.is_open()) {
+		std::wstring moduleDir = PathProperty::GetModuleDirectory();
+		size_t entryCount;
+		ifs.read(reinterpret_cast<char*>(&entryCount), sizeof(size_t));
+		for (uint32_t i = 0; i < entryCount; ++i) {
+			ScriptFileLineMap::Entry entryNew;
+			size_t pathSize;
+			ifs.read(reinterpret_cast<char*>(&pathSize), sizeof(size_t));
+			std::wstring entryPath;
+			entryPath.resize(pathSize);
+			ifs.read(reinterpret_cast<char*>(entryPath.data()), static_cast<std::streamsize>(pathSize * sizeof(wchar_t)));
+			entryNew.path_ = moduleDir + entryPath;
+			ifs.read(reinterpret_cast<char*>(&entryNew.lineStart_), sizeof(int));
+			ifs.read(reinterpret_cast<char*>(&entryNew.lineStartOriginal_), sizeof(int));
+			ifs.read(reinterpret_cast<char*>(&entryNew.lineEnd_), sizeof(int));
+			ifs.read(reinterpret_cast<char*>(&entryNew.lineEndOriginal_), sizeof(int));
+			entryList.push_back(entryNew);
+		}
+	}
+
+	std::vector<char> res;
+
+	size_t size;
+	ifs.read(reinterpret_cast<char*>(&size), sizeof(size_t));
+	res.resize(size);
+	ifs.read(res.data(), size);
+
+	ifs.close();
+
+	std::wstring pathReduce = PathProperty::ReduceModuleDirectory(compilePath);
+	Logger::WriteTop(StringUtility::Format("ScriptClient: Compiled script loaded. [%ls]", pathReduce.c_str()));
+
+	return res;
+}
 bool ScriptClientBase::_CreateEngine() {
 	unique_ptr<script_engine> engine(new script_engine(engineData_->GetSource(), &func_, &const_));
 	engineData_->SetEngine(std::move(engine));
@@ -522,10 +593,28 @@ void ScriptClientBase::SetSource(std::vector<char>& source) {
 }
 void ScriptClientBase::Compile() {
 	if (engineData_->GetEngine() == nullptr) {
-		std::vector<char> source = _ParseScriptSource(engineData_->GetSource());
-		engineData_->SetSource(source);
 
-		bool bCreateSuccess = _CreateEngine();
+		std::wstring compilePath = engineData_->GetPath();
+		size_t extPos = compilePath.rfind(L'.');
+		if (extPos != std::wstring::npos) {
+			compilePath = compilePath.substr(0, extPos) + L".dnho";
+		}
+
+		bool bLoad = !File::IsExists(PathProperty::GetModuleDirectory() + L".recompile");
+
+		if (bLoad && File::IsExists(compilePath)) {
+			// This is about 50x faster
+			std::vector<char> source = _LoadScriptSource(compilePath);
+			engineData_->SetSource(source);
+		}
+		else {
+			std::vector<char> source = _ParseScriptSource(engineData_->GetSource());
+			engineData_->SetSource(source);
+
+			_SaveScriptSource(compilePath, source);
+		}
+
+		bool bCreateSuccess = _CreateEngine(); // this part is long, still needs to be saved and loaded with appropriate .dnho
 		if (!bCreateSuccess) {
 			bError_ = true;
 			_RaiseErrorFromEngine();

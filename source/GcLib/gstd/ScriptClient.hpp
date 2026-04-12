@@ -133,6 +133,8 @@ namespace gstd {
 		std::wstring _GetErrorLineSource(int line);
 
 		virtual std::vector<char> _ParseScriptSource(std::vector<char>& source);
+		virtual bool _SaveScriptSource(std::wstring compilePath, const std::vector<char>& src);
+		virtual std::vector<char> _LoadScriptSource(std::wstring path);
 		virtual bool _CreateEngine();
 
 		std::wstring _ExtendPath(std::wstring path);
