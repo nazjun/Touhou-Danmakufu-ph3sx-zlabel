@@ -84,7 +84,7 @@ void script_scanner::skip() {
 		}
 
 		//Skip line comments and unrecognized #'s
-		if (ch1 == L'#' || (ch1 == L'/' && ch2 == L'/')) {
+		if ((ch1 == L'#' && ch2 != L'(') || (ch1 == L'/' && ch2 == L'/')) {
 			bReskip = true;
 			while (true) {
 				ch1 = next_char();
@@ -138,7 +138,14 @@ void script_scanner::advance() {
 		next = token_kind::tk_at;
 		ch = next_char();
 		if (ch == L'(') {
-			next = token_kind::tk_GET_FUNC;
+			next = token_kind::tk_GET_FUNC_AT;
+		}
+		break;
+	case L'#':
+		next = token_kind::tk_invalid;
+		ch = next_char();
+		if (ch == L'(') {
+			next = token_kind::tk_GET_FUNC_SHARP;
 		}
 		break;
 	case L',':

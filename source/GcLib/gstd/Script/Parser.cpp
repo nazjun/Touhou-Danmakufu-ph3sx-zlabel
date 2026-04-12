@@ -945,8 +945,13 @@ continue_as_variadic:
 		state->AddCode(block, code(command_kind::pc_inline_length_array));
 		return;
 	case token_kind::tk_GET_FUNC:
+	case token_kind::tk_GET_FUNC_AT:
+	case token_kind::tk_GET_FUNC_SHARP:
 	{
 		//Note: This is only a temporary solution, it will be deleted later
+
+		bool bAt = state->next() == token_kind::tk_GET_FUNC_AT;
+		bool bSharp = state->next() == token_kind::tk_GET_FUNC_SHARP;
 
 		state->advance();
 
@@ -992,6 +997,16 @@ continue_as_variadic:
 		}
 		else if (s->bVariable)
 			error = StringUtility::Format("%s is not callable.\r\n", funcName.c_str());
+
+		bool bIsCall = s->sub->kind == block_kind::bk_tcall || s->sub->kind == block_kind::bk_fcall;
+		bool bIsEngine = s->sub->func != nullptr;
+
+		if (bIsCall && bAt)
+			error = StringUtility::Format("%s is a callback (fcall / tcall). Use '__funcptr' or '#' instead of '@'.\r\n", funcName.c_str());
+		else if (bIsEngine && bAt)
+			error = StringUtility::Format("%s is an engine function. Use '__funcptr' or '#' instead of '@'.\r\n", funcName.c_str());
+		else if (!bIsCall && !bIsEngine && bSharp)
+			error = StringUtility::Format("%s is not a callback (fcall / tcall) or engine function. Use '__funcptr' or '@' instead of '#'.\r\n", funcName.c_str());
 		
 		parser_assert(state, error.size() == 0, error);
 
