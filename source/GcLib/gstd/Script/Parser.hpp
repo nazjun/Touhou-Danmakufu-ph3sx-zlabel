@@ -7,6 +7,9 @@
 #include "ScriptFunction.hpp"
 
 namespace gstd {
+	enum class command_layout : uint8_t {
+		cl_esc, cl_arg, cl_blk, cl_val
+	};
 	enum class command_kind : uint8_t {
 		pc_yield,				//Transfer control to next thread
 		pc_wait,				//Set nWait to ({esp-0} - 1), and cause thread to do pc_yield until (nWait-- == 0)
@@ -108,6 +111,106 @@ namespace gstd {
 	};
 	enum class block_kind : uint8_t {
 		bk_normal, bk_sub, bk_function, bk_microthread, bk_fcall, bk_tcall
+	};
+
+	static constexpr command_layout layout_table[] = {
+		/* pc_yield */ command_layout::cl_esc,
+		/* pc_wait */ command_layout::cl_esc,
+
+		/* pc_var_alloc */ command_layout::cl_arg,
+		/* pc_var_format */ command_layout::cl_arg,
+
+		/* pc_pop */ command_layout::cl_arg,
+		/* pc_push_value */ command_layout::cl_val,
+		/* pc_push_variable */ command_layout::cl_arg,
+		/* pc_push_variable2 */ command_layout::cl_arg,
+		/* pc_dup_n */ command_layout::cl_arg,
+		/* pc_swap */ command_layout::cl_esc,
+		/* pc_load_ptr */ command_layout::cl_arg,
+		/* pc_unload_ptr */ command_layout::cl_esc,
+		/* pc_make_unique */ command_layout::cl_arg,
+
+		/* pc_copy_assign */ command_layout::cl_arg,
+		/* pc_ref_assign */ command_layout::cl_esc,
+
+		/* pc_sub_return */ command_layout::cl_esc,
+
+		/* pc_call */ command_layout::cl_blk,
+		/* pc_call_and_push_result */ command_layout::cl_blk,
+
+		/* pc_jump */ command_layout::cl_arg,
+		/* pc_jump_if */ command_layout::cl_arg,
+		/* pc_jump_if_not */ command_layout::cl_arg,
+		/* pc_jump_if_nopop */ command_layout::cl_arg,
+		/* pc_jump_if_not_nopop */ command_layout::cl_arg,
+		/* pc_jump_target */ command_layout::cl_esc, // missing?
+		/* _pc_jump */ command_layout::cl_esc, // missing?
+		/* _pc_jump_if */ command_layout::cl_esc, // missing?
+		/* _pc_jump_if_not */ command_layout::cl_esc, // missing?
+		/* _pc_jump_if_nopop */ command_layout::cl_esc, // missing?
+		/* _pc_jump_if_not_nopop */ command_layout::cl_esc, // missing?
+
+		/* pc_compare_e */ command_layout::cl_esc,
+		/* pc_compare_g */ command_layout::cl_esc,
+		/* pc_compare_ge */ command_layout::cl_esc,
+		/* pc_compare_l */ command_layout::cl_esc,
+		/* pc_compare_le */ command_layout::cl_esc,
+		/* pc_compare_ne */ command_layout::cl_esc,
+
+		/* pc_loop_ascent */ command_layout::cl_esc,
+		/* pc_loop_descent */ command_layout::cl_esc,
+		/* pc_loop_count */ command_layout::cl_esc,
+		/* pc_loop_foreach */ command_layout::cl_esc,
+		/* pc_loop_continue */ command_layout::cl_esc, // missing?
+		/* pc_loop_break */ command_layout::cl_esc, // missing?
+
+		/* pc_construct_array */ command_layout::cl_arg,
+
+		//------------------------------------------------------------------------
+		//Inline operations
+		//------------------------------------------------------------------------
+		/* pc_inline_inc */ command_layout::cl_arg,
+		/* pc_inline_dec */ command_layout::cl_arg,
+
+		/* pc_inline_add_asi */ command_layout::cl_arg,
+		/* pc_inline_sub_asi */ command_layout::cl_arg,
+		/* pc_inline_mul_asi */ command_layout::cl_arg,
+		/* pc_inline_div_asi */ command_layout::cl_arg,
+		/* pc_inline_fdiv_asi */ command_layout::cl_arg,
+		/* pc_inline_mod_asi */ command_layout::cl_arg,
+		/* pc_inline_pow_asi */ command_layout::cl_arg,
+		/* pc_inline_cat_asi */ command_layout::cl_arg,
+
+		/* pc_inline_neg */ command_layout::cl_esc,
+		/* pc_inline_not */ command_layout::cl_esc,
+		/* pc_inline_abs */ command_layout::cl_esc,
+
+		/* pc_inline_add */ command_layout::cl_esc,
+		/* pc_inline_sub */ command_layout::cl_esc,
+		/* pc_inline_mul */ command_layout::cl_esc,
+		/* pc_inline_div */ command_layout::cl_esc,
+		/* pc_inline_fdiv */ command_layout::cl_esc,
+		/* pc_inline_mod */ command_layout::cl_esc,
+		/* pc_inline_pow */ command_layout::cl_esc,
+		/* pc_inline_app */ command_layout::cl_esc,
+		/* pc_inline_cat */ command_layout::cl_esc,
+
+		/* pc_inline_cmp_e */ command_layout::cl_esc,
+		/* pc_inline_cmp_g */ command_layout::cl_esc,
+		/* pc_inline_cmp_ge */ command_layout::cl_esc,
+		/* pc_inline_cmp_l */ command_layout::cl_esc,
+		/* pc_inline_cmp_le */ command_layout::cl_esc,
+		/* pc_inline_cmp_ne */ command_layout::cl_esc,
+
+		/* pc_inline_logic_and */ command_layout::cl_esc,
+		/* pc_inline_logic_or */ command_layout::cl_esc,
+
+		/* pc_inline_cast_var */ command_layout::cl_arg,
+		/* pc_inline_index_array */ command_layout::cl_esc,
+		/* pc_inline_index_array2 */ command_layout::cl_esc,
+		/* pc_inline_length_array */ command_layout::cl_esc
+
+		/* pc_nop */ // handle with care, default to cl_esc
 	};
 
 	struct code;

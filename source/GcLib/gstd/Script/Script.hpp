@@ -69,7 +69,7 @@ namespace gstd {
 
 		script_block* new_block(int level, block_kind kind);
 	public:
-		void* data;		//Client script pointer
+		// void* data;		//Client script pointer
 
 		bool error;
 		std::wstring error_message;
