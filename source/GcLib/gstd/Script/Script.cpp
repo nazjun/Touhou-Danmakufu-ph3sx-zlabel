@@ -29,9 +29,9 @@ script_type_manager::script_type_manager() {
 		int_type)).first);		//Int array
 	float_array_type = deref_itr(types.insert(type_data(type_data::tk_array,
 		float_type)).first);	//Real array
+	boolean_array_type = deref_itr(types.insert(type_data(type_data::tk_array,
+		boolean_type)).first);	//Boolean array
 
-	//Bool array
-	types.insert(type_data(type_data::tk_array, boolean_type));
 	//String array
 	types.insert(type_data(type_data::tk_array, string_type));
 }
@@ -53,9 +53,26 @@ type_data* script_type_manager::get_array_type(type_data* element) {
 	return get_type(&target);
 }
 
+std::vector<type_data*> script_type_manager::get_all_types() {
+	std::vector<type_data*> res(base_->types.size());
+	size_t i = 0;
+	for (auto itr = base_->types.begin(); itr != base_->types.end(); ++itr) {
+		type_data* type_ptr = deref_itr(itr);
+		res[i] = type_ptr;
+		++i;
+	}
+	return res;
+}
+
+type_data* script_type_manager::create_type(type_data::type_kind kind, type_data* element) {
+	auto [itr, inserted] = base_->types.emplace(kind, element);
+	return deref_itr(itr);
+}
+
 //****************************************************************************
 //script_engine
 //****************************************************************************
+script_engine::script_engine() {}
 script_engine::script_engine(const std::wstring& source, std::vector<function>* list_func, std::vector<constant>* list_const) {
 	init(source.data(), source.data() + source.size(), list_func, list_const);
 }
@@ -82,7 +99,7 @@ void script_engine::init(const wchar_t* source, const wchar_t* end, std::vector<
 	if (list_func) p.load_functions(list_func);
 	if (list_const) p.load_constants(list_const);
 
-	p.begin_parse(); // this part is long
+	p.begin_parse();
 
 	events = p.events;
 
@@ -376,6 +393,7 @@ void script_machine::run_code() {
 					stack.pop_back(c->arg0);
 					break;
 				case command_kind::pc_push_value:
+				case command_kind::pc_push_funcptr:
 					stack.push_back(c->data);
 					break;
 				case command_kind::pc_push_variable:

@@ -23,10 +23,15 @@ namespace gstd {
 		static type_data* get_string_type() { return base_->string_type; }
 		static type_data* get_int_array_type() { return base_->int_array_type; }
 		static type_data* get_float_array_type() { return base_->float_array_type; }
+		static type_data* get_boolean_array_type() { return base_->boolean_array_type; }
 
 		type_data* get_type(type_data* type);
 		type_data* get_type(type_data::type_kind kind);
 		type_data* get_array_type(type_data* element);
+
+		static std::vector<type_data*> get_all_types();
+
+		static type_data* create_type(type_data::type_kind kind, type_data* element);
 
 		static script_type_manager* get_instance() { return base_; }
 	private:
@@ -46,6 +51,7 @@ namespace gstd {
 		type_data* string_type;
 		type_data* int_array_type;
 		type_data* float_array_type;
+		type_data* boolean_array_type;
 
 		inline static type_data* deref_itr(std::set<type_data>::iterator& itr) {
 			return const_cast<type_data*>(&*itr);
@@ -54,6 +60,7 @@ namespace gstd {
 
 	class script_engine {
 	public:
+		script_engine();
 		script_engine(const std::wstring& source, std::vector<function>* list_func, std::vector<constant>* list_const);
 		script_engine(const std::vector<char>& source, std::vector<function>* list_func, std::vector<constant>* list_const);
 		script_engine(const wchar_t* source, const wchar_t* end, std::vector<function>* list_func, std::vector<constant>* list_const);

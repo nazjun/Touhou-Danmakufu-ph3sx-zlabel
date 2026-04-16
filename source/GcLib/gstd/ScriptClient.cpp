@@ -477,81 +477,666 @@ std::vector<char> ScriptClientBase::_ParseScriptSource(std::vector<char>& source
 
 	return scriptLoader.GetResult();
 }
-bool ScriptClientBase::_SaveScriptSource(std::wstring compilePath, const std::vector<char>& src) {
-	ScriptFileLineMap* lineMap = engineData_->GetScriptFileLineMap();
-
-	std::ofstream ofs(compilePath, std::ios::binary);
-	if (ofs.is_open()) {
-		size_t entryCount = lineMap->GetEntryList().size();
-		ofs.write(reinterpret_cast<const char*>(&entryCount), sizeof(size_t));
-		for (auto& entry : lineMap->GetEntryList()) {
-			std::wstring entryPath = PathProperty::GetPathWithoutModuleDirectory(entry.path_);
-			size_t pathSize = entryPath.size();
-			ofs.write(reinterpret_cast<const char*>(&pathSize), sizeof(size_t));
-			ofs.write(reinterpret_cast<const char*>(entryPath.data()), static_cast<std::streamsize>(pathSize * sizeof(wchar_t)));
-			ofs.write(reinterpret_cast<const char*>(&entry.lineStart_), sizeof(int));
-			ofs.write(reinterpret_cast<const char*>(&entry.lineStartOriginal_), sizeof(int));
-			ofs.write(reinterpret_cast<const char*>(&entry.lineEnd_), sizeof(int));
-			ofs.write(reinterpret_cast<const char*>(&entry.lineEndOriginal_), sizeof(int));
-		}
-
-		size_t size = src.size();
-		ofs.write(reinterpret_cast<const char*>(&size), sizeof(size));
-		ofs.write(src.data(), size);
-		ofs.close();
-
-		return true;
-	}
-
-	return false;
-}
-std::vector<char> ScriptClientBase::_LoadScriptSource(std::wstring compilePath) {
-	ScriptFileLineMap* lineMap = engineData_->GetScriptFileLineMap();
-
-	lineMap->Clear();
-
-	std::list<ScriptFileLineMap::Entry>& entryList = lineMap->GetEntryList();
-
-	std::ifstream ifs(compilePath, std::ios::binary);
-
-	if (ifs.is_open()) {
-		std::wstring moduleDir = PathProperty::GetModuleDirectory();
-		size_t entryCount;
-		ifs.read(reinterpret_cast<char*>(&entryCount), sizeof(size_t));
-		for (uint32_t i = 0; i < entryCount; ++i) {
-			ScriptFileLineMap::Entry entryNew;
-			size_t pathSize;
-			ifs.read(reinterpret_cast<char*>(&pathSize), sizeof(size_t));
-			std::wstring entryPath;
-			entryPath.resize(pathSize);
-			ifs.read(reinterpret_cast<char*>(entryPath.data()), static_cast<std::streamsize>(pathSize * sizeof(wchar_t)));
-			entryNew.path_ = moduleDir + entryPath;
-			ifs.read(reinterpret_cast<char*>(&entryNew.lineStart_), sizeof(int));
-			ifs.read(reinterpret_cast<char*>(&entryNew.lineStartOriginal_), sizeof(int));
-			ifs.read(reinterpret_cast<char*>(&entryNew.lineEnd_), sizeof(int));
-			ifs.read(reinterpret_cast<char*>(&entryNew.lineEndOriginal_), sizeof(int));
-			entryList.push_back(entryNew);
-		}
-	}
-
-	std::vector<char> res;
-
-	size_t size;
-	ifs.read(reinterpret_cast<char*>(&size), sizeof(size_t));
-	res.resize(size);
-	ifs.read(res.data(), size);
-
-	ifs.close();
-
-	std::wstring pathReduce = PathProperty::ReduceModuleDirectory(compilePath);
-	Logger::WriteTop(StringUtility::Format("ScriptClient: Compiled script loaded. [%ls]", pathReduce.c_str()));
-
-	return res;
-}
 bool ScriptClientBase::_CreateEngine() {
 	unique_ptr<script_engine> engine(new script_engine(engineData_->GetSource(), &func_, &const_));
 	engineData_->SetEngine(std::move(engine));
 	return !engineData_->GetEngine()->get_error();
+}
+bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engine) {
+	// all_func should include ALL engine-side functions so it can 1-1 map a dnh_func_callback_t + arguments to a name + argc
+
+	std::vector<function> all_func(func_);
+	all_func.insert(all_func.end(), parser::base_operations.begin(), parser::base_operations.end());
+
+	// vector of script block pointers for index-find
+
+	std::vector<script_block*> vblocks(engine->blocks.size());
+
+	{
+		size_t i = 0;
+		for (auto& block : engine->blocks) {
+			vblocks[i] = &block;
+			++i;
+		}
+	}
+
+	// ------
+
+	std::ofstream ofs(compilePath, std::ios::binary);
+	if (!ofs.is_open()) _RaiseError(0, L"Error opening compile path");
+
+	auto write = [&](auto* x, std::streamsize sz = 0) {
+		if (sz == 0) sz = sizeof(*x);
+		ofs.write(reinterpret_cast<const char*>(x), sz);
+	};
+
+	// ------
+
+	// grab hold of all types
+
+	std::vector<type_data*> all_types = script_type_manager::get_all_types();
+
+	std::vector<type_data*> types;
+	types.reserve(all_types.size());
+	types.push_back(script_type_manager::get_null_type());
+
+	auto push_type = [&](auto self, type_data* type, type_data* baseType = nullptr) -> size_t {
+		if (baseType == nullptr)
+			baseType = type;
+
+		size_t depth = 1;
+
+		types.push_back(type);
+
+		// If it exists, push the array of that type
+		for (auto& t : all_types) {
+			if (t->get_kind() == type_data::type_kind::tk_array && t->get_element() == type)
+				depth += self(self, t, baseType);
+		}
+
+		return depth;
+	};
+
+	std::vector<size_t> depths = {
+		push_type(push_type, script_type_manager::get_null_array_type()),
+		push_type(push_type, script_type_manager::get_int_type()),
+		push_type(push_type, script_type_manager::get_float_type()),
+		push_type(push_type, script_type_manager::get_char_type()),
+		push_type(push_type, script_type_manager::get_boolean_type())
+		// no ptr type needed, it should be impossible for the user to define them on the script side
+	};
+
+	for (size_t depth : depths)
+		write(&depth);
+
+	// ------
+
+	// Save all engine->blocks
+
+	size_t blocksSize = engine->blocks.size();
+
+	write(&blocksSize);
+
+	for (auto& block : engine->blocks) {
+
+		// --
+
+		uint32_t level = block.level;
+		size_t nameSize = block.name.size();
+		std::string name = block.name;
+		uint8_t kind = (uint8_t)block.kind;
+
+		write(&level);
+		write(&nameSize);
+		write(name.data(), static_cast<std::streamsize>(nameSize * sizeof(char)));
+		write(&kind);
+
+		// --
+
+		uint32_t arguments = block.arguments;
+		int funcIndex = -1;
+
+		if (block.func != nullptr) {
+			bool bFound = false;
+			int i = 0;
+			for (auto& fn : all_func) {
+				if (block.func == fn.func && block.arguments == fn.argc) {
+					funcIndex = i;
+					bFound = true;
+					break;
+				}
+				++i;
+			}
+			if (!bFound) _RaiseError(0, L"Error finding block.func associated name");
+		}
+
+		write(&arguments);
+		write(&funcIndex);
+
+		// --
+
+		size_t codeSize = block.codes.size();
+
+		write(&codeSize);
+
+		for (auto& c : block.codes) {
+			uint32_t line = c.GetLine();
+			uint8_t op = (uint8_t)c.GetOp();
+
+			write(&line);
+			write(&op);
+
+			command_layout layout = (c.GetOp() == command_kind::pc_nop) ? command_layout::cl_esc : layout_table[op];
+			switch (layout) {
+			case command_layout::cl_esc:
+			{
+				break;
+			}
+			case command_layout::cl_arg:
+			{
+				uint32_t arg0 = c.arg0;
+				uint32_t arg1 = c.arg1;
+
+				if ((command_kind)op == command_kind::pc_inline_cast_var) {
+					// This command is particularly nasty, as it casts arg0 to a pointer which will be invalid in the next session
+					// So instead, give it the position of the type that it is supposed to be
+
+					bool bFound = false;
+					for (auto itr = types.begin(); itr != types.end(); ++itr) {
+						if (arg0 == (uint32_t)(*itr)) {
+							bFound = true;
+							ptrdiff_t typeIndex = std::distance(types.begin(), itr);
+							arg0 = (uint32_t)typeIndex;
+							break;
+						}
+					}
+					if (!bFound) _RaiseError(0, StringUtility::Format(L"Error finding variable with type ptr %d", arg0));
+				}
+
+				write(&arg0);
+				write(&arg1);
+
+				break;
+			}
+			case command_layout::cl_blk:
+			{
+				auto blockFind = std::find(vblocks.begin(), vblocks.end(), c.block);
+				if (blockFind == vblocks.end()) _RaiseError(0, L"Error finding code block");
+				ptrdiff_t blockIndex = std::distance(vblocks.begin(), blockFind);
+				uint32_t arg1 = c.arg1;
+
+				write(&blockIndex);
+				write(&arg1);
+
+				break;
+			}
+			case command_layout::cl_val:
+			{
+				if ((command_kind)op == command_kind::pc_push_funcptr) {
+					// This command is particularly nasty, as in the least significant 4 bytes, it stores a pointer which will be invalid in the next session
+					// So instead, give it the position of the script block that it is supposed to be addressing
+
+					value dt = c.data;
+
+					type_data::type_kind kind = dt.get_type()->get_kind();
+
+					if (kind != type_data::type_kind::tk_int)
+						_RaiseError(0, L"funcptr was somehow not an int");
+
+					int64_t _val = dt.as_int();
+					uint64_t val = (uint64_t&)_val;
+
+					uint32_t verif = val >> 48;
+					uint32_t arguments = (val >> 32) & 0xffff;
+					script_block* sub = (script_block*)(val & 0xffffffff);
+
+					if (verif != 0x6a53 || sub == nullptr) {
+						_RaiseError(0, L"Invalid function pointer to " + StringUtility::ConvertMultiToWide(sub->name));
+					}
+
+					auto subIvkFind = std::find(vblocks.begin(), vblocks.end(), sub);
+					if (subIvkFind == vblocks.end()) _RaiseError(0, L"Error finding funcptr script block");
+					ptrdiff_t subIvkIndex = std::distance(vblocks.begin(), subIvkFind);
+
+					write(&subIvkIndex);
+					write(&arguments);
+
+					break;
+				}
+
+				auto write_value = [&](auto self, value val) -> void {
+					type_data::type_kind kind = val.get_type()->get_kind();
+					uint8_t k = (uint8_t)kind;
+
+					write(&k);
+
+					switch (kind) {
+					case type_data::type_kind::tk_null:
+					{
+						break;
+					}
+					case type_data::type_kind::tk_int:
+					{
+						int64_t v = val.as_int();
+
+						write(&v);
+
+						break;
+					}
+					case type_data::type_kind::tk_float:
+					{
+						double v = val.as_float();
+
+						write(&v);
+
+						break;
+					}
+					case type_data::type_kind::tk_char:
+					{
+						wchar_t v = val.as_char();
+
+						write(&v);
+
+						break;
+					}
+					case type_data::type_kind::tk_boolean:
+					{
+						bool v = val.as_boolean();
+
+						write(&v);
+
+						break;
+					}
+					case type_data::type_kind::tk_array:
+					{
+						std::vector<value>* v = val.as_array_ptr().get();
+						size_t vSize = v->size();
+
+						write(&vSize);
+
+						type_data* vtype = val.get_type();
+
+						uint32_t vtypeIndex = 0;
+						bool bFound = false;
+						for (auto itr = types.begin(); itr != types.end(); ++itr) {
+							if (vtype == *itr) {
+								bFound = true;
+								vtypeIndex = (uint32_t)std::distance(types.begin(), itr);
+								break;
+							}
+						}
+						if (!bFound) _RaiseError(0, StringUtility::Format(L"Error finding array type ptr %d %s", vtype, type_data::string_representation(vtype)));
+
+						write(&vtypeIndex);
+
+						for (auto& vIn : *v) {
+							self(self, vIn);
+						}
+
+						break;
+					}
+					case type_data::type_kind::tk_pointer:
+					{
+						_RaiseError(0, L"tk_pointer found where it shouldn't have been");
+						break;
+					}
+					case type_data::type_kind::tk_string:
+					{
+						_RaiseError(0, L"tk_string found where it shouldn't have been");
+						break;
+					}
+					}
+				};
+				
+				write_value(write_value, c.data);
+
+				break;
+			}
+			}
+		}
+
+		// --
+	}
+
+	// ------
+
+	// Save index of main block
+
+	auto mainFind = std::find(vblocks.begin(), vblocks.end(), engine->main_block);
+	if (mainFind == vblocks.end()) _RaiseError(0, L"Error finding main block");
+	ptrdiff_t mainIndex = std::distance(vblocks.begin(), mainFind);
+
+	write(&mainIndex);
+
+	// ------
+
+	size_t eventSize = engine->events.size();
+
+	write(&eventSize);
+
+	// Save event names and indexes of event blocks
+
+	for (auto& event : engine->events) {
+		size_t eventNameSize = event.first.size();
+		std::string eventName = event.first;
+		auto eventFind = std::find(vblocks.begin(), vblocks.end(), event.second);
+		if (eventFind == vblocks.end()) _RaiseError(0, L"Error finding event block");
+		ptrdiff_t eventIndex = std::distance(vblocks.begin(), eventFind);
+
+		write(&eventNameSize);
+		write(eventName.data(), static_cast<std::streamsize>(eventNameSize * sizeof(char)));
+		write(&eventIndex);
+	}
+
+	// ------
+
+	ofs.close();
+
+	return true;
+}
+bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
+	// all_func should include ALL engine-side functions so it can 1-1 map a dnh_func_callback_t + arguments to a name + argc
+
+	std::vector<function> all_func(func_);
+	all_func.insert(all_func.end(), parser::base_operations.begin(), parser::base_operations.end());
+
+	// ------
+
+	std::ifstream ifs(compilePath, std::ios::binary);
+	if (!ifs.is_open()) _RaiseError(0, L"Error opening compile path");
+
+	auto read = [&](auto* x, std::streamsize sz = 0) {
+		if (sz == 0) sz = sizeof(*x);
+		ifs.read(reinterpret_cast<char*>(x), sz);
+	};
+
+	// ------
+
+	// grab hold of all types
+
+	std::vector<type_data*> all_types = script_type_manager::get_all_types();
+
+	std::vector<type_data*> types;
+	types.push_back(script_type_manager::get_null_type());
+
+	std::vector<type_data*> baseTypes = {
+		script_type_manager::get_null_array_type(),
+		script_type_manager::get_int_type(),
+		script_type_manager::get_float_type(),
+		script_type_manager::get_char_type(),
+		script_type_manager::get_boolean_type()
+	};
+
+	for (size_t i = 0; i < baseTypes.size(); ++i) {
+		size_t depth; read(&depth);
+
+		type_data* type = baseTypes[i];
+
+		for (size_t j = 0; j < depth; ++j) {
+			types.push_back(type);
+
+			if (j < depth - 1) {
+				bool bFound = false;
+				for (auto& t : all_types) {
+					if (t->get_kind() == type_data::type_kind::tk_array && t->get_element() == type) {
+						bFound = true;
+						type = t;
+						break;
+					}
+				}
+				if (!bFound) {
+					type = script_type_manager::create_type(type_data::type_kind::tk_array, type);
+				}
+			}
+		}
+	}
+
+	// ------
+
+	unique_ptr<script_engine> engine(new script_engine());
+
+	// ------
+
+	// Initialize empty script blocks
+
+	size_t blocksSize; read(&blocksSize);
+
+	std::vector<script_block*> vblocks(blocksSize);
+
+	for (size_t i = 0; i < blocksSize; ++i) {
+		script_block* b = engine->new_block(0, block_kind::bk_normal);
+		vblocks[i] = b;
+	}
+
+	// ------
+
+	size_t blocksRead = 0;
+
+	for (auto& block : engine->blocks) {
+
+		// --
+
+		uint32_t level; read(&level);
+		size_t nameSize; read(&nameSize);
+		std::string name;
+		name.resize(nameSize);
+		read(name.data(), static_cast<std::streamsize>(nameSize * sizeof(char)));
+		uint8_t kind; read(&kind);
+
+		block.level = level;
+		block.name = name;
+		block.kind = (block_kind)kind;
+
+		// --
+
+		uint32_t arguments; read(&arguments);
+		int funcIndex; read(&funcIndex);
+
+		block.arguments = arguments;
+		block.func = (funcIndex >= 0) ? all_func[funcIndex].func : nullptr;
+
+		// --
+
+		size_t codeSize; read(&codeSize);
+
+		block.codes.resize(codeSize);
+
+		size_t codesRead = 0;
+
+		for (auto& c : block.codes) {
+			uint32_t line; read(&line);
+			uint8_t op; read(&op);
+
+			command_kind kind = (command_kind)op;
+
+			c.SetLine(line);
+			c.SetOp(kind);
+
+			command_layout layout = (kind == command_kind::pc_nop) ? command_layout::cl_esc : layout_table[op];
+			switch (layout) {
+			case command_layout::cl_esc:
+			{
+				break;
+			}
+			case command_layout::cl_arg:
+			{
+				uint32_t arg0; read(&arg0);
+				uint32_t arg1; read(&arg1);
+
+				if (kind == command_kind::pc_inline_cast_var) {
+					// This command is handled such that the correct type is in types at the index contained in arg0
+					c.arg0 = (uint32_t)types[arg0];
+				}
+				else {
+					c.arg0 = arg0;
+				}
+
+				c.arg1 = arg1;
+
+				break;
+			}
+			case command_layout::cl_blk:
+			{
+				ptrdiff_t blockIndex; read(&blockIndex);
+				uint32_t arg1; read(&arg1);
+
+				c.block = vblocks[blockIndex];
+				c.arg1 = arg1;
+
+				break;
+			}
+			case command_layout::cl_val:
+			{
+				if ((command_kind)op == command_kind::pc_push_funcptr) {
+					// This command is particularly nasty, as in the least significant 4 bytes, it traditionally stores a pointer which would now be invalid
+					// So instead, the binary serialization contains position of the script block that it is supposed to be addressing
+
+					ptrdiff_t subIvkIndex; read(&subIvkIndex);
+					uint32_t arguments; read(&arguments);
+
+					script_block* subIvk = vblocks[subIvkIndex];
+
+					uint64_t val = 0;
+
+					val |= (uint64_t)subIvk & 0xffffffff;
+					val |= (uint64_t)(arguments & 0xffff) << 32;
+					val |= (uint64_t)0x6a53 << 48;
+
+					c.data = CreateIntValue((int64_t&)val);
+
+					break;
+				}
+
+				auto read_value = [&](auto self) -> value {
+					uint8_t k; read(&k);
+					type_data::type_kind kind = (type_data::type_kind)k;
+
+					switch (kind) {
+					case type_data::type_kind::tk_null:
+					{
+						return value();
+
+						break;
+					}
+					case type_data::type_kind::tk_int:
+					{
+						int64_t v; read(&v);
+
+						return CreateIntValue(v);
+
+						break;
+					}
+					case type_data::type_kind::tk_float:
+					{
+						double v; read(&v);
+
+						return CreateFloatValue(v);
+
+						break;
+					}
+					case type_data::type_kind::tk_char:
+					{
+						wchar_t v; read(&v);
+
+						return CreateCharValue(v);
+
+						break;
+					}
+					case type_data::type_kind::tk_boolean:
+					{
+						bool v; read(&v);
+
+						return CreateBooleanValue(v);
+
+						break;
+					}
+					case type_data::type_kind::tk_array:
+					{
+						size_t vSize; read(&vSize);
+
+						ptrdiff_t vtypeIndex; read(&vtypeIndex);
+
+						type_data* type_arr = types[vtypeIndex];
+
+						if (vSize == 0) {
+							std::vector<value> vec;
+							value vs;
+							vs.reset(type_arr, vec);
+							return vs;
+						}
+
+						// Below is the equivalent code from pc_construct_array
+
+						std::vector<value> vs(vSize);
+
+						for (size_t i = 0; i < vSize; ++i) {
+							vs[i] = self(self);
+						}
+
+						std::vector<value> res_arr(vSize);
+
+						type_data* type_elem = vs[0].get_type();
+
+						for (size_t i = 0; i < vSize; ++i) {
+							BaseFunction::_append_check(nullptr, type_arr, vs[i].get_type());
+							{
+								value appending = vs[i];
+								if (appending.get_type()->get_kind() != type_elem->get_kind()) {
+									appending.make_unique();
+									BaseFunction::_value_cast(&appending, type_elem);
+								}
+								res_arr[i] = appending;
+							}
+						}
+
+						value vres;
+						vres.reset(type_arr, res_arr);
+						return vres;
+
+						break;
+					}
+					default:
+					{
+						_RaiseError(0, L"Error reading cl_val");
+
+						return value();
+
+						break;
+					}
+					}
+				};
+
+				c.data = read_value(read_value);
+
+				break;
+			}
+			default:
+			{
+				_RaiseError(0, StringUtility::Format(L"Error reading command_layout %ld / %ld of block %ld / %ld", codesRead, codeSize, blocksRead, blocksSize));
+
+				break;
+			}
+			}
+
+			++codesRead;
+		}
+
+		++blocksRead;
+
+		// --
+	}
+
+	// ------
+
+	ptrdiff_t mainIndex; read(&mainIndex);
+	engine->main_block = vblocks[mainIndex];
+
+	// ------
+
+	engine->events = std::map<std::string, script_block*>();
+
+	size_t eventSize; read(&eventSize);
+
+	for (size_t i = 0; i < eventSize; ++i) {
+		size_t eventNameSize; read(&eventNameSize);
+		std::string eventName;
+		eventName.resize(eventNameSize);
+		read(eventName.data(), static_cast<std::streamsize>(eventNameSize * sizeof(char)));
+		ptrdiff_t eventIndex; read(&eventIndex);
+		engine->events.emplace(eventName, vblocks[eventIndex]);
+	}
+
+	// ------
+
+	ifs.close();
+
+	engine->error = false;
+	engine->error_message = L"";
+	engine->error_line = 0;
+
+	engineData_->SetEngine(std::move(engine));
+
+	return true;
 }
 bool ScriptClientBase::SetSourceFromFile(std::wstring path) {
 	path = PathProperty::GetUnique(path);
@@ -602,22 +1187,22 @@ void ScriptClientBase::Compile() {
 
 		bool bLoad = !File::IsExists(PathProperty::GetModuleDirectory() + L".recompile");
 
-		if (bLoad && File::IsExists(compilePath)) {
-			// This is about 50x faster
-			std::vector<char> source = _LoadScriptSource(compilePath);
-			engineData_->SetSource(source);
-		}
-		else {
+		bool bLoaded = false;
+
+		if (bLoad && File::IsExists(compilePath))
+			bLoaded = _LoadEngine(compilePath);
+
+		if (!bLoaded) {
 			std::vector<char> source = _ParseScriptSource(engineData_->GetSource());
 			engineData_->SetSource(source);
 
-			_SaveScriptSource(compilePath, source);
-		}
+			bool bCreateSuccess = _CreateEngine();
+			if (!bCreateSuccess) {
+				bError_ = true;
+				_RaiseErrorFromEngine();
+			}
 
-		bool bCreateSuccess = _CreateEngine(); // this part is long, still needs to be saved and loaded with appropriate .dnho
-		if (!bCreateSuccess) {
-			bError_ = true;
-			_RaiseErrorFromEngine();
+			_SaveEngine(compilePath, engineData_->GetEngine().get());
 		}
 	}
 

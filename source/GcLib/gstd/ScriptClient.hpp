@@ -133,9 +133,9 @@ namespace gstd {
 		std::wstring _GetErrorLineSource(int line);
 
 		virtual std::vector<char> _ParseScriptSource(std::vector<char>& source);
-		virtual bool _SaveScriptSource(std::wstring compilePath, const std::vector<char>& src);
-		virtual std::vector<char> _LoadScriptSource(std::wstring path);
 		virtual bool _CreateEngine();
+		virtual bool _SaveEngine(std::wstring compilePath, gstd::script_engine* engine);
+		virtual bool _LoadEngine(std::wstring compilePath);
 
 		std::wstring _ExtendPath(std::wstring path);
 	public:
@@ -188,6 +188,8 @@ namespace gstd {
 		template<size_t N> static inline value CreateFloatArrayValue(const Math::DVec<N>& arr);
 		template<typename T> static inline value CreateIntArrayValue(const std::vector<T>& list);
 		template<typename T> static value CreateIntArrayValue(const T* ptrList, size_t count);
+		template<typename T> static inline value CreateBooleanArrayValue(const std::vector<T>& list);
+		template<typename T> static value CreateBooleanArrayValue(const T* ptrList, size_t count);
 		static value CreateStringArrayValue(const std::vector<std::string>& list);
 		static value CreateStringArrayValue(const std::vector<std::wstring>& list);
 		value CreateValueArrayValue(const std::vector<value>& list);
@@ -493,6 +495,27 @@ namespace gstd {
 			res_arr.resize(count);
 			for (size_t iVal = 0U; iVal < count; ++iVal) {
 				res_arr[iVal] = value(type_int, (int64_t)(ptrList[iVal]));
+			}
+
+			value res;
+			res.reset(type_arr, res_arr);
+			return res;
+		}
+		return value(type_arr, std::wstring());
+	}
+
+	template<typename T> value ScriptClientBase::CreateBooleanArrayValue(const std::vector<T>& list) {
+		return CreateBooleanArrayValue(list.data(), list.size());
+	}
+	template<typename T>
+	value ScriptClientBase::CreateBooleanArrayValue(const T* ptrList, size_t count) {
+		type_data* type_bool = script_type_manager::get_boolean_type();
+		type_data* type_arr = script_type_manager::get_boolean_array_type();
+		if (ptrList && count > 0) {
+			std::vector<value> res_arr;
+			res_arr.resize(count);
+			for (size_t iVal = 0U; iVal < count; ++iVal) {
+				res_arr[iVal] = value(type_bool, (bool)(ptrList[iVal]));
 			}
 
 			value res;

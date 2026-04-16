@@ -56,6 +56,7 @@ code::code(const code& src) {
 code::~code() {
 	switch (GetOp()) {
 	case command_kind::pc_push_value:
+	case command_kind::pc_push_funcptr:
 		data.~value();
 		break;
 	}
@@ -67,6 +68,7 @@ code& code::operator=(const code& src) {
 
 	switch (src.GetOp()) {
 	case command_kind::pc_push_value:
+	case command_kind::pc_push_funcptr:
 		new (&data) value(src.data);
 		break;
 	default:
@@ -118,7 +120,7 @@ parser::symbol::symbol(uint32_t lv, type_data* type_, uint32_t var_, bool bConst
 
 //=========================================================================
 
-static const std::vector<function> base_operations = {
+const std::vector<function> parser::base_operations = {
 	{ "not", BaseFunction::not_, 1 },
 	{ "negative", BaseFunction::negative, 1 },
 	{ "predecessor", BaseFunction::predecessor, 1 },
@@ -1017,7 +1019,7 @@ continue_as_variadic:
 		val |= (uint64_t)(s->sub->arguments & 0xffff) << 32;
 		val |= (uint64_t)0x6a53 << 48;
 
-		state->AddCode(block, code(command_kind::pc_push_value,
+		state->AddCode(block, code(command_kind::pc_push_funcptr,
 			value(script_type_manager::get_int_type(), (int64_t&)val)));
 
 		return;
@@ -2622,7 +2624,8 @@ void parser::optimize_expression(script_block* block, parser_state_t* state) {
 					code* ptrPushValueCode = ptrBack + 1;
 					for (size_t i = 0; i < sizeArray; ++i) {
 						--ptrPushValueCode;
-						if (ptrPushValueCode->GetOp() != command_kind::pc_push_value)
+						if (ptrPushValueCode->GetOp() != command_kind::pc_push_value
+							&& ptrPushValueCode->GetOp() != command_kind::pc_push_funcptr)
 							goto lab_opt_construct_array_cancel;
 					}
 					//Make sure the previous value was not part of a ternary statement

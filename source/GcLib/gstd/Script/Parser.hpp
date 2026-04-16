@@ -19,6 +19,7 @@ namespace gstd {
 
 		pc_pop,					//Pop [arg0] values from stack
 		pc_push_value,			//Push value=[data] to stack
+		pc_push_funcptr,		//Push value=[data] to stack (special flag for binary serialization)
 		pc_push_variable,		//Push value of variable=[arg0, arg1] to stack
 		pc_push_variable2,		//Push pointer of variable=[arg0, arg1] to stack
 		pc_dup_n,				//Push {esp-[arg0]} to stack
@@ -122,6 +123,7 @@ namespace gstd {
 
 		/* pc_pop */ command_layout::cl_arg,
 		/* pc_push_value */ command_layout::cl_val,
+		/* pc_push_funcptr */ command_layout::cl_val,
 		/* pc_push_variable */ command_layout::cl_arg,
 		/* pc_push_variable2 */ command_layout::cl_arg,
 		/* pc_dup_n */ command_layout::cl_arg,
@@ -448,6 +450,8 @@ namespace gstd {
 		inline static bool IsDeclToken(token_kind tk);
 
 		inline static command_kind get_replacing_jump(command_kind c);
+	public:
+		static const std::vector<gstd::function> base_operations;
 	};
 
 	void parser::parser_assert(bool expr, const std::wstring& error) {
