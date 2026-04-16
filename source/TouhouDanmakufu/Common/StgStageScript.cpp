@@ -5878,11 +5878,13 @@ gstd::value StgStageScript::Func_ObjPatternShot_FireReturn(gstd::script_machine*
 	int id = argv[0].as_int();
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
 
-	std::vector<int> res;
-	if (obj) 
-		obj->FireSet(machine->data, stageController, &res);
+	std::vector<int>* res;
+	if (obj) {
+		res = obj->GetFireVector();
+		obj->FireSet(machine->data, stageController, res);
+	}
 
-	return script->CreateIntArrayValue(res);
+	return script->CreateIntArrayValue(res ? *res : std::vector<int>());
 }
 gstd::value StgStageScript::Func_ObjPatternShot_ClearWaiting(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;

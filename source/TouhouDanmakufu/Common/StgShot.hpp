@@ -797,6 +797,7 @@ private:
 	int repeatCount_;
 	std::vector<std::pair<gstd::script_machine*, gstd::script_block*>> fireCallback_;
 	std::vector<std::pair<gstd::script_machine*, gstd::script_block*>> tickCallback_;
+	std::vector<int> fireRes_;
 	std::vector<int> tickRes_;
 
 	//Calculate the sets in order-------------------------------------
@@ -857,9 +858,13 @@ public:
 		repeatCount_ = 0;
 		if (subIvkFire != nullptr)
 			fireCallback_.push_back(std::pair<gstd::script_machine*, gstd::script_block*>(machine, subIvkFire));
-		if (subIvkTick != nullptr)
+		if (subIvkTick != nullptr) {
 			tickCallback_.push_back(std::pair<gstd::script_machine*, gstd::script_block*>(machine, subIvkTick));
+			tickRes_.reserve(64U);
+		}
 	}
+
+	std::vector<int>* GetFireVector() { return &fireRes_; }
 
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);
 

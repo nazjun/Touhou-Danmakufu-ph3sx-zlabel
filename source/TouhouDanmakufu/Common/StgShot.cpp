@@ -2826,6 +2826,8 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	repeatCount_ = 0;
 	fireCallback_.clear();
 	tickCallback_.clear();
+	fireRes_.clear();
+	fireRes_.reserve(128U);
 	tickRes_.clear();
 
 	basePointX_ = BASEPOINT_RESET;
@@ -2900,6 +2902,7 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 	repeatCount_ = src->repeatCount_;
 	fireCallback_ = src->fireCallback_;
 	tickCallback_ = src->tickCallback_;
+	fireRes_ = src->fireRes_;
 	tickRes_ = src->tickRes_;
 
 	basePointX_ = src->basePointX_;
@@ -2931,8 +2934,7 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 void StgShotPatternGeneratorObject::Work() {
 	if (repeatTimes_ != 0 && repeatNext_ <= frameExist_) {
 		if (!fireCallback_.empty()) {
-			std::vector<int> res;
-			FireSet(scriptData_, controller_, &res);
+			FireSet(scriptData_, controller_, &fireRes_);
 
 			for (auto& callback : fireCallback_) {
 				script_machine* machine = callback.first;
@@ -2944,7 +2946,7 @@ void StgShotPatternGeneratorObject::Work() {
 				for (int i = subIvk->arguments - 1; i >= 0; --i) {
 					switch (i) {
 					case 0: e->stack.push_back(script->CreateIntValue(idObject_)); break;
-					case 1: e->stack.push_back(script->CreateIntArrayValue(res)); break;
+					case 1: e->stack.push_back(script->CreateIntArrayValue(fireRes_)); break;
 					case 2: e->stack.push_back(script->CreateIntValue(repeatCount_)); break;
 					}
 				}
