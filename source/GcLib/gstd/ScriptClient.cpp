@@ -656,14 +656,12 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 					// This command is particularly nasty, as in the least significant 4 bytes, it stores a pointer which will be invalid in the next session
 					// So instead, give it the position of the script block that it is supposed to be addressing
 
-					value dt = c.data;
-
-					type_data::type_kind kind = dt.get_type()->get_kind();
+					type_data::type_kind kind = c.data.get_type()->get_kind();
 
 					if (kind != type_data::type_kind::tk_int)
 						_RaiseError(0, L"funcptr was somehow not an int");
 
-					int64_t _val = dt.as_int();
+					int64_t _val = c.data.as_int();
 					uint64_t val = (uint64_t&)_val;
 
 					uint32_t verif = val >> 48;
@@ -684,8 +682,8 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 					break;
 				}
 
-				auto write_value = [&](auto self, value val) -> void {
-					type_data::type_kind kind = val.get_type()->get_kind();
+				auto write_value = [&](auto self, value* val) -> void {
+					type_data::type_kind kind = val->get_type()->get_kind();
 					uint8_t k = (uint8_t)kind;
 
 					write(&k);
@@ -697,7 +695,7 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 					}
 					case type_data::type_kind::tk_int:
 					{
-						int64_t v = val.as_int();
+						int64_t v = val->as_int();
 
 						write(&v);
 
@@ -705,7 +703,7 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 					}
 					case type_data::type_kind::tk_float:
 					{
-						double v = val.as_float();
+						double v = val->as_float();
 
 						write(&v);
 
@@ -713,7 +711,7 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 					}
 					case type_data::type_kind::tk_char:
 					{
-						wchar_t v = val.as_char();
+						wchar_t v = val->as_char();
 
 						write(&v);
 
@@ -721,7 +719,7 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 					}
 					case type_data::type_kind::tk_boolean:
 					{
-						bool v = val.as_boolean();
+						bool v = val->as_boolean();
 
 						write(&v);
 
@@ -729,12 +727,12 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 					}
 					case type_data::type_kind::tk_array:
 					{
-						std::vector<value>* v = val.as_array_ptr().get();
+						std::vector<value>* v = val->as_array_ptr().get();
 						size_t vSize = v->size();
 
 						write(&vSize);
 
-						type_data* vtype = val.get_type();
+						type_data* vtype = val->get_type();
 
 						uint32_t vtypeIndex = 0;
 						bool bFound = false;
@@ -750,7 +748,7 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 						write(&vtypeIndex);
 
 						for (auto& vIn : *v) {
-							self(self, vIn);
+							self(self, &vIn);
 						}
 
 						break;
@@ -768,7 +766,7 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 					}
 				};
 				
-				write_value(write_value, c.data);
+				write_value(write_value, &c.data);
 
 				break;
 			}
@@ -919,23 +917,19 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 
 		size_t codeSize; read(&codeSize);
 
-		block.codes.resize(codeSize);
+		block.codes.reserve(codeSize);
 
-		size_t codesRead = 0;
-
-		for (auto& c : block.codes) {
+		for (size_t ic = 0; ic < codeSize; ++ic) {
 			uint32_t line; read(&line);
 			uint8_t op; read(&op);
 
 			command_kind kind = (command_kind)op;
 
-			c.SetLine(line);
-			c.SetOp(kind);
-
 			command_layout layout = (kind == command_kind::pc_nop) ? command_layout::cl_esc : layout_table[op];
 			switch (layout) {
 			case command_layout::cl_esc:
 			{
+				block.codes.push_back(code(kind));
 				break;
 			}
 			case command_layout::cl_arg:
@@ -943,15 +937,11 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 				uint32_t arg0; read(&arg0);
 				uint32_t arg1; read(&arg1);
 
-				if (kind == command_kind::pc_inline_cast_var) {
-					// This command is handled such that the correct type is in types at the index contained in arg0
-					c.arg0 = (uint32_t)types[arg0];
-				}
-				else {
-					c.arg0 = arg0;
-				}
-
-				c.arg1 = arg1;
+				// This command is handled such that the correct type is in types at the index contained in arg0
+				if (kind == command_kind::pc_inline_cast_var)
+					block.codes.push_back(code(kind, (uint32_t)types[arg0], arg1));
+				else
+					block.codes.push_back(code(kind, arg0, arg1));
 
 				break;
 			}
@@ -960,8 +950,7 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 				ptrdiff_t blockIndex; read(&blockIndex);
 				uint32_t arg1; read(&arg1);
 
-				c.block = vblocks[blockIndex];
-				c.arg1 = arg1;
+				block.codes.push_back(code(kind, (uint32_t)vblocks[blockIndex], arg1));
 
 				break;
 			}
@@ -982,7 +971,7 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 					val |= (uint64_t)(arguments & 0xffff) << 32;
 					val |= (uint64_t)0x6a53 << 48;
 
-					c.data = CreateIntValue((int64_t&)val);
+					block.codes.push_back(code(kind, CreateIntValue((int64_t&)val)));
 
 					break;
 				}
@@ -1047,26 +1036,23 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 
 						// Below is the equivalent code from pc_construct_array
 
-						std::vector<value> vs(vSize);
+						std::vector<value> res_arr;
+						res_arr.reserve(vSize);
+
+						value appending = self(self);
+						type_data* type_elem = appending.get_type();
 
 						for (size_t i = 0; i < vSize; ++i) {
-							vs[i] = self(self);
-						}
-
-						std::vector<value> res_arr(vSize);
-
-						type_data* type_elem = vs[0].get_type();
-
-						for (size_t i = 0; i < vSize; ++i) {
-							BaseFunction::_append_check(nullptr, type_arr, vs[i].get_type());
+							BaseFunction::_append_check(nullptr, type_arr, appending.get_type());
 							{
-								value appending = vs[i];
 								if (appending.get_type()->get_kind() != type_elem->get_kind()) {
 									appending.make_unique();
 									BaseFunction::_value_cast(&appending, type_elem);
 								}
-								res_arr[i] = appending;
+								res_arr.push_back(appending);
 							}
+							if (i < vSize - 1)
+								appending = self(self);
 						}
 
 						value vres;
@@ -1086,19 +1072,17 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 					}
 				};
 
-				c.data = read_value(read_value);
+				block.codes.push_back(code(kind, read_value(read_value)));
 
 				break;
 			}
 			default:
 			{
-				_RaiseError(0, StringUtility::Format(L"Error reading command_layout %ld / %ld of block %ld / %ld", codesRead, codeSize, blocksRead, blocksSize));
+				_RaiseError(0, StringUtility::Format(L"Error reading command_layout %ld / %ld of block %ld / %ld", ic, codeSize, blocksRead, blocksSize));
 
 				break;
 			}
 			}
-
-			++codesRead;
 		}
 
 		++blocksRead;
