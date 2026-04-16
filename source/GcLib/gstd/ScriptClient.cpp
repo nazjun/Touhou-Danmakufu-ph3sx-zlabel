@@ -668,9 +668,8 @@ bool ScriptClientBase::_SaveEngine(std::wstring compilePath, script_engine* engi
 					uint32_t arguments = (val >> 32) & 0xffff;
 					script_block* sub = (script_block*)(val & 0xffffffff);
 
-					if (verif != 0x6a53 || sub == nullptr) {
+					if (verif != 0x6a53 || sub == nullptr)
 						_RaiseError(0, L"Invalid function pointer to " + StringUtility::ConvertMultiToWide(sub->name));
-					}
 
 					auto subIvkFind = std::find(vblocks.begin(), vblocks.end(), sub);
 					if (subIvkFind == vblocks.end()) _RaiseError(0, L"Error finding funcptr script block");
@@ -879,11 +878,12 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 
 	size_t blocksSize; read(&blocksSize);
 
-	std::vector<script_block*> vblocks(blocksSize);
+	std::vector<script_block*> vblocks;
+	vblocks.reserve(blocksSize);
 
 	for (size_t i = 0; i < blocksSize; ++i) {
-		script_block* b = engine->new_block(0, block_kind::bk_normal);
-		vblocks[i] = b;
+		script_block& b = engine->blocks.emplace_back(0, block_kind::bk_normal);
+		vblocks.push_back(&b);
 	}
 
 	// ------
@@ -929,7 +929,7 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 			switch (layout) {
 			case command_layout::cl_esc:
 			{
-				block.codes.push_back(code(kind));
+				block.codes.emplace_back(kind);
 				break;
 			}
 			case command_layout::cl_arg:
@@ -939,9 +939,9 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 
 				// This command is handled such that the correct type is in types at the index contained in arg0
 				if (kind == command_kind::pc_inline_cast_var)
-					block.codes.push_back(code(kind, (uint32_t)types[arg0], arg1));
+					block.codes.emplace_back(kind, (uint32_t)types[arg0], arg1);
 				else
-					block.codes.push_back(code(kind, arg0, arg1));
+					block.codes.emplace_back(kind, arg0, arg1);
 
 				break;
 			}
@@ -950,7 +950,7 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 				ptrdiff_t blockIndex; read(&blockIndex);
 				uint32_t arg1; read(&arg1);
 
-				block.codes.push_back(code(kind, (uint32_t)vblocks[blockIndex], arg1));
+				block.codes.emplace_back(kind, (uint32_t)vblocks[blockIndex], arg1);
 
 				break;
 			}
@@ -971,7 +971,7 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 					val |= (uint64_t)(arguments & 0xffff) << 32;
 					val |= (uint64_t)0x6a53 << 48;
 
-					block.codes.push_back(code(kind, CreateIntValue((int64_t&)val)));
+					block.codes.emplace_back(kind, CreateIntValue((int64_t&)val));
 
 					break;
 				}
@@ -1072,7 +1072,7 @@ bool ScriptClientBase::_LoadEngine(std::wstring compilePath) {
 					}
 				};
 
-				block.codes.push_back(code(kind, read_value(read_value)));
+				block.codes.emplace_back(kind, read_value(read_value));
 
 				break;
 			}
