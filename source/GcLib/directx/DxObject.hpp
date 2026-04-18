@@ -21,6 +21,32 @@ namespace directx {
 	class DxScriptObjectBase {
 		friend DxScript;
 		friend DxScriptObjectManager;
+	public:
+		struct DxCallback {
+			gstd::script_machine* machine = nullptr;
+			gstd::script_block* block = nullptr;
+			std::vector<gstd::value> args;
+
+			DxCallback() = default;
+			DxCallback(gstd::script_machine* m, gstd::script_block* b, std::vector<gstd::value> a) : machine(m), block(b), args(std::move(a)) {}
+
+			void call() {
+				if (machine == nullptr || block == nullptr)
+					return;
+
+				if (block->func)
+					block->func(machine, block->arguments, args.data());
+				else {
+					auto itr = machine->current_thread_index;
+					machine->current_thread_index = machine->threads.begin();
+					gstd::script_machine::environment* e = (block->kind == gstd::block_kind::bk_tcall)
+						? machine->add_thread(block) : machine->add_child_block(block);
+					for (int i = args.size() - 1; i >= 0; --i)
+						e->stack.push_back(args[i]);
+					machine->current_thread_index = itr;
+				}
+			}
+		};
 	protected:
 		DxScriptObjectManager* manager_;
 
@@ -28,7 +54,7 @@ namespace directx {
 		TypeObject typeObject_;
 		int64_t idScript_;
 
-		std::vector<std::tuple<gstd::script_machine*, gstd::script_block*, std::vector<gstd::value>>> deleteCallback_;
+		std::vector<DxCallback> deleteCallback_;
 
 		bool bDelete_;
 		bool bActive_;

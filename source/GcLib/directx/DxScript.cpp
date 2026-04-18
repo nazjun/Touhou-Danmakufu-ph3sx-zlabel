@@ -2701,7 +2701,8 @@ value DxScript::Func_Obj_SetDeleteCallback(script_machine* machine, int argc, co
 				script->RaiseError("Too many arguments provided for function pointer.");
 
 			std::vector<value> args(argv + 2, argv + 2 + subIvk->arguments);
-			obj->deleteCallback_.push_back(std::tuple<script_machine*, script_block*, std::vector<gstd::value>>(machine, subIvk, args));
+
+			obj->deleteCallback_.emplace_back(machine, subIvk, args);
 		}
 	}
 	return value();

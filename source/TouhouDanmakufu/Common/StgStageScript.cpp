@@ -4299,7 +4299,8 @@ gstd::value StgStageScript::Func_ObjEnemy_SetDeathCallback(gstd::script_machine*
 				script->RaiseError("Too many arguments provided for function pointer.");
 
 			std::vector<value> args(argv + 2, argv + 2 + subIvk->arguments);
-			obj->SetLifeCallback(machine, subIvk, args);
+
+			obj->GetLifeCallback()->emplace_back(machine, subIvk, args);
 		}
 	}
 	return value();

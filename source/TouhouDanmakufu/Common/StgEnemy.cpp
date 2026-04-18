@@ -198,26 +198,8 @@ void StgEnemyObject::Work() {
 	damageAccumFrame_ = 0;
 
 	if (life_ <= 0 && !lifeCallback_.empty()) {
-		for (auto& callback : lifeCallback_) {
-			script_machine* machine = std::get<0>(callback);
-			script_block* subIvk = std::get<1>(callback);
-			std::vector<value>* args = &std::get<2>(callback);
-
-			if (subIvk->func)
-				subIvk->func(machine, subIvk->arguments, args->data());
-			else {
-				auto currItr = machine->current_thread_index;
-				machine->current_thread_index = machine->threads.begin();
-
-				script_machine::environment* e = (subIvk->kind == block_kind::bk_tcall)
-					? machine->add_thread(subIvk) : machine->add_child_block(subIvk);
-
-				for (int i = args->size() - 1; i >= 0; --i)
-					e->stack.push_back((*args)[i]);
-
-				machine->current_thread_index = currItr;
-			}
-		}
+		for (auto& callback : lifeCallback_)
+			callback.call();
 		lifeCallback_.clear();
 	}
 

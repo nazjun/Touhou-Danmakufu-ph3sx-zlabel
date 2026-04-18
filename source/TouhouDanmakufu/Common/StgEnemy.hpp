@@ -59,7 +59,7 @@ protected:
 	double lifePrev_;
 	double lifeDelta_;
 
-	std::vector<std::tuple<gstd::script_machine*, gstd::script_block*, std::vector<gstd::value>>> lifeCallback_;
+	std::vector<DxCallback> lifeCallback_;
 
 	double rateDamageShot_;
 	double rateDamageSpell_;
@@ -109,9 +109,7 @@ public:
 	void AddLife(double inc);
 	void AddLife2(double inc);
 
-	void SetLifeCallback(gstd::script_machine* machine, gstd::script_block* subIvk, std::vector<gstd::value> args) {
-		lifeCallback_.push_back(std::tuple<gstd::script_machine*, gstd::script_block*, std::vector<gstd::value>>(machine, subIvk, args));
-	}
+	std::vector<DxCallback>* GetLifeCallback() { return &lifeCallback_; }
 
 	void SetDamageRate(double rateShot, double rateSpell) { rateDamageShot_ = rateShot; rateDamageSpell_ = rateSpell; }
 	double GetShotDamageRate() { return rateDamageShot_; }

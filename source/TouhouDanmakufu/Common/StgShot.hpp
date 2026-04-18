@@ -766,6 +766,15 @@ public:
 
 		BASEPOINT_RESET = -256 * 256,
 	};
+public:
+	struct StgHoldShot {
+		StgShotManager* manager;
+		ref_unsync_ptr<StgShotObject> shot;
+		ref_unsync_weak_ptr<StgMoveParent> parent;
+		uint32_t frame;
+
+		StgHoldShot(StgShotManager* m, ref_unsync_ptr<StgShotObject> s, ref_unsync_weak_ptr<StgMoveParent> p, uint32_t f) : manager(m), shot(s), parent(p), frame(f) {}
+	};
 private:
 	void* scriptData_;
 	StgStageController* controller_;
@@ -789,14 +798,14 @@ private:
 
 	int wayWait_;
 	int stackWait_;
-	std::vector<std::tuple<size_t, ref_unsync_ptr<StgShotObject>, ref_unsync_weak_ptr<StgMoveParent>, StgShotManager*>> shotsWaiting_;
+	std::vector<StgHoldShot> shotsWaiting_;
 
 	int repeatNext_;
 	int repeatWait_;
 	int repeatTimes_;
 	int repeatCount_;
-	std::vector<std::pair<gstd::script_machine*, gstd::script_block*>> fireCallback_;
-	std::vector<std::pair<gstd::script_machine*, gstd::script_block*>> tickCallback_;
+	DxCallback fireCallback_;
+	DxCallback tickCallback_;
 	std::vector<int> fireRes_;
 	std::vector<int> tickRes_;
 
@@ -856,10 +865,13 @@ public:
 		repeatWait_ = repeatWait;
 		repeatTimes_ = repeatTimes;
 		repeatCount_ = 0;
-		if (subIvkFire != nullptr)
-			fireCallback_.push_back(std::pair<gstd::script_machine*, gstd::script_block*>(machine, subIvkFire));
+		if (subIvkFire != nullptr) {
+			fireCallback_.machine = machine;
+			fireCallback_.block = subIvkFire;
+		}
 		if (subIvkTick != nullptr) {
-			tickCallback_.push_back(std::pair<gstd::script_machine*, gstd::script_block*>(machine, subIvkTick));
+			tickCallback_.machine = machine;
+			tickCallback_.block = subIvkTick;
 			tickRes_.reserve(64U);
 		}
 	}

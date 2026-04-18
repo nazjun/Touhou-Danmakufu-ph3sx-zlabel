@@ -2824,8 +2824,7 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	repeatWait_ = 0;
 	repeatTimes_ = 0;
 	repeatCount_ = 0;
-	fireCallback_.clear();
-	tickCallback_.clear();
+
 	fireRes_.clear();
 	fireRes_.reserve(128U);
 	tickRes_.clear();
@@ -2933,24 +2932,22 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 
 void StgShotPatternGeneratorObject::Work() {
 	if (repeatTimes_ != 0 && repeatNext_ <= frameExist_) {
-		if (!fireCallback_.empty()) {
+		if (fireCallback_.machine != nullptr && fireCallback_.block != nullptr) {
 			FireSet(scriptData_, controller_, &fireRes_);
 
-			for (auto& callback : fireCallback_) {
-				script_machine* machine = callback.first;
-				script_block* subIvk = callback.second;
-				DxScript* script = (DxScript*)machine->data;
+			fireCallback_.args.clear();
 
-				script_machine::environment* e = machine->add_child_block(subIvk);
+			DxScript* script = (DxScript*)(fireCallback_.machine->data);
 
-				for (int i = subIvk->arguments - 1; i >= 0; --i) {
-					switch (i) {
-					case 0: e->stack.push_back(script->CreateIntValue(idObject_)); break;
-					case 1: e->stack.push_back(script->CreateIntArrayValue(fireRes_)); break;
-					case 2: e->stack.push_back(script->CreateIntValue(repeatCount_)); break;
-					}
+			for (int i = 0; i < fireCallback_.block->arguments; ++i) {
+				switch (i) {
+				case 0: fireCallback_.args.push_back(script->CreateIntValue(idObject_)); break;
+				case 1: fireCallback_.args.push_back(script->CreateIntArrayValue(fireRes_)); break;
+				case 2: fireCallback_.args.push_back(script->CreateIntValue(repeatCount_)); break;
 				}
 			}
+			
+			fireCallback_.call();
 		}
 		else
 			FireSet(scriptData_, controller_, nullptr);
@@ -2960,51 +2957,35 @@ void StgShotPatternGeneratorObject::Work() {
 		repeatCount_++;
 	}
 
-	bool bTick = !tickCallback_.empty();
+	bool bTick = tickCallback_.machine != nullptr && tickCallback_.block != nullptr;
 
-	size_t sz = shotsWaiting_.size();
-	for (size_t i = 0U; i < sz; ) {
-		if (std::get<0>(shotsWaiting_[i]) <= frameExist_) {
-			ref_unsync_ptr<StgShotObject> objShot = std::get<1>(shotsWaiting_[i]);
+	for (auto itr = shotsWaiting_.begin(); itr != shotsWaiting_.end(); ) {
+		if (itr->frame <= frameExist_) {
+			itr->shot->SetEnableMovement(bEnableMovement_);
+			itr->manager->AddShot(itr->shot);
 
-			objShot->SetEnableMovement(bEnableMovement_);
-			std::get<3>(shotsWaiting_[i])->AddShot(objShot);
+			if (itr->parent != nullptr)
+				itr->parent->AddChild(itr->parent, itr->shot);
 
-			ref_unsync_weak_ptr<StgMoveParent> shotParent = std::get<2>(shotsWaiting_[i]);
-			if (shotParent) shotParent->AddChild(shotParent, objShot);
-
-			shotsWaiting_.erase(shotsWaiting_.begin() + i);
-
-			if (bTick)
-				tickRes_.push_back(objShot->GetObjectID());
-
-			--sz;
+			itr = shotsWaiting_.erase(itr);
 		}
-		else {
-			++i;
-		}
+		else
+			++itr;
 	}
 
 	if (bTick) {
-		for (auto& callback : tickCallback_) {
-			script_machine* machine = callback.first;
-			script_block* subIvk = callback.second;
-			DxScript* script = (DxScript*)machine->data;
+		tickCallback_.args.clear();
 
-			auto currItr = machine->current_thread_index;
-			machine->current_thread_index = machine->threads.begin();
+		DxScript* script = (DxScript*)(tickCallback_.machine->data);
 
-			script_machine::environment* e = machine->add_child_block(subIvk);
-
-			for (int i = subIvk->arguments - 1; i >= 0; --i) {
-				switch (i) {
-				case 0: e->stack.push_back(script->CreateIntValue(idObject_)); break;
-				case 1: e->stack.push_back(script->CreateIntArrayValue(tickRes_)); break;
-				}
+		for (int i = 0; i < tickCallback_.block->arguments; ++i) {
+			switch (i) {
+			case 0: tickCallback_.args.push_back(script->CreateIntValue(idObject_)); break;
+			case 1: tickCallback_.args.push_back(script->CreateIntArrayValue(tickRes_)); break;
 			}
-
-			machine->current_thread_index = currItr;
 		}
+
+		tickCallback_.call();
 
 		tickRes_.clear();
 	}
@@ -3114,8 +3095,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 
 			if (totalWait > 0) {
 				objShot->SetEnableMovement(false);
-				shotsWaiting_.push_back(std::tuple<size_t, ref_unsync_ptr<StgShotObject>, ref_unsync_weak_ptr<StgMoveParent>, StgShotManager*>
-					(frameExist_ + totalWait, objShot, shotParent_, shotManager));
+				shotsWaiting_.emplace_back(shotManager, objShot, shotParent_, frameExist_ + totalWait);
 			}
 			else {
 				shotManager->AddShot(objShot);
@@ -3492,8 +3472,8 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 void StgShotPatternGeneratorObject::ClearWaiting() {
 	auto objectManager = stageController_->GetMainObjectManager();
 
-	for (auto& shot : shotsWaiting_)
-		objectManager->DeleteObject(std::get<1>(shot));
+	for (auto& hold : shotsWaiting_)
+		objectManager->DeleteObject(hold.shot);
 
 	shotsWaiting_.clear();
 
@@ -3501,6 +3481,6 @@ void StgShotPatternGeneratorObject::ClearWaiting() {
 	repeatWait_ = 0;
 	repeatTimes_ = 0;
 	repeatCount_ = 0;
-	fireCallback_.clear();
-	tickCallback_.clear();
+	fireCallback_.block = nullptr;
+	tickCallback_.block = nullptr;
 }
