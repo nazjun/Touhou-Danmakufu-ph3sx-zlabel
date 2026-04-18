@@ -4,6 +4,8 @@
 #include "File.hpp"
 #include "Logger.hpp"
 
+#include "../../TouhouDanmakufu/Common/DnhConfiguration.hpp"
+
 using namespace gstd;
 
 //****************************************************************************
@@ -1169,11 +1171,10 @@ void ScriptClientBase::Compile() {
 			compilePath = compilePath.substr(0, extPos) + L".dnho";
 		}
 
-		bool bLoad = !File::IsExists(PathProperty::GetModuleDirectory() + L".recompile");
+		DnhConfiguration* config = DnhConfiguration::GetInstance();
 
 		bool bLoaded = false;
-
-		if (bLoad && File::IsExists(compilePath))
+		if (File::IsExists(compilePath) && !config->bRecompile_)
 			bLoaded = _LoadEngine(compilePath);
 
 		if (!bLoaded) {
@@ -1186,7 +1187,8 @@ void ScriptClientBase::Compile() {
 				_RaiseErrorFromEngine();
 			}
 
-			_SaveEngine(compilePath, engineData_->GetEngine().get());
+			if (config->bCompile_)
+				_SaveEngine(compilePath, engineData_->GetEngine().get());
 		}
 	}
 

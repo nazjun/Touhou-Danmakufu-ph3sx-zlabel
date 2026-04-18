@@ -64,6 +64,9 @@ DnhConfiguration::DnhConfiguration() {
 
 	bEnableUnfocusedProcessing_ = false;
 
+	bCompile_ = false;
+	bRecompile_ = false;
+
 	LoadConfigFile();
 	_LoadDefinitionFile();
 }
@@ -96,6 +99,16 @@ bool DnhConfiguration::_LoadDefinitionFile() {
 	{
 		std::wstring str = prop.GetString(L"unfocused.processing", L"false");
 		bEnableUnfocusedProcessing_ = str == L"true" ? true : StringUtility::ToInteger(str);
+	}
+
+	{
+		std::wstring str = prop.GetString(L"dnho.compile", L"false");
+		bCompile_ = str == L"true" ? true : StringUtility::ToInteger(str);
+	}
+
+	{
+		std::wstring str = prop.GetString(L"dnho.recompile", L"false");
+		bRecompile_ = str == L"true" ? true : StringUtility::ToInteger(str);
 	}
 
 	{

@@ -31,6 +31,9 @@ public:
 	LONG screenHeight_;
 	bool bEnableUnfocusedProcessing_;
 
+	bool bCompile_;
+	bool bRecompile_;
+
 	uint32_t fpsStandard_;
 	int fpsType_;
 	int fastModeSpeed_;
