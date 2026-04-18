@@ -1550,51 +1550,42 @@ bool DxTextRenderer::LoadGlyphAtlases(const std::wstring& path) {
 		std::ifstream ifs(metadataPath, std::ios::binary);
 
 		if (ifs.is_open()) {
-			uint32_t size;
-			ifs.read(reinterpret_cast<char*>(&size), sizeof(uint32_t));
+
+			auto read = [&](auto* x, std::streamsize sz = 0) {
+				if (sz == 0) sz = sizeof(*x);
+				ifs.read(reinterpret_cast<char*>(x), sz);
+			};
+
+			uint32_t size; read(&size);
+			glyphCount = size;
 
 			for (uint32_t i = 0; i < size; ++i) {
-				DxCharGlyph::CharGlyphKey key;
+				DxCharGlyph::CharGlyphKey key{};
 
-				ifs.read(reinterpret_cast<char*>(&(key.fontName)), sizeof(uint32_t));
+				read(&key.fontName);
+				read(&key.height);
+				read(&key.weight);
+				read(&key.italic);
+				read(&key.topColor);
+				read(&key.bottomColor);
+				read(&key.borderColor);
+				read(&key.borderType);
+				read(&key.borderWidth);
+				read(&key.codepoint);
 
-				ifs.read(reinterpret_cast<char*>(&(key.height)), sizeof(int32_t));
-				ifs.read(reinterpret_cast<char*>(&(key.weight)), sizeof(int32_t));
-				ifs.read(reinterpret_cast<char*>(&(key.italic)), sizeof(uint8_t));
-
-				ifs.read(reinterpret_cast<char*>(&(key.topColor)), sizeof(uint32_t));
-				ifs.read(reinterpret_cast<char*>(&(key.bottomColor)), sizeof(uint32_t));
-				ifs.read(reinterpret_cast<char*>(&(key.borderColor)), sizeof(uint32_t));
-
-				ifs.read(reinterpret_cast<char*>(&(key.borderType)), sizeof(uint8_t));
-				ifs.read(reinterpret_cast<char*>(&(key.borderWidth)), sizeof(int32_t));
-
-				ifs.read(reinterpret_cast<char*>(&(key.codepoint)), sizeof(uint32_t));
-
-				int32_t left;
-				int32_t top;
-				int32_t right;
-				int32_t bottom;
-
-				ifs.read(reinterpret_cast<char*>(&left), sizeof(int32_t));
-				ifs.read(reinterpret_cast<char*>(&top), sizeof(int32_t));
-				ifs.read(reinterpret_cast<char*>(&right), sizeof(int32_t));
-				ifs.read(reinterpret_cast<char*>(&bottom), sizeof(int32_t));
+				int32_t left; read(&left);
+				int32_t top; read(&top);
+				int32_t right; read(&right);
+				int32_t bottom; read(&bottom);
 
 				DxRect<LONG> rect = DxRect<LONG>(left, top, right, bottom);
 
 				atlas->glyphs_.emplace(key, rect);
-
-				++glyphCount;
 			}
 
-			int32_t headX;
-			int32_t headY;
-			int32_t lineHeight;
-
-			ifs.read(reinterpret_cast<char*>(&headX), sizeof(int32_t));
-			ifs.read(reinterpret_cast<char*>(&headY), sizeof(int32_t));
-			ifs.read(reinterpret_cast<char*>(&lineHeight), sizeof(int32_t));
+			int32_t headX; read(&headX);
+			int32_t headY; read(&headY);
+			int32_t lineHeight; read(&lineHeight);
 
 			atlas->head_ = { headX, headY };
 			atlas->lineHeight_ = lineHeight;
@@ -1683,25 +1674,27 @@ bool DxTextRenderer::SaveGeneratedGlyphs() {
 			std::ofstream ofs(metadataPath, std::ios::binary | std::ios::trunc);
 
 			if (ofs.is_open()) {
+
+				auto write = [&](auto* x, std::streamsize sz = 0) {
+					if (sz == 0) sz = sizeof(*x);
+					ofs.write(reinterpret_cast<const char*>(x), sz);
+				};
+
 				uint32_t size = static_cast<uint32_t>(atlas->glyphs_.size());
-				ofs.write(reinterpret_cast<const char*>(&size), sizeof(uint32_t));
+				write(&size);
 
 				for (auto gitr = atlas->glyphs_.begin(); gitr != atlas->glyphs_.end(); gitr++) {
 					// CharGlyphKey
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.fontName)), sizeof(uint32_t));
-
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.height)), sizeof(int32_t));
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.weight)), sizeof(int32_t));
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.italic)), sizeof(uint8_t));
-
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.topColor)), sizeof(uint32_t));
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.bottomColor)), sizeof(uint32_t));
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.borderColor)), sizeof(uint32_t));
-
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.borderType)), sizeof(uint8_t));
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.borderWidth)), sizeof(int32_t));
-
-					ofs.write(reinterpret_cast<const char*>(&(gitr->first.codepoint)), sizeof(uint32_t));
+					write(&gitr->first.fontName);
+					write(&gitr->first.height);
+					write(&gitr->first.weight);
+					write(&gitr->first.italic);
+					write(&gitr->first.topColor);
+					write(&gitr->first.bottomColor);
+					write(&gitr->first.borderColor);
+					write(&gitr->first.borderType);
+					write(&gitr->first.borderWidth);
+					write(&gitr->first.codepoint);
 
 					// DxRect
 					int32_t left = gitr->second.left;
@@ -1709,19 +1702,19 @@ bool DxTextRenderer::SaveGeneratedGlyphs() {
 					int32_t right = gitr->second.right;
 					int32_t bottom = gitr->second.bottom;
 
-					ofs.write(reinterpret_cast<const char*>(&left), sizeof(int32_t));
-					ofs.write(reinterpret_cast<const char*>(&top), sizeof(int32_t));
-					ofs.write(reinterpret_cast<const char*>(&right), sizeof(int32_t));
-					ofs.write(reinterpret_cast<const char*>(&bottom), sizeof(int32_t));
+					write(&left);
+					write(&top);
+					write(&right);
+					write(&bottom);
 				}
 
 				int32_t headX = atlas->head_.x;
 				int32_t headY = atlas->head_.y;
 				int32_t lineHeight = atlas->lineHeight_;
 
-				ofs.write(reinterpret_cast<const char*>(&headX), sizeof(int32_t));
-				ofs.write(reinterpret_cast<const char*>(&headY), sizeof(int32_t));
-				ofs.write(reinterpret_cast<const char*>(&lineHeight), sizeof(int32_t));
+				write(&headX);
+				write(&headY);
+				write(&lineHeight);
 
 				ofs.close();
 			}
