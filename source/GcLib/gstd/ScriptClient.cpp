@@ -182,6 +182,8 @@ static const std::vector<function> commonFunction = {
 	{ "Interpolate_Smoother", ScriptClientBase::Func_Interpolate<Math::Lerp::Smoother>, 3 },
 	{ "Interpolate_Accelerate", ScriptClientBase::Func_Interpolate<Math::Lerp::Accelerate>, 3 },
 	{ "Interpolate_Decelerate", ScriptClientBase::Func_Interpolate<Math::Lerp::Decelerate>, 3 },
+	{ "Interpolate_Rubberband", ScriptClientBase::Func_Interpolate<Math::Lerp::Rubberband>, 3 },
+	{ "Interpolate_Bell", ScriptClientBase::Func_Interpolate<Math::Lerp::Bell>, 3 },
 	{ "Interpolate_Modulate", ScriptClientBase::Func_Interpolate_Modulate, 4 },
 	{ "Interpolate_Overshoot", ScriptClientBase::Func_Interpolate_Overshoot, 4 },
 	{ "Interpolate_QuadraticBezier", ScriptClientBase::Func_Interpolate_QuadraticBezier, 4 },
@@ -345,6 +347,8 @@ static const std::vector<constant> commonConstant = {
 	constant("LERP_SMOOTHER", Math::Lerp::SMOOTHER),
 	constant("LERP_ACCELERATE", Math::Lerp::ACCELERATE),
 	constant("LERP_DECELERATE", Math::Lerp::DECELERATE),
+	constant("LERP_RUBBERBAND", Math::Lerp::RUBBERBAND),
+	constant("LERP_BELL", Math::Lerp::BELL),
 
 	//Math constants
 	constant("M_PI", GM_PI),

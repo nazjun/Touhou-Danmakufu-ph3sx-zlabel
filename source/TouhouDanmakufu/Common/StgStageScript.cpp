@@ -407,9 +407,10 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjMove_AddPatternD2", StgStageScript::Func_ObjMove_AddPatternD2, 5 },
 	{ "ObjMove_AddPatternD2", StgStageScript::Func_ObjMove_AddPatternD2, 6 }, //Overloaded
 	{ "ObjMove_AddPatternD3", StgStageScript::Func_ObjMove_AddPatternD3, 6 },
-	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 4 },
-	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 5 },
-	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 6 },
+	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 8 }, //Bezier (quadratic)
+	{ "ObjMove_AddPatternE1", StgStageScript::Func_ObjMove_AddPatternE1, 10 }, //Overloaded (cubic)
+	{ "ObjMove_AddPatternE2", StgStageScript::Func_ObjMove_AddPatternE2, 10 }, //Hermite
+	{ "ObjMove_AddPatternE3", StgStageScript::Func_ObjMove_AddPatternE3, 6 }, //Spline
 	{ "ObjMove_SetProcessMovement", StgStageScript::Func_ObjMove_SetProcessMovement, 2 },
 	{ "ObjMove_GetProcessMovement", StgStageScript::Func_ObjMove_GetProcessMovement, 1 },
 	{ "ObjMove_GetMoveFrame", StgStageScript::Func_ObjMove_GetMoveFrame, 1 },
@@ -812,11 +813,16 @@ static const std::vector<constant> stgStageConstant = {
 	constant("MOVE_XY", StgMovePattern::TYPE_XY),
 	constant("MOVE_XY_ANGLE", StgMovePattern::TYPE_XY_ANG),
 	constant("MOVE_LINE", StgMovePattern::TYPE_LINE),
+	constant("MOVE_CURVE", StgMovePattern::TYPE_CURVE),
 	constant("MOVE_SPLINE", StgMovePattern::TYPE_SPLINE),
 
 	constant("MOVE_LINE_SPEED", StgMovePattern::TYPE_LINE_SPEED),
 	constant("MOVE_LINE_FRAME", StgMovePattern::TYPE_LINE_FRAME),
 	constant("MOVE_LINE_WEIGHT", StgMovePattern::TYPE_LINE_WEIGHT),
+
+	constant("MOVE_CURVE_QUADRATIC_BEZIER", StgMovePattern::TYPE_CURVE_QUADRATIC_BEZIER),
+	constant("MOVE_CURVE_CUBIC_BEZIER", StgMovePattern::TYPE_CURVE_CUBIC_BEZIER),
+	constant("MOVE_CURVE_HERMITE", StgMovePattern::TYPE_CURVE_HERMITE),
 
 	//AddPattern constants
 	constant("TOPLAYER_CHANGE", StgMovePattern::TOPLAYER_CHANGE),
@@ -3529,34 +3535,61 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 			obj->AddPattern(frame, pattern);
 			break;
 		}
+		case StgMovePattern::TYPE_CURVE_QUADRATIC_BEZIER:
+		{
+			if (argc < 9) break;
+			ref_unsync_ptr<StgMovePattern_Curve> pattern(new StgMovePattern_Curve(obj));
+			pattern->SetCurve(StgMovePattern_Curve::TYPE_QUADRATIC_BEZIER);
+			ADD_CMD(StgMovePattern_Curve::SET_DX, argv[3].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_DY, argv[4].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C1, argv[5].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C2, argv[6].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_FR, argv[7].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_LP, argv[8].as_float());
+			obj->AddPattern(frame, pattern);
+			break;
+		}
+		case StgMovePattern::TYPE_CURVE_CUBIC_BEZIER:
+		{
+			if (argc < 11) break;
+			ref_unsync_ptr<StgMovePattern_Curve> pattern(new StgMovePattern_Curve(obj));
+			pattern->SetCurve(StgMovePattern_Curve::TYPE_CUBIC_BEZIER);
+			ADD_CMD(StgMovePattern_Curve::SET_DX, argv[3].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_DY, argv[4].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C1, argv[5].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C2, argv[6].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C3, argv[7].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C4, argv[8].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_FR, argv[9].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_LP, argv[10].as_float());
+			obj->AddPattern(frame, pattern);
+			break;
+		}
+		case StgMovePattern::TYPE_CURVE_HERMITE:
+		{
+			if (argc < 11) break;
+			ref_unsync_ptr<StgMovePattern_Curve> pattern(new StgMovePattern_Curve(obj));
+			pattern->SetCurve(StgMovePattern_Curve::TYPE_HERMITE);
+			ADD_CMD(StgMovePattern_Curve::SET_DX, argv[3].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_DY, argv[4].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C1, argv[5].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C2, argv[6].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C3, argv[7].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_C4, argv[8].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_FR, argv[9].as_float());
+			ADD_CMD(StgMovePattern_Curve::SET_LP, argv[10].as_float());
+			obj->AddPattern(frame, pattern);
+			break;
+		}
 		case StgMovePattern::TYPE_SPLINE:
 		{
+			if (argc < 7) break;
 			ref_unsync_ptr<StgMovePattern_Spline> pattern(new StgMovePattern_Spline(obj));
-			for (int i = 3; i < argc; ++i) {
-				switch (i) {
-				case 3:
-				{
-					ref_unsync_ptr<DxSplineObject> sp = ref_unsync_ptr<DxSplineObject>::Cast(script->GetObject(argv[i].as_int()));
-					pattern->SetSpline(sp);
-					break;
-				}
-				case 4:
-				{
-					ADD_CMD(StgMovePattern_Spline::SET_FR, argv[i].as_float());
-					break;
-				}
-				case 5:
-				{
-					ADD_CMD(StgMovePattern_Spline::SET_LP, argv[i].as_float());
-					break;
-				}
-				case 6:
-				{
-					ADD_CMD(StgMovePattern_Spline::SET_ARC, argv[i].as_float());
-					break;
-				}
-				}
-			}
+			ref_unsync_ptr<DxSplineObject> sp = ref_unsync_ptr<DxSplineObject>::Cast(script->GetObject(argv[3].as_int()));
+			pattern->SetSpline(sp);
+			ADD_CMD(StgMovePattern_Spline::SET_FR, argv[4].as_float());
+			ADD_CMD(StgMovePattern_Spline::SET_LP, argv[5].as_float());
+			ADD_CMD(StgMovePattern_Spline::SET_ARC, argv[6].as_float());
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3960,13 +3993,78 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternE1(gstd::script_machine* mach
 	int id = argv[0].as_int();
 	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
 	if (obj) {
+		bool bCubic = argc == 10;
+		int frame = argv[1].as_int();
+		double tx = argv[2].as_float();
+		double ty = argv[3].as_float();
+		double c1 = argv[4].as_float();
+		double c2 = argv[5].as_float();
+		double c3 = bCubic ? argv[6].as_float() : 0;
+		double c4 = bCubic ? argv[7].as_float() : 0;
+		double frameEnd = argv[bCubic ? 8 : 6].as_float();
+		double lerpMode = argv[bCubic ? 9 : 7].as_float();
+
+		ref_unsync_ptr<StgMovePattern_Curve> pattern(new StgMovePattern_Curve(obj));
+		pattern->SetCurve(bCubic ? StgMovePattern_Curve::TYPE_CUBIC_BEZIER : StgMovePattern_Curve::TYPE_QUADRATIC_BEZIER);
+
+		ADD_CMD(StgMovePattern_Curve::SET_DX, tx);
+		ADD_CMD(StgMovePattern_Curve::SET_DY, ty);
+		ADD_CMD(StgMovePattern_Curve::SET_C1, c1);
+		ADD_CMD(StgMovePattern_Curve::SET_C2, c2);
+		if (bCubic) {
+			ADD_CMD(StgMovePattern_Curve::SET_C3, c3);
+			ADD_CMD(StgMovePattern_Curve::SET_C4, c4);
+		}
+		ADD_CMD(StgMovePattern_Curve::SET_FR, frameEnd);
+		ADD_CMD(StgMovePattern_Curve::SET_LP, lerpMode);
+
+		obj->AddPattern(frame, pattern);
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjMove_AddPatternE2(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
+	if (obj) {
+		int frame = argv[1].as_int();
+		double tx = argv[2].as_float();
+		double ty = argv[3].as_float();
+		double c1 = argv[4].as_float();
+		double c2 = argv[5].as_float();
+		double c3 = argv[6].as_float();
+		double c4 = argv[7].as_float();
+		double frameEnd = argv[8].as_float();
+		double lerpMode = argv[9].as_float();
+
+		ref_unsync_ptr<StgMovePattern_Curve> pattern(new StgMovePattern_Curve(obj));
+		pattern->SetCurve(StgMovePattern_Curve::TYPE_HERMITE);
+
+		ADD_CMD(StgMovePattern_Curve::SET_DX, tx);
+		ADD_CMD(StgMovePattern_Curve::SET_DY, ty);
+		ADD_CMD(StgMovePattern_Curve::SET_C1, c1);
+		ADD_CMD(StgMovePattern_Curve::SET_C2, c2);
+		ADD_CMD(StgMovePattern_Curve::SET_C3, c3);
+		ADD_CMD(StgMovePattern_Curve::SET_C4, c4);
+		ADD_CMD(StgMovePattern_Curve::SET_FR, frameEnd);
+		ADD_CMD(StgMovePattern_Curve::SET_LP, lerpMode);
+
+		obj->AddPattern(frame, pattern);
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjMove_AddPatternE3(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
+	if (obj) {
 		int frame = argv[1].as_int();
 
 		ref_unsync_ptr<DxSplineObject> sp = ref_unsync_ptr<DxSplineObject>::Cast(script->GetObject(argv[2].as_int()));
 
 		double frameEnd = argv[3].as_float();
-		double lerpMode = (argc >= 5) ? argv[4].as_float() : Math::Lerp::LINEAR;
-		double arc = (argc >= 6) ? argv[5].as_float() : false;
+		double lerpMode = argv[4].as_float();
+		double arc = argv[5].as_float();
 
 		ref_unsync_ptr<StgMovePattern_Spline> pattern(new StgMovePattern_Spline(obj));
 		pattern->SetSpline(sp);

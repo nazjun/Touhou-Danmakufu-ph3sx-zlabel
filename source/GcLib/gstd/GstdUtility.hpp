@@ -438,6 +438,8 @@ namespace gstd {
 				SMOOTHER,
 				ACCELERATE,
 				DECELERATE,
+				RUBBERBAND,
+				BELL,
 			} Type;
 
 			template<typename T, typename L>
@@ -466,6 +468,15 @@ namespace gstd {
 			static inline T Decelerate(T a, T b, L x) {
 				return a + ((L)1 - ((L)1 - x) * ((L)1 - x)) * (b - a);
 			}
+			template<typename T, typename L>
+			static inline T Rubberband(T a, T b, L x) {
+				T g = Smooth((T)0, (T)1, x);
+				return a + (g - sin(GM_PI_X2 * g) / GM_PI) * (b - a);
+			}
+			template<typename T, typename L>
+			static inline T Bell(T a, T b, L x) {
+				return a + (((L)1 - cos(GM_PI_X2 * x)) / (L)2) * (b - a);
+			}
 
 			//For finding lerp speeds
 			template<typename T>
@@ -488,18 +499,32 @@ namespace gstd {
 			static inline T DifferentialDecelerate(T x) {
 				return (T)2 * ((T)1 - x);
 			}
+			template<typename T>
+			static inline T DifferentialRubberband(T x) {
+				T g = Smooth((T)0, (T)1, x);
+				T dg = DifferentialSmooth(x);
+				return dg * ((T)1 - (T)2 * cos(2 * GM_PI * g));
+			}
+			template<typename T>
+			static inline T DifferentialBell(T x) {
+				return GM_PI * sin((T)2 * GM_PI * x);
+			}
 
 			template<typename T, typename L>
 			static funcLerp<T, L> GetFunc(Type type) {
 				switch (type) {
 				case Math::Lerp::SMOOTH:
-					return Smooth<T, L>;
+					return Math::Lerp::Smooth<T, L>;
 				case Math::Lerp::SMOOTHER:
-					return Smoother<T, L>;
+					return Math::Lerp::Smoother<T, L>;
 				case Math::Lerp::ACCELERATE:
 					return Math::Lerp::Accelerate<T, L>;
 				case Math::Lerp::DECELERATE:
 					return Math::Lerp::Decelerate<T, L>;
+				case Math::Lerp::RUBBERBAND:
+					return Math::Lerp::Rubberband<T, L>;
+				case Math::Lerp::BELL:
+					return Math::Lerp::Bell<T, L>;
 				}
 				return Math::Lerp::Linear<T, L>;
 			}
@@ -507,15 +532,19 @@ namespace gstd {
 			static funcLerpDiff<T> GetFuncDifferential(Type type) {
 				switch (type) {
 				case Math::Lerp::SMOOTH:
-					return DifferentialSmooth<T>;
+					return Math::Lerp::DifferentialSmooth<T>;
 				case Math::Lerp::SMOOTHER:
-					return DifferentialSmoother<T>;
+					return Math::Lerp::DifferentialSmoother<T>;
 				case Math::Lerp::ACCELERATE:
-					return DifferentialAccelerate<T>;
+					return Math::Lerp::DifferentialAccelerate<T>;
 				case Math::Lerp::DECELERATE:
-					return DifferentialDecelerate<T>;
+					return Math::Lerp::DifferentialDecelerate<T>;
+				case Math::Lerp::RUBBERBAND:
+					return Math::Lerp::DifferentialRubberband<T>;
+				case Math::Lerp::BELL:
+					return Math::Lerp::DifferentialBell<T>;
 				}
-				return DifferentialLinear<T>;
+				return Math::Lerp::DifferentialLinear<T>;
 			}
 		};
 

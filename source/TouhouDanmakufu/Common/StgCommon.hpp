@@ -211,11 +211,16 @@ public:
 		TYPE_XY,
 		TYPE_XY_ANG,
 		TYPE_LINE,
+		TYPE_CURVE,
 		TYPE_SPLINE,
 
 		TYPE_LINE_SPEED,
 		TYPE_LINE_FRAME,
 		TYPE_LINE_WEIGHT,
+
+		TYPE_CURVE_QUADRATIC_BEZIER,
+		TYPE_CURVE_CUBIC_BEZIER,
+		TYPE_CURVE_HERMITE,
 
 		NO_CHANGE = -0x1000000,
 		TOPLAYER_CHANGE = 0x1000000,
@@ -539,6 +544,56 @@ public:
 	virtual void Move();
 
 	void SetAtWeight(double tx, double ty, double weight, double maxSpeed);
+};
+
+class StgMovePattern_Curve : public StgMovePattern {
+	friend class StgMoveObject;
+public:
+	enum : int8_t {
+		SET_FR,
+		SET_LP,
+		SET_DX,
+		SET_DY,
+		SET_C1,
+		SET_C2,
+		SET_C3,
+		SET_C4,
+	};
+
+	enum : int8_t {
+		TYPE_QUADRATIC_BEZIER,
+		TYPE_CUBIC_BEZIER,
+		TYPE_HERMITE,
+	};
+public:
+	using lerp_func = Math::Lerp::funcLerp<double, double>;
+protected:
+	int8_t typeCurve_;
+	double speed_;
+	uint32_t maxFrame_;
+	lerp_func moveLerpFunc;
+
+	Math::DVec2 iniPos_;
+	Math::DVec2 targetPos_;
+	Math::DVec<4> control_;
+public:
+	StgMovePattern_Curve(StgMoveObject* target);
+
+	virtual void CopyFrom(StgMovePattern* src);
+	virtual StgMovePattern* CreateCopy(StgMoveObject* target) {
+		return new StgMovePattern_Curve(target);
+	}
+
+	virtual void Activate(StgMovePattern* src);
+	virtual void Move();
+
+	void SetCurve(int8_t typeCurve) { typeCurve_ = typeCurve; }
+
+	virtual inline double GetSpeed() { return speed_; }
+	virtual inline double GetDirectionAngle() { return angDirection_; }
+
+	virtual double GetSpeedX() { return (speed_ * c_); }
+	virtual double GetSpeedY() { return (speed_ * s_); }
 };
 
 class StgMovePattern_Spline : public StgMovePattern {

@@ -725,6 +725,11 @@ void StgMovePattern_Angle::Activate(StgMovePattern* _src) {
 			speed_ = src->GetSpeed();
 			angDirection_ = src->GetDirectionAngle();
 		}
+		else if (_src->GetType() == TYPE_CURVE) {
+			StgMovePattern_Curve* src = dynamic_cast<StgMovePattern_Curve*>(_src);
+			speed_ = src->GetSpeed();
+			angDirection_ = src->GetDirectionAngle();
+		}
 		else if (_src->GetType() == TYPE_SPLINE) {
 			StgMovePattern_Spline* src = dynamic_cast<StgMovePattern_Spline*>(_src);
 			speed_ = src->GetSpeed();
@@ -907,6 +912,11 @@ void StgMovePattern_XY::Activate(StgMovePattern* _src) {
 			c_ = src->GetSpeedX();
 			s_ = src->GetSpeedY();
 		}
+		else if (_src->GetType() == TYPE_CURVE) {
+			StgMovePattern_Curve* src = dynamic_cast<StgMovePattern_Curve*>(_src);
+			c_ = src->GetSpeedX();
+			s_ = src->GetSpeedY();
+		}
 		else if (_src->GetType() == TYPE_SPLINE) {
 			StgMovePattern_Spline* src = dynamic_cast<StgMovePattern_Spline*>(_src);
 			c_ = src->GetSpeedX();
@@ -1071,6 +1081,11 @@ void StgMovePattern_XY_Angle::Activate(StgMovePattern* _src) {
 		}
 		else if (_src->GetType() == TYPE_LINE) {
 			StgMovePattern_Line* src = dynamic_cast<StgMovePattern_Line*>(_src);
+			c_ = src->GetSpeedX();
+			s_ = src->GetSpeedY();
+		}
+		else if (_src->GetType() == TYPE_CURVE) {
+			StgMovePattern_Curve* src = dynamic_cast<StgMovePattern_Curve*>(_src);
 			c_ = src->GetSpeedX();
 			s_ = src->GetSpeedY();
 		}
@@ -1348,6 +1363,173 @@ void StgMovePattern_Line_Weight::Move() {
 	target_->SetPositionX(tPos[0]);
 	target_->SetPositionY(tPos[1]);
 	++frameWork_;
+}
+
+//****************************************************************************
+//StgMovePattern_Curve
+//****************************************************************************
+StgMovePattern_Curve::StgMovePattern_Curve(StgMoveObject* target) : StgMovePattern(target) {
+	typeMove_ = TYPE_CURVE;
+	typeCurve_ = TYPE_QUADRATIC_BEZIER;
+	maxFrame_ = -1;
+	speed_ = 0;
+	angDirection_ = 0;
+	moveLerpFunc = Math::Lerp::Linear<double, double>;
+	iniPos_ = { 0, 0 };
+	targetPos_ = { 0, 0 };
+	control_ = { 0, 0, 0, 0 };
+}
+
+void StgMovePattern_Curve::CopyFrom(StgMovePattern* _src) {
+	StgMovePattern::CopyFrom(_src);
+	auto src = (StgMovePattern_Curve*)_src;
+
+	typeCurve_ = src->typeCurve_;
+	maxFrame_ = src->maxFrame_;
+	speed_ = src->speed_;
+	angDirection_ = src->angDirection_;
+	moveLerpFunc = src->moveLerpFunc;
+	iniPos_ = src->iniPos_;
+	targetPos_ = src->targetPos_;
+	control_ = src->control_;
+}
+
+void StgMovePattern_Curve::Move() {
+	if (frameWork_ < maxFrame_) {
+		double t = moveLerpFunc(0, 1, (double)frameWork_ / maxFrame_);
+
+		double x = 0, y = 0;
+
+		switch (typeCurve_) {
+		case TYPE_QUADRATIC_BEZIER:
+		{
+			double s = 1.0 - t;
+
+			x = (iniPos_[0] * s * s) + t * (targetPos_[0] * t + control_[0] * 2 * s);
+			y = (iniPos_[1] * s * s) + t * (targetPos_[1] * t + control_[1] * 2 * s);
+
+			break;
+		}
+		/*
+		case TYPE_CUBIC_BEZIER:
+		{
+			double s = 1.0 - t;
+			double r = s * s;
+
+			x = (iniPos_[0] * s * r) + t * ((targetPos_[0] * t * t) + (control_[0] * control_[0] * control_[1] * 3 * r));
+			y = (iniPos_[1] * s * r) + t * ((targetPos_[1] * t * t) + (control_[2] * control_[2] * control_[3] * 3 * r));
+
+			break;
+		}
+		case TYPE_HERMITE:
+		{
+			__m128d vec_s;
+			__m128d vec_e;
+			Math::DoSinCos(Math::DegreeToRadian(control_[1]), vec_s.m128d_f64);
+			Math::DoSinCos(Math::DegreeToRadian(control_[3]), vec_e.m128d_f64);
+			vec_s = Vectorize::Mul(vec_s, Vectorize::Replicate(control_[0]));
+			vec_e = Vectorize::Mul(vec_e, Vectorize::Replicate(control_[2]));
+
+			double t_2 = 2 * t;
+			double t2 = t * t;
+			double t_s1 = t - 1;
+			double t_s1_2 = t_s1 * t_s1;
+
+			double rps = (1 + t_2) * t_s1_2;
+			double rpe = t2 * (3 - t_2);
+			double rvs = t * t_s1_2;
+			double rve = t2 * t_s1;
+
+			x = iniPos_[0] * rps + targetPos_[0] * rpe + vec_s.m128d_f64[1] * rvs + vec_e.m128d_f64[1] * rve;
+			y = iniPos_[1] * rps + targetPos_[1] * rpe + vec_s.m128d_f64[0] * rvs + vec_e.m128d_f64[0] * rve;
+
+			break;
+		}
+		*/
+		}
+
+		double dx = x - target_->GetPositionX();
+		double dy = y - target_->GetPositionY();
+
+		angDirection_ = atan2(dy, dx);
+		speed_ = hypot(dy, dx);
+
+		c_ = cos(angDirection_);
+		s_ = sin(angDirection_);
+
+		target_->SetPositionX(x);
+		target_->SetPositionY(y);
+	}
+	else {
+		speed_ = 0;
+	}
+
+	++frameWork_;
+}
+void StgMovePattern_Curve::Activate(StgMovePattern* src) {
+	double tx = 0, ty = 0, c1 = 0, c2 = 0, c3 = 0, c4 = 0;
+
+	for (auto& [cmd, arg] : listCommand_) {
+		switch (cmd) {
+		case SET_FR:
+		{
+			maxFrame_ = std::max((uint32_t)arg, 1U);
+			break;
+		}
+		case SET_LP:
+		{
+			Math::Lerp::Type lerpMode = (Math::Lerp::Type)arg;
+			moveLerpFunc = Math::Lerp::GetFunc<double, double>(lerpMode);
+			break;
+		}
+		case SET_DX:
+		{
+			tx = arg;
+			break;
+		}
+		case SET_DY:
+		{
+			ty = arg;
+			break;
+		}
+		case SET_C1:
+		{
+			c1 = arg;
+			break;
+		}
+		case SET_C2:
+		{
+			c2 = arg;
+			break;
+		}
+		case SET_C3:
+		{
+			c3 = arg;
+			break;
+		}
+		case SET_C4:
+		{
+			c4 = arg;
+			break;
+		}
+		}
+	}
+
+	iniPos_[0] = target_->GetPositionX();
+	iniPos_[1] = target_->GetPositionY();
+	targetPos_[0] = tx;
+	targetPos_[1] = ty;
+	control_[0] = c1;
+	control_[1] = c2;
+	control_[2] = c3;
+	control_[3] = c4;
+
+	speed_ = 0;
+	angDirection_ = 0;
+	c_ = 1;
+	s_ = 0;
+
+	_RegisterShotDataID();
 }
 
 //****************************************************************************
