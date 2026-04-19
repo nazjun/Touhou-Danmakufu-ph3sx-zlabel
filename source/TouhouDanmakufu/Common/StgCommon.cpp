@@ -1410,7 +1410,6 @@ void StgMovePattern_Curve::Move() {
 
 			break;
 		}
-		/*
 		case TYPE_CUBIC_BEZIER:
 		{
 			double s = 1.0 - t;
@@ -1445,7 +1444,6 @@ void StgMovePattern_Curve::Move() {
 
 			break;
 		}
-		*/
 		}
 
 		double dx = x - target_->GetPositionX();
