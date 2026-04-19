@@ -140,8 +140,6 @@ StgEnemyObject::StgEnemyObject(StgStageController* stageController) : StgMoveObj
 	life_ = 0;
 	lifePrev_ = 0;
 
-	lifeCallback_.clear();
-
 	rateDamageShot_ = 1;
 	rateDamageSpell_ = 1;
 

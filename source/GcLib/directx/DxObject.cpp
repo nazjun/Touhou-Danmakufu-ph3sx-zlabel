@@ -20,8 +20,6 @@ DxScriptObjectBase::DxScriptObjectBase() {
 	idScript_ = ScriptClientBase::ID_SCRIPT_FREE;
 	typeObject_ = TypeObject::Base;
 
-	deleteCallback_.clear();
-
 	bDelete_ = false;
 	bActive_ = false;
 	bVisible_ = true;

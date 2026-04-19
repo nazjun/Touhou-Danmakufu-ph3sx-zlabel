@@ -1016,6 +1016,12 @@ void StgShotObject::_DeleteInAutoClip() {
 void StgShotObject::_DeleteInFadeDelete() {
 	if (IsDeleted()) return;
 	if (frameFadeDelete_ == 0) {
+		if (!deleteCallback_.empty()) {
+			for (auto& callback : deleteCallback_)
+				callback.call();
+			deleteCallback_.clear();
+		}
+
 		_SendDeleteEvent(TypeDelete::Fade);
 
 		auto objectManager = stageController_->GetMainObjectManager();
@@ -2825,9 +2831,7 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	repeatTimes_ = 0;
 	repeatCount_ = 0;
 
-	fireRes_.clear();
 	fireRes_.reserve(128U);
-	tickRes_.clear();
 
 	basePointX_ = BASEPOINT_RESET;
 	basePointY_ = BASEPOINT_RESET;
