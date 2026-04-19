@@ -471,11 +471,6 @@ static const std::vector<function> dxFunction = {
 	{ "ObjSprite3D_SetSourceDestRect", DxScript::Func_ObjSprite3D_SetSourceDestRect, 2 },	//Overloaded
 	{ "ObjSprite3D_SetBillboard", DxScript::Func_ObjSprite3D_SetBillboard, 2 },
 
-	//2D trajectory object functions (what)
-	{ "ObjTrajectory3D_SetInitialPoint", DxScript::Func_ObjTrajectory3D_SetInitialPoint, 7 },
-	{ "ObjTrajectory3D_SetAlphaVariation", DxScript::Func_ObjTrajectory3D_SetAlphaVariation, 2 },
-	{ "ObjTrajectory3D_SetComplementCount", DxScript::Func_ObjTrajectory3D_SetComplementCount, 2 },
-
 	//Particle list object functions
 	{ "ObjParticleList_Create", DxScript::Func_ObjParticleList_Create, 1 },
 	{ "ObjParticleList_SetPosition", DxScript::Func_ObjParticleList_SetPosition, 4 },
@@ -613,7 +608,6 @@ static const std::vector<constant> dxConstant = {
 	constant("OBJ_SPRITE_LIST_2D", (int)TypeObject::SpriteList2D),
 	constant("OBJ_PRIMITIVE_3D", (int)TypeObject::Primitive3D),
 	constant("OBJ_SPRITE_3D", (int)TypeObject::Sprite3D),
-	constant("OBJ_TRAJECTORY_3D", (int)TypeObject::Trajectory3D),
 	constant("OBJ_PARTICLE_LIST_2D", (int)TypeObject::ParticleList2D),
 	constant("OBJ_PARTICLE_LIST_3D", (int)TypeObject::ParticleList3D),
 	constant("OBJ_SHADER", (int)TypeObject::Shader),
@@ -2190,7 +2184,6 @@ static inline bool IsDxObjValid3D(DxScriptObjectBase* obj) {
 	switch (obj->GetObjectType()) {
 	case TypeObject::Primitive3D:
 	case TypeObject::Sprite3D:
-	case TypeObject::Trajectory3D:
 	case TypeObject::ParticleList3D:
 	case TypeObject::Mesh:
 		return true;
@@ -4724,7 +4717,6 @@ value DxScript::Func_ObjPrimitive_Create(script_machine* machine, int argc, cons
 		DEF_CASE(TypeObject::SpriteList2D, DxScriptSpriteListObject2D);
 		DEF_CASE(TypeObject::Primitive3D, DxScriptPrimitiveObject3D);
 		DEF_CASE(TypeObject::Sprite3D, DxScriptSpriteObject3D);
-		DEF_CASE(TypeObject::Trajectory3D, DxScriptTrajectoryObject3D);
 	}
 #undef DEF_CASE
 
@@ -5150,34 +5142,6 @@ value DxScript::Func_ObjSprite3D_SetBillboard(script_machine* machine, int argc,
 		bool bEnable = argv[1].as_boolean();
 		obj->GetSpritePointer()->SetBillboardEnable(bEnable);
 	}
-	return value();
-}
-//Dx関数：オブジェクト操作(TrajectoryObject3D)
-value DxScript::Func_ObjTrajectory3D_SetInitialPoint(script_machine* machine, int argc, const value* argv) {
-	DxScript* script = (DxScript*)machine->data;
-	int id = argv[0].as_int();
-	DxScriptTrajectoryObject3D* obj = script->GetObjectPointerAs<DxScriptTrajectoryObject3D>(id);
-	if (obj) {
-		D3DXVECTOR3 pos1(argv[1].as_float(), argv[2].as_float(), argv[3].as_float());
-		D3DXVECTOR3 pos2(argv[4].as_float(), argv[5].as_float(), argv[6].as_float());
-		obj->GetRenderObject()->SetInitialLine(pos1, pos2);
-	}
-	return value();
-}
-value DxScript::Func_ObjTrajectory3D_SetAlphaVariation(script_machine* machine, int argc, const value* argv) {
-	DxScript* script = (DxScript*)machine->data;
-	int id = argv[0].as_int();
-	DxScriptTrajectoryObject3D* obj = script->GetObjectPointerAs<DxScriptTrajectoryObject3D>(id);
-	if (obj)
-		obj->GetRenderObject()->SetAlphaVariation(argv[1].as_float());
-	return value();
-}
-value DxScript::Func_ObjTrajectory3D_SetComplementCount(script_machine* machine, int argc, const value* argv) {
-	DxScript* script = (DxScript*)machine->data;
-	int id = argv[0].as_int();
-	DxScriptTrajectoryObject3D* obj = script->GetObjectPointerAs<DxScriptTrajectoryObject3D>(id);
-	if (obj)
-		obj->GetRenderObject()->SetComplementCount(argv[1].as_int());
 	return value();
 }
 

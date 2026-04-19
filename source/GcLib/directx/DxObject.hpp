@@ -545,31 +545,6 @@ namespace directx {
 	};
 
 	//****************************************************************************
-	//DxScriptTrajectoryObject3D
-	//****************************************************************************
-	class DxScriptTrajectoryObject3D : public DxScriptPrimitiveObject {
-	public:
-		DxScriptTrajectoryObject3D();
-
-		virtual void Work();
-		virtual void Render();
-		virtual void SetRenderState();
-
-		TrajectoryObject3D* GetRenderObject() { return dynamic_cast<TrajectoryObject3D*>(objRender_.get()); }
-
-		virtual void SetColor(int r, int g, int b);
-		virtual void SetAlpha(int alpha) {};
-
-		virtual bool IsValidVertexIndex(size_t index) { return false; }
-		virtual void SetVertexPosition(size_t index, float x, float y, float z) {};
-		virtual void SetVertexUV(size_t index, float u, float v) {};
-		virtual void SetVertexAlpha(size_t index, int alpha) {};
-		virtual void SetVertexColor(size_t index, int r, int g, int b) {};
-		virtual D3DCOLOR GetVertexColor(size_t index) { return 0xffffffff; };
-		virtual D3DXVECTOR3 GetVertexPosition(size_t index) { return D3DXVECTOR3(0, 0, 0); }
-	};
-
-	//****************************************************************************
 	//DxScriptParticleListObject2D
 	//****************************************************************************
 	class DxScriptParticleListObject2D : public DxScriptSpriteObject2D {

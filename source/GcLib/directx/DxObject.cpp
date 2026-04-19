@@ -934,61 +934,6 @@ void DxScriptSpriteObject3D::Render() {
 }
 
 //****************************************************************************
-//DxScriptTrajectoryObject3D
-//****************************************************************************
-DxScriptTrajectoryObject3D::DxScriptTrajectoryObject3D() {
-	typeObject_ = TypeObject::Trajectory3D;
-	objRender_ = std::make_shared<TrajectoryObject3D>();
-	color_ = 0xffffffff;
-}
-
-void DxScriptTrajectoryObject3D::Work() {
-	if (TrajectoryObject3D* obj = GetRenderObject()) {
-		if (DxScriptMeshObject* objMesh = dynamic_cast<DxScriptMeshObject*>(objRelative_.get())) {
-			objRelative_->SetRenderState();
-			int frameAnime = objMesh->GetAnimeFrame();
-			const std::wstring& nameAnime = objMesh->GetAnimeName();
-			shared_ptr<DxMesh> mesh = objMesh->GetMesh();
-			D3DXMATRIX matAnime = mesh->GetAnimationMatrix(nameAnime, frameAnime);
-
-			TrajectoryObject3D* objRender = GetRenderObject();
-			objRender->AddPoint(matAnime);
-		}
-
-		obj->Work();
-	}
-}
-void DxScriptTrajectoryObject3D::Render() {
-	if (TrajectoryObject3D* obj = GetRenderObject()) {
-		SetRenderState();
-		//obj->Render();
-		obj->Render(angX_, angY_, angZ_);
-	}
-}
-void DxScriptTrajectoryObject3D::SetRenderState() {
-	DirectGraphics* graphics = DirectGraphics::GetBase();
-	TrajectoryObject3D* obj = GetRenderObject();
-	graphics->SetLightingEnable(false);
-	graphics->SetZWriteEnable(bZWrite_);
-	graphics->SetZBufferEnable(bZTest_);
-	graphics->SetBlendMode(typeBlend_);
-	graphics->SetCullingMode(modeCulling_);
-	graphics->SetTextureFilter(filterMin_, filterMag_, filterMip_);
-	obj->SetVertexShaderRendering(bVertexShaderMode_);
-	obj->SetDisableMatrixTransformation(!bEnableMatrix_);
-}
-
-void DxScriptTrajectoryObject3D::SetColor(int r, int g, int b) {
-	DirectGraphics* graphics = DirectGraphics::GetBase();
-	TrajectoryObject3D* obj = GetRenderObject();
-
-	__m128i c = Vectorize::Set(color_ >> 24, r, g, b);
-	color_ = ColorAccess::ToD3DCOLOR(ColorAccess::ClampColorPacked(c));
-
-	obj->SetColor(color_);
-}
-
-//****************************************************************************
 //DxScriptParticleListObject2D
 //****************************************************************************
 DxScriptParticleListObject2D::DxScriptParticleListObject2D() {

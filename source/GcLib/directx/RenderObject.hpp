@@ -341,47 +341,6 @@ namespace directx {
 	};
 
 	//****************************************************************************
-	//TrajectoryObject3D
-	//	Fuck?
-	//****************************************************************************
-	class TrajectoryObject3D : public RenderObjectLX {
-		struct Data {
-			int alpha;
-			D3DXVECTOR3 pos1;
-			D3DXVECTOR3 pos2;
-		};
-	protected:
-		D3DCOLOR color_;
-		int diffAlpha_;
-		int countComplement_;
-
-		Data dataInit_;
-		Data dataLast1_;
-		Data dataLast2_;
-		std::list<Data> listData_;
-
-		virtual D3DXMATRIX _CreateWorldTransformMatrix();
-	public:
-		TrajectoryObject3D();
-		~TrajectoryObject3D();
-
-		virtual void Copy(RenderObject* src);
-		
-		virtual void Work();
-		virtual void Render();
-		virtual void Render(const D3DXVECTOR2& angX, const D3DXVECTOR2& angY, const D3DXVECTOR2& angZ);
-		
-		void SetInitialLine(const D3DXVECTOR3& pos1, const D3DXVECTOR3& pos2) {
-			dataInit_.pos1 = pos1;
-			dataInit_.pos2 = pos2;
-		}
-		void AddPoint(const D3DXMATRIX& mat);
-		void SetAlphaVariation(int diff) { diffAlpha_ = diff; }
-		void SetComplementCount(int count) { countComplement_ = count; }
-		void SetColor(D3DCOLOR color) { color_ = color; }
-	};
-
-	//****************************************************************************
 	//ParticleRendererBase
 	//	Base class for instanced render objects
 	//****************************************************************************

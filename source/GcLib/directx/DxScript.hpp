@@ -451,11 +451,6 @@ namespace directx {
 		static gstd::value Func_ObjSprite3D_SetSourceDestRect(gstd::script_machine* machine, int argc, const gstd::value* argv);
 		static gstd::value Func_ObjSprite3D_SetBillboard(gstd::script_machine* machine, int argc, const gstd::value* argv);
 
-		//Dx関数：オブジェクト操作(TrajectoryObject3D)
-		static gstd::value Func_ObjTrajectory3D_SetInitialPoint(gstd::script_machine* machine, int argc, const gstd::value* argv);
-		static gstd::value Func_ObjTrajectory3D_SetAlphaVariation(gstd::script_machine* machine, int argc, const gstd::value* argv);
-		static gstd::value Func_ObjTrajectory3D_SetComplementCount(gstd::script_machine* machine, int argc, const gstd::value* argv);
-
 		//DxScriptParticleListObject
 		DNH_FUNCAPI_DECL_(Func_ObjParticleList_Create);
 		DNH_FUNCAPI_DECL_(Func_ObjParticleList_SetPosition);

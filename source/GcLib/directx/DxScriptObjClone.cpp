@@ -33,7 +33,6 @@ value DxScript::Func_Obj_Clone(script_machine* machine, int argc, const value* a
 				DEF_CASE(TypeObject::SpriteList2D, DxScriptSpriteListObject2D);
 				DEF_CASE(TypeObject::Primitive3D, DxScriptPrimitiveObject3D);
 				DEF_CASE(TypeObject::Sprite3D, DxScriptSpriteObject3D);
-				DEF_CASE(TypeObject::Trajectory3D, DxScriptTrajectoryObject3D);
 
 				DEF_CASE(TypeObject::ParticleList2D, DxScriptParticleListObject2D);
 				DEF_CASE(TypeObject::ParticleList3D, DxScriptParticleListObject3D);

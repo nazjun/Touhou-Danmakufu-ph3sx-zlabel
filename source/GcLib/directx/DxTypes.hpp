@@ -99,7 +99,6 @@ namespace directx {
 		SpriteList2D,
 		Primitive3D,
 		Sprite3D,
-		Trajectory3D,
 
 		ParticleList2D,
 		ParticleList3D,
