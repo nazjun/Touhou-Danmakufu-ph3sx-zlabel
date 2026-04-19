@@ -1360,6 +1360,7 @@ StgMovePattern_Spline::StgMovePattern_Spline(StgMoveObject* target) : StgMovePat
 	angDirection_ = 0;
 	spline_ = nullptr;
 	moveLerpFunc = Math::Lerp::Linear<double, double>;
+	arc_ = false;
 }
 
 void StgMovePattern_Spline::CopyFrom(StgMovePattern* _src) {
@@ -1371,12 +1372,13 @@ void StgMovePattern_Spline::CopyFrom(StgMovePattern* _src) {
 	angDirection_ = src->angDirection_;
 	spline_ = src->spline_;
 	moveLerpFunc = src->moveLerpFunc;
+	arc_ = src->arc_;
 }
 
 void StgMovePattern_Spline::Move() {
 	if (frameWork_ < maxFrame_ && spline_ != nullptr) {
 		double t = moveLerpFunc(0, 1, (double)frameWork_ / maxFrame_);
-		DxSplineObjectNode node = arc_? spline_->LerpArc(t) : spline_->Lerp(t);
+		DxSplineObjectNode node = arc_ ? spline_->LerpArc(t) : spline_->Lerp(t);
 
 		angDirection_ = atan2(node[4], node[3]);
 		speed_ = hypot(node[3], node[4]) / 60.0; // this isn't quite right

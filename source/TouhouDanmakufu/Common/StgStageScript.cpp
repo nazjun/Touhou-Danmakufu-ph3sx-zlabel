@@ -390,6 +390,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjMove_SetDestAtFrame", StgStageScript::Func_ObjMove_SetDestAtFrame, 4 },
 	{ "ObjMove_SetDestAtFrame", StgStageScript::Func_ObjMove_SetDestAtFrame, 5 },	//Overloaded
 	{ "ObjMove_SetDestAtWeight", StgStageScript::Func_ObjMove_SetDestAtWeight, 5 },
+	{ "ObjMove_AddPattern", StgStageScript::Func_ObjMove_AddPattern, -4 }, //3 fixed + ... -> 3 minimum
 	{ "ObjMove_AddPatternA1", StgStageScript::Func_ObjMove_AddPatternA1, 4 },
 	{ "ObjMove_AddPatternA2", StgStageScript::Func_ObjMove_AddPatternA2, 7 },
 	{ "ObjMove_AddPatternA3", StgStageScript::Func_ObjMove_AddPatternA3, 8 },
@@ -812,6 +813,10 @@ static const std::vector<constant> stgStageConstant = {
 	constant("MOVE_XY_ANGLE", StgMovePattern::TYPE_XY_ANG),
 	constant("MOVE_LINE", StgMovePattern::TYPE_LINE),
 	constant("MOVE_SPLINE", StgMovePattern::TYPE_SPLINE),
+
+	constant("MOVE_LINE_SPEED", StgMovePattern::TYPE_LINE_SPEED),
+	constant("MOVE_LINE_FRAME", StgMovePattern::TYPE_LINE_FRAME),
+	constant("MOVE_LINE_WEIGHT", StgMovePattern::TYPE_LINE_WEIGHT),
 
 	//AddPattern constants
 	constant("TOPLAYER_CHANGE", StgMovePattern::TOPLAYER_CHANGE),
@@ -3305,6 +3310,260 @@ gstd::value StgStageScript::Func_ObjMove_SetDestAtWeight(gstd::script_machine* m
 								pattern->AddCommand(std::make_pair(__cmd, __arg));
 #define ADD_CMD2(__cmd, __target, __arg) if (__target != StgMovePattern::NO_CHANGE) \
 								pattern->AddCommand(std::make_pair(__cmd, __arg));
+gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
+	if (obj) {
+		int moveType = argv[1].as_int();
+		int frame = argv[2].as_int();
+		switch (moveType) {
+		case StgMovePattern::TYPE_ANGLE:
+		{
+			ref_unsync_ptr<StgMovePattern_Angle> pattern(new StgMovePattern_Angle(obj));
+			for (int i = 3; i < argc; ++i) {
+				switch (i) {
+				case 3:
+				{
+					ADD_CMD(StgMovePattern_Angle::SET_SPEED, argv[i].as_float());
+					break;
+				}
+				case 4:
+				{
+					double angle = argv[i].as_float();
+					ADD_CMD2(StgMovePattern_Angle::SET_ANGLE, angle, Math::DegreeToRadian(angle));
+					break;
+				}
+				case 5:
+				{
+					ADD_CMD(StgMovePattern_Angle::SET_ACCEL, argv[i].as_float());
+					break;
+				}
+				case 6:
+				{
+					ADD_CMD(StgMovePattern_Angle::SET_SPMAX, argv[i].as_float());
+					break;
+				}
+				case 7:
+				{
+					double agvel = argv[i].as_float();
+					ADD_CMD2(StgMovePattern_Angle::SET_AGVEL, agvel, Math::DegreeToRadian(agvel));
+					break;
+				}
+				case 8:
+				{
+					double agacc = argv[i].as_float();
+					ADD_CMD2(StgMovePattern_Angle::SET_AGACC, agacc, Math::DegreeToRadian(agacc));
+					break;
+				}
+				case 9:
+				{
+					double agmax = argv[i].as_float();
+					ADD_CMD2(StgMovePattern_Angle::SET_AGMAX, agmax, Math::DegreeToRadian(agmax));
+					break;
+				}
+				case 10:
+				{
+					pattern->SetShotDataID(argv[i].as_int());
+					break;
+				}
+				case 11:
+				{
+					pattern->SetRelativeObject(argv[i].as_int());
+					break;
+				}
+				}
+			}
+			obj->AddPattern(frame, pattern);
+			break;
+		}
+		case StgMovePattern::TYPE_XY:
+		{
+			ref_unsync_ptr<StgMovePattern_XY> pattern(new StgMovePattern_XY(obj));
+			for (int i = 3; i < argc; ++i) {
+				switch (i) {
+				case 3:
+				{
+					ADD_CMD(StgMovePattern_XY::SET_S_X, argv[i].as_float());
+					break;
+				}
+				case 4:
+				{
+					ADD_CMD(StgMovePattern_XY::SET_S_Y, argv[i].as_float());
+					break;
+				}
+				case 5:
+				{
+					ADD_CMD(StgMovePattern_XY::SET_A_X, argv[i].as_float());
+					break;
+				}
+				case 6:
+				{
+					ADD_CMD(StgMovePattern_XY::SET_A_Y, argv[i].as_float());
+					break;
+				}
+				case 7:
+				{
+					ADD_CMD(StgMovePattern_XY::SET_M_X, argv[i].as_float());
+					break;
+				}
+				case 8:
+				{
+					ADD_CMD(StgMovePattern_XY::SET_M_Y, argv[i].as_float());
+					break;
+				}
+				case 9:
+				{
+					double angle = argv[i].as_float();
+					ADD_CMD2(StgMovePattern_Angle::SET_ANGLE, angle, Math::DegreeToRadian(angle));
+					break;
+				}
+				case 10:
+				{
+					pattern->SetShotDataID(argv[i].as_int());
+					break;
+				}
+				}
+			}
+			obj->AddPattern(frame, pattern);
+			break;
+		}
+		case StgMovePattern::TYPE_XY_ANG:
+		{
+			ref_unsync_ptr<StgMovePattern_XY_Angle> pattern(new StgMovePattern_XY_Angle(obj));
+			for (int i = 3; i < argc; ++i) {
+				switch (i) {
+				case 3:
+				{
+					ADD_CMD(StgMovePattern_XY_Angle::SET_S_X, argv[i].as_float());
+					break;
+				}
+				case 4:
+				{
+					ADD_CMD(StgMovePattern_XY_Angle::SET_S_Y, argv[i].as_float());
+					break;
+				}
+				case 5:
+				{
+					ADD_CMD(StgMovePattern_XY_Angle::SET_A_X, argv[i].as_float());
+					break;
+				}
+				case 6:
+				{
+					ADD_CMD(StgMovePattern_XY_Angle::SET_A_Y, argv[i].as_float());
+					break;
+				}
+				case 7:
+				{
+					ADD_CMD(StgMovePattern_XY_Angle::SET_M_X, argv[i].as_float());
+					break;
+				}
+				case 8:
+				{
+					ADD_CMD(StgMovePattern_XY_Angle::SET_M_Y, argv[i].as_float());
+					break;
+				}
+				case 9:
+				{
+					double angOff = argv[i].as_float();
+					ADD_CMD2(StgMovePattern_XY_Angle::SET_ANGLE, angOff, Math::DegreeToRadian(angOff));
+					break;
+				}
+				case 10:
+				{
+					double angVel = argv[i].as_float();
+					ADD_CMD2(StgMovePattern_XY_Angle::SET_AGVEL, angVel, Math::DegreeToRadian(angVel));
+					break;
+				}
+				case 11:
+				{
+					double angAcc = argv[i].as_float();
+					ADD_CMD2(StgMovePattern_XY_Angle::SET_AGACC, angAcc, Math::DegreeToRadian(angAcc));
+					break;
+				}
+				case 12:
+				{
+					double angMax = argv[i].as_float();
+					ADD_CMD2(StgMovePattern_XY_Angle::SET_AGMAX, angMax, Math::DegreeToRadian(angMax));
+					break;
+				}
+				case 13:
+				{
+					pattern->SetShotDataID(argv[i].as_int());
+					break;
+				}
+				}
+			}
+			obj->AddPattern(frame, pattern);
+			break;
+		}
+		case StgMovePattern::TYPE_LINE_SPEED:
+		{
+			if (argc < 6) break;
+			ref_unsync_ptr<StgMovePattern_Line_Speed> pattern(new StgMovePattern_Line_Speed(obj));
+			ADD_CMD(StgMovePattern_Line::SET_DX, argv[3].as_float());
+			ADD_CMD(StgMovePattern_Line::SET_DY, argv[4].as_float());
+			ADD_CMD(StgMovePattern_Line::SET_SP, argv[5].as_float());
+			obj->AddPattern(frame, pattern);
+			break;
+		}
+		case StgMovePattern::TYPE_LINE_FRAME:
+		{
+			if (argc < 6) break;
+			ref_unsync_ptr<StgMovePattern_Line_Frame> pattern(new StgMovePattern_Line_Frame(obj));
+			ADD_CMD(StgMovePattern_Line::SET_DX, argv[3].as_float());
+			ADD_CMD(StgMovePattern_Line::SET_DY, argv[4].as_float());
+			ADD_CMD(StgMovePattern_Line::SET_FR, argv[5].as_float());
+			ADD_CMD(StgMovePattern_Line::SET_LP, (argc == 7) ? argv[6].as_float() : Math::Lerp::LINEAR);
+			obj->AddPattern(frame, pattern);
+			break;
+		}
+		case StgMovePattern::TYPE_LINE_WEIGHT:
+		{
+			if (argc < 7) break;
+			ref_unsync_ptr<StgMovePattern_Line_Weight> pattern(new StgMovePattern_Line_Weight(obj));
+			ADD_CMD(StgMovePattern_Line::SET_DX, argv[3].as_float());
+			ADD_CMD(StgMovePattern_Line::SET_DY, argv[4].as_float());
+			ADD_CMD(StgMovePattern_Line::SET_WG, argv[5].as_float());
+			ADD_CMD(StgMovePattern_Line::SET_MS, argv[6].as_float());
+			obj->AddPattern(frame, pattern);
+			break;
+		}
+		case StgMovePattern::TYPE_SPLINE:
+		{
+			ref_unsync_ptr<StgMovePattern_Spline> pattern(new StgMovePattern_Spline(obj));
+			for (int i = 3; i < argc; ++i) {
+				switch (i) {
+				case 3:
+				{
+					ref_unsync_ptr<DxSplineObject> sp = ref_unsync_ptr<DxSplineObject>::Cast(script->GetObject(argv[i].as_int()));
+					pattern->SetSpline(sp);
+					break;
+				}
+				case 4:
+				{
+					ADD_CMD(StgMovePattern_Spline::SET_FR, argv[i].as_float());
+					break;
+				}
+				case 5:
+				{
+					ADD_CMD(StgMovePattern_Spline::SET_LP, argv[i].as_float());
+					break;
+				}
+				case 6:
+				{
+					ADD_CMD(StgMovePattern_Spline::SET_ARC, argv[i].as_float());
+					break;
+				}
+				}
+			}
+			obj->AddPattern(frame, pattern);
+			break;
+		}
+		}
+	}
+	return value();
+}
 gstd::value StgStageScript::Func_ObjMove_AddPatternA1(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;
 	int id = argv[0].as_int();
