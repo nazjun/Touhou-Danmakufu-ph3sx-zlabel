@@ -208,6 +208,31 @@ bool DirectGraphics::Initialize(HWND hWnd, const DirectGraphicsConfig& config) {
 	}
 
 	{
+		if (GetCurrentThreadId() != GetWindowThreadProcessId(hWnd, NULL)) {
+			std::wstring err = L"Window hWnd created on different thread than CreateDevice.";
+			throw wexception(err);
+		}
+
+		ShowWindow(hWnd, SW_SHOW);
+		UpdateWindow(hWnd);
+
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
+		// Let possible D3D9 translation layer catch up (awful)
+		Sleep(50);
+
+		D3DADAPTER_IDENTIFIER9 id;
+		pDirect3D->GetAdapterIdentifier(0, 0, &id);
+		Logger::WriteTop(L"Direct3D Adapter");
+		Logger::WriteTop(id.Description);
+		Logger::WriteTop(id.Driver);
+	}
+
+	{
 		D3DPRESENT_PARAMETERS* d3dpp = config.bWindowed ? &d3dppWin_ : &d3dppFull_;
 		modeScreen_ = config.bWindowed ? SCREENMODE_WINDOW : SCREENMODE_FULLSCREEN;
 
