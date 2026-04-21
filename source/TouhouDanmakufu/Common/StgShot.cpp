@@ -1015,13 +1015,12 @@ void StgShotObject::_DeleteInAutoClip() {
 }
 void StgShotObject::_DeleteInFadeDelete() {
 	if (IsDeleted()) return;
+	if (frameFadeDelete_ >= 0 && !deleteCallback_.empty()) {
+		for (auto& callback : deleteCallback_)
+			callback.call();
+		deleteCallback_.clear();
+	}
 	if (frameFadeDelete_ == 0) {
-		if (!deleteCallback_.empty()) {
-			for (auto& callback : deleteCallback_)
-				callback.call();
-			deleteCallback_.clear();
-		}
-
 		_SendDeleteEvent(TypeDelete::Fade);
 
 		auto objectManager = stageController_->GetMainObjectManager();
