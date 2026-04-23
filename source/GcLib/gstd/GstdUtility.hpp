@@ -344,6 +344,11 @@ namespace gstd {
 			return std::min(std::abs<int>(i - leftMid), std::abs<int>(i - rightMid));
 		}
 
+		static inline int Triwave(int i, int lower, int upper) {
+			int bounds = upper - lower;
+			return upper - std::abs<int>((i % (bounds * 2)) - bounds);
+		}
+
 		static inline constexpr double DegreeToRadian(double angle) { return angle * GM_PI / 180.0; }
 		static inline constexpr double RadianToDegree(double angle) { return angle * 180.0 / GM_PI; }
 

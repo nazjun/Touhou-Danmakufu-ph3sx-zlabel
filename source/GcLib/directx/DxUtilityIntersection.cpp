@@ -767,4 +767,52 @@ void DxIntersect::GetSlice_AmorphousPolygram(std::vector<double>& radii, size_t 
 	}
 }
 
+void DxIntersect::GetSlice_EquidistantAmorphousPolygram(std::vector<double>& radiiAngles, size_t fineSamples, size_t samples, const DxAmorphousPolygram* polygram) {
+	std::vector<double> radii(fineSamples + 1, 0);
+	DxAmorphousPolygram aPolygram(0, 0, 1, polygram->GetSide(), 0, polygram->GetInning(), polygram->GetSmoothing());
+	DxIntersect::GetSlice_AmorphousPolygram(radii, fineSamples, &aPolygram);
+
+	float spanTheta = (GM_PI_X2 / (float)polygram->GetSide()) / (float)fineSamples;
+
+	std::vector<double> dists(fineSamples + 1, 0);
+
+	float x1 = 1;
+	float y1 = 0;
+
+	for (size_t i = 1; i <= fineSamples; ++i) {
+		float theta = spanTheta * i;
+		float radSample = radii[i];
+		float x2 = radSample * cos(theta);
+		float y2 = radSample * sin(theta);
+
+		dists[i] = dists[i - 1] + hypot(y2 - y1, x2 - x1);
+
+		x1 = x2;
+		y1 = y2;
+	}
+
+	radiiAngles[0] = 1;
+
+	float sampleDist = dists[fineSamples] / (float)samples;
+	float aggregateDist = sampleDist;
+
+	spanTheta = Math::RadianToDegree(spanTheta);
+
+	size_t j = 1;
+
+	for (size_t i = 1; i <= samples; ++i) {
+		for (; dists[j] < aggregateDist && j < fineSamples; ++j);
+
+		float nearestLower = dists[j - 1];
+		float nearestUpper = dists[j];
+
+		float interp = (aggregateDist - nearestLower) / (nearestUpper - nearestLower);
+
+		radiiAngles[2 * i] = Math::Lerp::Linear<float, float>(radii[j - 1], radii[j], interp);
+		radiiAngles[2 * i + 1] = spanTheta * (j - 1 + interp);
+
+		aggregateDist += sampleDist;
+	}
+}
+
 #endif

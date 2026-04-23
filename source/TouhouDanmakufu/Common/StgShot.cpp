@@ -888,6 +888,8 @@ StgShotObject::StgShotObject(StgStageController* stageController) : StgMoveObjec
 	frameAutoDelete_ = INT_MAX;
 	typeAutoDelete_ = StgShotManager::TO_TYPE_IMMEDIATE;
 
+	framePatternWait_ = 0;
+
 	typeOwner_ = OWNER_ENEMY;
 
 	bUserIntersectionMode_ = false;
@@ -928,6 +930,8 @@ void StgShotObject::Clone(DxScriptObjectBase* _src, bool deepCopy) {
 	frameGrazeInvalidStart_ = src->frameGrazeInvalidStart_;
 	frameFadeDelete_ = src->frameFadeDelete_;
 	bPenetrateShot_ = src->bPenetrateShot_;
+
+	framePatternWait_ = src->framePatternWait_;
 
 	renderTarget_ = src->renderTarget_;
 
@@ -2807,6 +2811,9 @@ void StgCurveLaserObject::_SendDeleteEvent(TypeDelete type) {
 //****************************************************************************
 StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController* stageController) : StgShotObject(stageController) {
 	typeObject_ = TypeObject::ShotPattern;
+
+	bFreezePatterns_ = true;
+
 	bAutoDeletePattern_ = false;
 
 	typePattern_ = PATTERN_TYPE_FAN;
@@ -2841,6 +2848,11 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	fireRadiusOffset_ = 0;
 	fireRadiusScale_ = 0;
 	lerpRadius_ = Math::Lerp::GetFunc<float, float>(Math::Lerp::LINEAR);
+
+	bPropagateSpeed_ = false;
+	bPropagateWait_ = false;
+
+	safeRadiusSq_ = -1;
 
 	speedBase_ = 1;
 	speedArgument_ = 1;
@@ -2917,6 +2929,11 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 	fireRadiusScale_ = src->fireRadiusScale_;
 	lerpRadius_ = src->lerpRadius_;
 
+	bPropagateSpeed_ = src->bPropagateSpeed_;
+	bPropagateWait_ = src->bPropagateWait_;
+
+	safeRadiusSq_ = src->safeRadiusSq_;
+
 	speedBase_ = src->speedBase_;
 	speedArgument_ = src->speedArgument_;
 	speedOff_ = src->speedOff_;
@@ -2964,11 +2981,16 @@ void StgShotPatternGeneratorObject::Work() {
 
 	for (auto itr = shotsWaiting_.begin(); itr != shotsWaiting_.end(); ) {
 		if (itr->frame <= frameExist_) {
+			if (bPropagateWait_)
+				itr->shot->SetFramePattern(itr->shot->GetPatternWait());
+
 			itr->shot->SetEnableMovement(bEnableMovement_);
 			itr->manager->AddShot(itr->shot);
 
 			if (itr->parent != nullptr)
 				itr->parent->AddChild(itr->parent, itr->shot);
+
+			tickRes_.push_back(itr->shot->GetObjectID());
 
 			itr = shotsWaiting_.erase(itr);
 		}
@@ -3022,6 +3044,9 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 	auto __CreateShot = [&](float _x, float _y, double _ss, double _sa, double _wayWaitScale, double _stackWaitScale,
 		size_t _iWay, size_t _iStack, size_t _wayStart, size_t _wayEnd, size_t _stackEnd) -> bool {
 		if (shotManager->GetShotCountAll() >= StgShotManager::SHOT_MAX) return false;
+
+		if (safeRadiusSq_ >= 0 && Math::HypotSq<double>(_x - objPlayer->GetX(), _y - objPlayer->GetY()) < safeRadiusSq_)
+			return false;
 
 		ref_unsync_ptr<StgShotObject> objShot;
 		switch (typeShot_) {
@@ -3081,29 +3106,34 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 			delayScale->y *= scaling;
 		}
 
+		if (bPropagateSpeed_) {
+			for (StgMovePattern* pattern : objShot->GetAllPatterns()) {
+				for (auto& command : *pattern->GetCommands())
+					command.second *= _ss;
+			}
+		}
+
 		int idRes = script->AddObject(objShot);
 		if (idRes == DxScript::ID_INVALID) return false;
 
 		if (idVector) idVector->push_back(idRes);
 
-		if (wayWait_ == 0 && stackWait_ == 0) {
-			shotManager->AddShot(objShot);
-			if (shotParent_) shotParent_->AddChild(shotParent_, objShot);
-		}
-		else {
+		size_t totalWait = 0;
+
+		if (wayWait_ != 0 || stackWait_ != 0) {
 			size_t wayWait = _wayWaitScale * ((wayWait_ > 0) ? (wayWait_ * (_iWay - _wayStart)) : (-wayWait_ * (_wayEnd - _iWay - 1)));
 			size_t stackWait = _stackWaitScale * ((stackWait_ > 0) ? (stackWait_ * _iStack) : (-stackWait_ * (_stackEnd - _iStack - 1)));
+			totalWait = wayWait + stackWait;
+		}
 
-			size_t totalWait = wayWait + stackWait;
-
-			if (totalWait > 0) {
-				objShot->SetEnableMovement(false);
-				shotsWaiting_.emplace_back(shotManager, objShot, shotParent_, frameExist_ + totalWait);
-			}
-			else {
-				shotManager->AddShot(objShot);
-				if (shotParent_) shotParent_->AddChild(shotParent_, objShot);
-			}
+		if (totalWait > 0) {
+			objShot->SetEnableMovement(false);
+			objShot->SetPatternWait(totalWait);
+			shotsWaiting_.emplace_back(shotManager, objShot, shotParent_, frameExist_ + totalWait);
+		}
+		else {
+			shotManager->AddShot(objShot);
+			if (shotParent_) shotParent_->AddChild(shotParent_, objShot);
 		}
 
 		return true;
@@ -3295,6 +3325,62 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 
 					__CreateShot(sx, sy, ss, sa, 1, 1, iEdge, ws, wayStart, sendEnd, shotStack_);
 				}
+			}
+			break;
+		}
+		case PATTERN_TYPE_AMORPHOUS:
+		case PATTERN_TYPE_AMORPHOUS_AIMED:
+		{
+			double ini_angle = angleBase_;
+			if (objPlayer != nullptr && typePattern_ == PATTERN_TYPE_AMORPHOUS_AIMED)
+				ini_angle += atan2(objPlayer->GetY() - basePosY, objPlayer->GetX() - basePosX);
+
+			size_t numEdges = shotWay_;
+			size_t numShotPerEdge = shotStack_;
+
+			float inning = speedArgument_;
+			float smoothing = Math::RadianToDegree(angleArgument_);
+
+			size_t wayStart = (shotCutoff_ < 0) ? (numEdges + shotCutoff_) : 0;
+			size_t wayEnd = (shotCutoff_ >= 0) ? shotCutoff_ : numEdges;
+
+			std::vector<double> radiiAngles(2 * (numShotPerEdge + 1), 0);
+			DxAmorphousPolygram aPolygram(0, 0, 1, numEdges, 0, inning, smoothing);
+			DxIntersect::GetSlice_EquidistantAmorphousPolygram(radiiAngles, numShotPerEdge * 4, numShotPerEdge, &aPolygram);
+
+			float shotCount = numShotPerEdge * numEdges;
+
+			for (size_t iShot = 0; iShot < shotCount; ++iShot) {
+				size_t iWay = iShot / numShotPerEdge;
+
+				if (bInterlace_) {
+					size_t iMidWay = (int)std::round((float)iShot / numEdges) % numEdges;
+					if (iMidWay < wayStart || iMidWay >= wayEnd)
+						continue;
+				}
+				else if (iWay < wayStart || iWay >= wayEnd)
+					continue;
+
+				int sampleIndex = Math::Triwave(iShot, 0, numShotPerEdge);
+				float radSample = radiiAngles[sampleIndex * 2];
+				float angSample = Math::DegreeToRadian(radiiAngles[sampleIndex * 2 + 1]);
+
+				int t = std::floor((float)iShot / numShotPerEdge);
+				float angOff = (t % 2 == 1) ? ((GM_PI_X2 / numEdges) - angSample) : angSample;
+
+				float shotAngle = ini_angle + angOff + (GM_PI_X2 / numEdges) * std::floor((float)iShot / numShotPerEdge);
+
+				double lerp = 1.0 - (double)sampleIndex / numShotPerEdge;
+				float rad = fireRadiusOffset_ * (fireRadiusScale_ * lerpRadius_(0, 1, lerp) + 1);
+
+				float sx = basePosX + rad * radSample * cos(shotAngle);
+				float sy = basePosY + rad * radSample * sin(shotAngle);
+
+				double sa = shotAngle + angleOff_;
+				double ss = radSample * speedBase_;
+				ss *= speedOff_ * lerpSpeed_(0, 1, lerp) + 1;
+
+				__CreateShot(sx, sy, ss, sa, 1, 1, iWay, sampleIndex, wayStart, wayEnd, shotStack_ + 1);
 			}
 			break;
 		}

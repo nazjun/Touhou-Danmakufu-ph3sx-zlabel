@@ -459,6 +459,7 @@ public:
 	static gstd::value Func_ObjShot_GetIntersectionEnable(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjShot_SetItemChange(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjShot_GetDelay(gstd::script_machine* machine, int argc, const gstd::value* argv);
+	DNH_FUNCAPI_DECL_(Func_ObjShot_GetPatternWait);
 	static gstd::value Func_ObjShot_GetDamage(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjShot_GetPenetration(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjShot_IsSpellResist(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -546,6 +547,8 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetBasePointOffset);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetBasePointOffsetCircle);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetShootRadius);
+	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetPropagate);
+	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetSafeRadius);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetSpinParameter);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetLaserParameter);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_GetParentObject);

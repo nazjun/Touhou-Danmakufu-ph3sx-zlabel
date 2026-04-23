@@ -23,6 +23,8 @@ StgMoveObject::StgMoveObject(StgStageController* stageController) : StgObjectBas
 	springMassSystems_.clear();
 	springMassIndexes_.clear();
 	bSpringMassAims_.clear();
+
+	bFreezePatterns_ = false;
 }
 StgMoveObject::~StgMoveObject() {
 	parent_ = nullptr;
@@ -67,6 +69,8 @@ void StgMoveObject::Copy(StgMoveObject* src) {
 		}
 		mapPattern_[iPair.first] = listPattern;
 	}
+
+	// bFreezePatterns_ purposefully omitted
 }
 void StgMoveObject::Move() {
 	++frameMove_;
@@ -85,7 +89,7 @@ void StgMoveObject::Move() {
 		}
 	}
 	if (bStep) {
-		if (mapPattern_.size() > 0) {
+		if (mapPattern_.size() > 0 && !bFreezePatterns_) {
 			auto itr = mapPattern_.begin();
 			while (framePattern_ >= itr->first) {
 				for (auto& ipPattern : itr->second)
@@ -126,12 +130,27 @@ void StgMoveObject::_AttachReservedPattern(ref_unsync_ptr<StgMovePattern> patter
 	pattern_ = pattern;
 }
 void StgMoveObject::AddPattern(uint32_t frameDelay, ref_unsync_ptr<StgMovePattern> pattern, bool bForceMap) {
-	if (frameDelay == 0 && !bForceMap)
+	if (frameDelay == 0 && !bForceMap && !bFreezePatterns_)
 		_AttachReservedPattern(pattern);
 	else {
 		uint32_t frame = frameDelay + framePattern_;
 		mapPattern_[frame].push_back(pattern);
 	}
+}
+
+std::vector<StgMovePattern*> StgMoveObject::GetAllPatterns() {
+	std::vector<StgMovePattern*> res;
+	res.reserve(1 + mapPattern_.size()); // reasonable assumption, 1 pattern per frame is the typical use case
+
+	if (pattern_ != nullptr)
+		res.push_back(pattern_.get());
+
+	for (auto& iPair : mapPattern_) {
+		for (auto& iPattern : iPair.second)
+			res.push_back(iPattern.get());
+	}
+
+	return res;
 }
 
 double StgMoveObject::GetSpeed() {

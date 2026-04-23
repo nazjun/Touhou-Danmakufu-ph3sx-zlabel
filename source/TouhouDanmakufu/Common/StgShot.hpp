@@ -333,6 +333,8 @@ protected:
 	int frameGrazeInvalidStart_;
 	int frameFadeDelete_;
 
+	int framePatternWait_;
+
 	bool bPenetrateShot_; // Translation: Does The Shot Lose Penetration Points Upon Colliding With Another Shot And Not An Enemy
 
 	weak_ptr<Texture> renderTarget_;
@@ -481,6 +483,9 @@ public:
 	void SetHitboxScaleY(float y) { hitboxScale_.y = y; }
 	float GetHitboxScaleX() { return hitboxScale_.x; }
 	float GetHitboxScaleY() { return hitboxScale_.y; }
+
+	void SetPatternWait(int wait) { framePatternWait_ = wait; }
+	int GetPatternWait() { return framePatternWait_; }
 };
 
 //*******************************************************************
@@ -754,6 +759,8 @@ public:
 		PATTERN_TYPE_ARROW_AIMED,
 		PATTERN_TYPE_POLYGON,
 		PATTERN_TYPE_POLYGON_AIMED,
+		PATTERN_TYPE_AMORPHOUS,
+		PATTERN_TYPE_AMORPHOUS_AIMED,
 		PATTERN_TYPE_ELLIPSE,
 		PATTERN_TYPE_ELLIPSE_AIMED,
 		PATTERN_TYPE_SCATTER_ANGLE,
@@ -821,6 +828,11 @@ private:
 	float fireRadiusScale_;
 	Math::Lerp::funcLerp<float, float> lerpRadius_;
 	//-----------------------------------------------------------------
+
+	bool bPropagateSpeed_;
+	bool bPropagateWait_;
+
+	float safeRadiusSq_;
 
 	double speedBase_;
 	double speedArgument_;
@@ -892,11 +904,13 @@ public:
 		shotCutoff_ = cutoff;
 		bInterlace_ = bInterlace;
 	}
+
 	void SetWayStackScale(float wayScale, float stackScale, Math::Lerp::Type lerpType) {
 		wayScale_ = wayScale;
 		stackScale_ = stackScale;
 		lerpScale_ = Math::Lerp::GetFunc<float, float>(lerpType);
 	}
+
 	void SetWayStackWait(int wayWait, int stackWait) {
 		wayWait_ = wayWait;
 		stackWait_ = stackWait;
@@ -906,27 +920,48 @@ public:
 		basePointX_ = bx;
 		basePointY_ = by;
 	}
+
 	void SetOffsetFromBasePoint(float ox, float oy) {
 		basePointOffsetX_ = ox;
 		basePointOffsetY_ = oy;
 	}
+
 	void SetRadiusFromFirePoint(float r, float off, Math::Lerp::Type lerpType) {
 		fireRadiusOffset_ = r;
 		fireRadiusScale_ = off;
 		lerpRadius_ = Math::Lerp::GetFunc<float, float>(lerpType);
 	}
 
-	void SetSpeed(double base, double arg, double off, Math::Lerp::Type lerpType) {
+	void SetPropagate(bool bPropagateSpeed, bool bPropagateWait) {
+		bPropagateSpeed_ = bPropagateSpeed;
+		bPropagateWait_ = bPropagateWait;
+	}
+
+	void SetSafeRadius(float r) { safeRadiusSq_ = r * r; }
+
+	void SetSpeed(double base, double arg, double off) {
 		speedBase_ = base;
 		speedArgument_ = arg;
 		speedOff_ = off;
+	}
+
+	void SetSpeedLerp(Math::Lerp::Type lerpType) {
 		lerpSpeed_ = Math::Lerp::GetFunc<double, double>(lerpType);
 	}
+
+	double GetSpeedBase() { return speedBase_; }
+	double GetSpeedArgument() { return speedArgument_; }
+	double GetSpeedOff() { return speedOff_; }
+
 	void SetAngle(double base, double arg, double off) {
 		angleBase_ = base;
 		angleArgument_ = arg;
 		angleOff_ = off;
 	}
+
+	double GetAngleBase() { return angleBase_; }
+	double GetAngleArgument() { return angleArgument_; }
+	double GetAngleOff() { return angleOff_; }
 
 	void SetSpinArgument(double angularVelocity, bool bFixedAngle) {
 		angularVelocity_ = angularVelocity;

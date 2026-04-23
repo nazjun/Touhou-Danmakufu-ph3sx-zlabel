@@ -515,6 +515,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjShot_GetIntersectionEnable", StgStageScript::Func_ObjShot_GetIntersectionEnable, 1 },
 	{ "ObjShot_SetItemChange", StgStageScript::Func_ObjShot_SetItemChange, 2 },
 	{ "ObjShot_GetDelay", StgStageScript::Func_ObjShot_GetDelay, 1 },
+	{ "ObjShot_GetPatternWait", StgStageScript::Func_ObjShot_GetPatternWait, 1 },
 	{ "ObjShot_GetDamage", StgStageScript::Func_ObjShot_GetDamage, 1 },
 	{ "ObjShot_GetPenetration", StgStageScript::Func_ObjShot_GetPenetration, 1 },
 	{ "ObjShot_IsSpellResist", StgStageScript::Func_ObjShot_IsSpellResist, 1 },
@@ -611,6 +612,8 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjPatternShot_SetBasePointOffsetCircle", StgStageScript::Func_ObjPatternShot_SetBasePointOffsetCircle, 3 },
 	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 2 },
 	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 4 },
+	{ "ObjPatternShot_SetPropagate", StgStageScript::Func_ObjPatternShot_SetPropagate, 3 },
+	{ "ObjPatternShot_SetSafeRadius", StgStageScript::Func_ObjPatternShot_SetSafeRadius, 2 },
 	{ "ObjPatternShot_SetSpinParameter", StgStageScript::Func_ObjPatternShot_SetSpinParameter, 3 },
 	{ "ObjPatternShot_SetLaserParameter", StgStageScript::Func_ObjPatternShot_SetLaserParameter, 3 },
 	{ "ObjPatternShot_GetParentObject", StgStageScript::Func_ObjPatternShot_GetParentObject, 1 },
@@ -676,6 +679,8 @@ static const std::vector<constant> stgStageConstant = {
 	constant("PATTERN_ARROW_AIMED", StgShotPatternGeneratorObject::PATTERN_TYPE_ARROW_AIMED),
 	constant("PATTERN_POLYGON", StgShotPatternGeneratorObject::PATTERN_TYPE_POLYGON),
 	constant("PATTERN_POLYGON_AIMED", StgShotPatternGeneratorObject::PATTERN_TYPE_POLYGON_AIMED),
+	constant("PATTERN_AMORPHOUS", StgShotPatternGeneratorObject::PATTERN_TYPE_AMORPHOUS),
+	constant("PATTERN_AMORPHOUS_AIMED", StgShotPatternGeneratorObject::PATTERN_TYPE_AMORPHOUS_AIMED),
 	constant("PATTERN_ELLIPSE", StgShotPatternGeneratorObject::PATTERN_TYPE_ELLIPSE),
 	constant("PATTERN_ELLIPSE_AIMED", StgShotPatternGeneratorObject::PATTERN_TYPE_ELLIPSE_AIMED),
 	constant("PATTERN_SCATTER_ANGLE", StgShotPatternGeneratorObject::PATTERN_TYPE_SCATTER_ANGLE),
@@ -5423,6 +5428,16 @@ gstd::value StgStageScript::Func_ObjShot_GetDelay(gstd::script_machine* machine,
 		res = obj->GetDelay();
 	return script->CreateFloatValue(res);
 }
+gstd::value StgStageScript::Func_ObjShot_GetPatternWait(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	StgStageController* stageController = script->stageController_;
+	int id = argv[0].as_int();
+	StgShotObject* obj = script->GetObjectPointerAs<StgShotObject>(id);
+	int res = 0;
+	if (obj)
+		res = obj->GetPatternWait();
+	return script->CreateFloatValue(res);
+}
 gstd::value StgStageScript::Func_ObjShot_GetDamage(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;
 	StgStageController* stageController = script->stageController_;
@@ -6365,11 +6380,12 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetSpeed(gstd::script_machine* m
 	int id = argv[0].as_int();
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
 	if (obj) {
-		float base = argv[1].as_float();
-		float arg = argv[2].as_float();
-		float off = (argc == 5) ? argv[3].as_float() : 0;
-		Math::Lerp::Type type = (argc == 5) ? (Math::Lerp::Type)argv[4].as_int() : Math::Lerp::LINEAR;
-		obj->SetSpeed(base, arg, off, type);
+		float base = argv[1].as_int() == StgMovePattern::NO_CHANGE ? obj->GetSpeedBase() : argv[1].as_float();
+		float arg = argv[2].as_int() == StgMovePattern::NO_CHANGE ? obj->GetSpeedArgument() : argv[2].as_float();
+		float off = (argc == 5) ? (argv[3].as_int() == StgMovePattern::NO_CHANGE ? obj->GetSpeedOff() : argv[3].as_float()) : 0;
+		obj->SetSpeed(base, arg, off);
+		if (argc == 5 && argv[4].as_int() != StgMovePattern::NO_CHANGE)
+			obj->SetSpeedLerp((Math::Lerp::Type)argv[4].as_int());
 	}
 	return value();
 }
@@ -6380,9 +6396,9 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetAngle(gstd::script_machine* m
 	int id = argv[0].as_int();
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
 	if (obj) {
-		float base = Math::DegreeToRadian(argv[1].as_float());
-		float arg = Math::DegreeToRadian(argv[2].as_float());
-		float off = (argc == 4) ? Math::DegreeToRadian(argv[3].as_float()) : 0;
+		float base = argv[1].as_int() == StgMovePattern::NO_CHANGE ? obj->GetAngleBase() : Math::DegreeToRadian(argv[1].as_float());
+		float arg = argv[2].as_int() == StgMovePattern::NO_CHANGE ? obj->GetAngleArgument() : Math::DegreeToRadian(argv[2].as_float());
+		float off = (argc == 4) ? (argv[3].as_int() == StgMovePattern::NO_CHANGE ? obj->GetAngleOff() : Math::DegreeToRadian(argv[3].as_float())) : 0;
 		obj->SetAngle(base, arg, off);
 	}
 	return value();
@@ -6437,6 +6453,31 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetShootRadius(gstd::script_mach
 		float off = (argc == 4) ? argv[2].as_float() : 0;
 		Math::Lerp::Type type = (argc == 4) ? (Math::Lerp::Type)argv[3].as_int() : Math::Lerp::LINEAR;
 		obj->SetRadiusFromFirePoint(r, off, type);
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjPatternShot_SetPropagate(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	StgStageController* stageController = script->stageController_;
+
+	int id = argv[0].as_int();
+	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
+	if (obj) {
+		bool bSpeed = argv[1].as_boolean();
+		bool bWait = argv[2].as_boolean();
+		obj->SetPropagate(bSpeed, bWait);
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjPatternShot_SetSafeRadius(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	StgStageController* stageController = script->stageController_;
+
+	int id = argv[0].as_int();
+	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
+	if (obj) {
+		float r = argv[1].as_float();
+		obj->SetSafeRadius(r);
 	}
 	return value();
 }

@@ -45,6 +45,7 @@ protected:
 
 	uint32_t framePattern_;
 	std::map<uint32_t, std::list<ref_unsync_ptr<StgMovePattern>>> mapPattern_;
+	bool bFreezePatterns_;
 	virtual void _Move();
 	void _AttachReservedPattern(ref_unsync_ptr<StgMovePattern> pattern);
 public:
@@ -105,6 +106,11 @@ public:
 		pattern_ = pattern;
 	}
 	void AddPattern(uint32_t frameDelay, ref_unsync_ptr<StgMovePattern> pattern, bool bForceMap = false);
+
+	std::vector<StgMovePattern*> GetAllPatterns();
+	std::map<uint32_t, std::list<ref_unsync_ptr<StgMovePattern>>>* GetMapPattern() { return &mapPattern_; }
+
+	void SetFramePattern(uint32_t f) { framePattern_ = f; }
 
 	int GetMoveFrame() { return frameMove_; }
 };
@@ -254,6 +260,7 @@ public:
 	virtual void Move() = 0;
 
 	void AddCommand(std::pair<uint8_t, double> cmd) { listCommand_.push_back(cmd); }
+	std::list<std::pair<int8_t, double>>* GetCommands() { return &listCommand_; }
 	int GetType() { return typeMove_; }
 
 	virtual inline double GetSpeed() = 0;

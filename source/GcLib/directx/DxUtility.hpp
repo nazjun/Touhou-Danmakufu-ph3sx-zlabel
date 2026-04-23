@@ -205,6 +205,7 @@ namespace directx {
 		static bool Polygon_RegularPolygon(const std::vector<DxPoint>* verts, const DxRegularPolygon* polygon);
 
 		static void GetSlice_AmorphousPolygram(std::vector<double>& radii, size_t samples, const DxAmorphousPolygram* polygram);
+		static void GetSlice_EquidistantAmorphousPolygram(std::vector<double>& radiiAngles, size_t fineSamples, size_t samples, const DxAmorphousPolygram* polygram);
 	};
 #endif
 }
