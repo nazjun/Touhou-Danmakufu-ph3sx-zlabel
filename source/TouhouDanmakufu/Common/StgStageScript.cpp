@@ -6246,7 +6246,7 @@ gstd::value StgStageScript::Func_ObjPatternShot_Fire(gstd::script_machine* machi
 			int repeatTimes = argv[2].as_int();
 			obj->SetRepeat(repeatWait, repeatTimes, nullptr, nullptr, nullptr);
 		}
-		else
+		else if (!obj->ResetRepeat())
 			obj->FireSet(machine->data, stageController, nullptr);
 	}
 	return value();

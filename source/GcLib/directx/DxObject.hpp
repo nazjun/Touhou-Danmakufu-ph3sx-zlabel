@@ -914,6 +914,10 @@ namespace directx {
 		std::vector<RenderList> listObjRender_;
 		std::vector<shared_ptr<Shader>> listShader_;
 
+		std::map<uint32_t, std::list<DxScriptObjectBase::DxCallback>> waitCallback_;
+
+		int workFrame_;
+
 		void _SetObjectID(DxScriptObjectBase* obj, int index) { obj->idObject_ = index; obj->manager_ = this; }
 
 		void _DeleteObject(int id);
@@ -961,6 +965,10 @@ namespace directx {
 		void ResetShader();
 		void ResetShader(int min, int max);
 		shared_ptr<Shader> GetShader(int index);
+
+		std::map<uint32_t, std::list<DxScriptObjectBase::DxCallback>>* GetWaitCallback() { return &waitCallback_; }
+
+		int GetWorkFrame() { return workFrame_; }
 
 		void ReserveSound(shared_ptr<SoundPlayer> player);
 		void DeleteReservedSound(shared_ptr<SoundPlayer> player);

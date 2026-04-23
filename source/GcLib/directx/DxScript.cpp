@@ -57,6 +57,9 @@ shared_ptr<SoundSourceData> DxScriptResourceCache::GetSound(const std::wstring& 
 //DxScript
 //****************************************************************************
 static const std::vector<function> dxFunction = {
+	//Timed callbacks
+	{ "waitcall", DxScript::Func_WaitCall, -3 },	//2 fixed + ... -> 2 minimum
+
 	//Matrix operations
 	{ "MatrixIdentity", DxScript::Func_MatrixIdentity, 0 },
 	{ "MatrixInverse", DxScript::Func_MatrixInverse, 1 },
@@ -983,6 +986,34 @@ lab_type_invalid:
 	}
 lab_return:
 	return res;
+}
+
+gstd::value DxScript::Func_WaitCall(gstd::script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+
+	int waitTime = std::max<int>(0, argv[0].as_int());
+	uint64_t callback = (uint64_t)argv[1].as_int();
+	if (callback != NULL) {
+		script_block* subIvk = (script_block*)(callback & 0xffffffff);
+
+		if (subIvk->func == nullptr && !(subIvk->kind == block_kind::bk_fcall || subIvk->kind == block_kind::bk_tcall))
+			script->RaiseError("Callback function must be an engine function, fcall, or tcall.");
+
+		if (argc - 2 < subIvk->arguments)
+			script->RaiseError("Insufficient arguments provided for function pointer.");
+
+		if (argc - 2 > subIvk->arguments)
+			script->RaiseError("Too many arguments provided for function pointer.");
+
+		std::vector<value> args(argv + 2, argv + 2 + subIvk->arguments);
+
+		auto objectManager = script->GetObjectManager();
+
+		auto& waitMap = *objectManager->GetWaitCallback();
+		waitMap[waitTime + objectManager->GetWorkFrame()].emplace_back(machine, subIvk, args);
+	}
+
+	return value();
 }
 
 gstd::value DxScript::Func_MatrixIdentity(gstd::script_machine* machine, int argc, const value* argv) {

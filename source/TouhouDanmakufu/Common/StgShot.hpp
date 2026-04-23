@@ -891,6 +891,13 @@ public:
 		}
 	}
 
+	bool ResetRepeat() {
+		repeatNext_ = 0;
+		repeatTimes_ = repeatMax_;
+		repeatCount_ = 0;
+		return repeatMax_ > 0;
+	}
+
 	std::vector<int>* GetFireVector() { return &fireRes_; }
 
 	void FireSet(void* scriptData, StgStageController* controller, std::vector<int>* idVector);

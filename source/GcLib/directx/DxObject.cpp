@@ -1878,6 +1878,8 @@ DxScriptObjectManager::DxScriptObjectManager() {
 	totalObjectCreateCount_ = 0U;
 
 	listDeleteObject_.reserve(512U);
+
+	workFrame_ = 0;
 }
 DxScriptObjectManager::~DxScriptObjectManager() {
 }
@@ -2071,6 +2073,18 @@ void DxScriptObjectManager::WorkObject() {
 		++(obj->frameExist_);
 		++itr;
 	}
+
+	if (waitCallback_.size() > 0) {
+		auto itr = waitCallback_.begin();
+		while (workFrame_ >= itr->first) {
+			for (auto& callback : itr->second)
+				callback.call();
+			itr = waitCallback_.erase(itr);
+			if (waitCallback_.size() == 0) break;
+		}
+	}
+
+	++workFrame_;
 }
 void DxScriptObjectManager::RenderObject() {
 	PrepareRenderObject();

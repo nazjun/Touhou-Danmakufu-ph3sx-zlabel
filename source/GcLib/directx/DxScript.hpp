@@ -76,6 +76,8 @@ namespace directx {
 
 		//------------------------------------------------------------------------------------------
 
+		DNH_FUNCAPI_DECL_(Func_WaitCall);
+
 		DNH_FUNCAPI_DECL_(Func_MatrixIdentity);
 		DNH_FUNCAPI_DECL_(Func_MatrixInverse);
 		DNH_FUNCAPI_DECL_(Func_MatrixAdd);
