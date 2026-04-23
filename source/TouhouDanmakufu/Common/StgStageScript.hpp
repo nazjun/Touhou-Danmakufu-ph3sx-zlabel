@@ -533,6 +533,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_Fire);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_FireReturn);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_ClearWaiting);
+	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetCallback);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetParentObject);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetShotParent);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetAutoDelete);

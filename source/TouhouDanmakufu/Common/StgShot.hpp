@@ -810,6 +810,7 @@ private:
 	int repeatNext_;
 	int repeatWait_;
 	int repeatTimes_;
+	int repeatMax_;
 	int repeatCount_;
 	DxCallback fireCallback_;
 	DxCallback tickCallback_;
@@ -842,6 +843,7 @@ private:
 	double angleBase_;
 	double angleArgument_;
 	double angleOff_;
+	double angleRange_;
 
 	double angularVelocity_;
 	bool bFixedAngle_;
@@ -876,6 +878,7 @@ public:
 		repeatNext_ = 0;
 		repeatWait_ = repeatWait;
 		repeatTimes_ = repeatTimes;
+		repeatMax_ = repeatTimes;
 		repeatCount_ = 0;
 		if (subIvkFire != nullptr) {
 			fireCallback_.machine = machine;
@@ -953,15 +956,17 @@ public:
 	double GetSpeedArgument() { return speedArgument_; }
 	double GetSpeedOff() { return speedOff_; }
 
-	void SetAngle(double base, double arg, double off) {
+	void SetAngle(double base, double arg, double off, double range) {
 		angleBase_ = base;
 		angleArgument_ = arg;
 		angleOff_ = off;
+		angleRange_ = range;
 	}
 
 	double GetAngleBase() { return angleBase_; }
 	double GetAngleArgument() { return angleArgument_; }
 	double GetAngleOff() { return angleOff_; }
+	double GetAngleRange() { return angleRange_; }
 
 	void SetSpinArgument(double angularVelocity, bool bFixedAngle) {
 		angularVelocity_ = angularVelocity;

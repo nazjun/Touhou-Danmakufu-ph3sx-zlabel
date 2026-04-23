@@ -591,9 +591,11 @@ static const std::vector<function> stgStageFunction = {
 
 	{ "ObjPatternShot_Create", StgStageScript::Func_ObjPatternShot_Create, 0 },
 	{ "ObjPatternShot_Fire", StgStageScript::Func_ObjPatternShot_Fire, 1 },
+	{ "ObjPatternShot_Fire", StgStageScript::Func_ObjPatternShot_Fire, 3 },
 	{ "ObjPatternShot_Fire", StgStageScript::Func_ObjPatternShot_Fire, 5 },
 	{ "ObjPatternShot_FireReturn", StgStageScript::Func_ObjPatternShot_FireReturn, 1 },
 	{ "ObjPatternShot_ClearWaiting", StgStageScript::Func_ObjPatternShot_ClearWaiting, 1 },
+	{ "ObjPatternShot_SetCallback", StgStageScript::Func_ObjPatternShot_SetCallback, 3 },
 	{ "ObjPatternShot_SetParentObject", StgStageScript::Func_ObjPatternShot_SetParentObject, 2 },
 	{ "ObjPatternShot_SetShotParent", StgStageScript::Func_ObjPatternShot_SetShotParent, 2 },
 	{ "ObjPatternShot_SetAutoDelete", StgStageScript::Func_ObjPatternShot_SetAutoDelete, 2 },
@@ -606,7 +608,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjPatternShot_SetSpeed", StgStageScript::Func_ObjPatternShot_SetSpeed, 3 },
 	{ "ObjPatternShot_SetSpeed", StgStageScript::Func_ObjPatternShot_SetSpeed, 5 },
 	{ "ObjPatternShot_SetAngle", StgStageScript::Func_ObjPatternShot_SetAngle, 3 },
-	{ "ObjPatternShot_SetAngle", StgStageScript::Func_ObjPatternShot_SetAngle, 4 },
+	{ "ObjPatternShot_SetAngle", StgStageScript::Func_ObjPatternShot_SetAngle, 5 },
 	{ "ObjPatternShot_SetBasePoint", StgStageScript::Func_ObjPatternShot_SetBasePoint, 3 },
 	{ "ObjPatternShot_SetBasePointOffset", StgStageScript::Func_ObjPatternShot_SetBasePointOffset, 3 },
 	{ "ObjPatternShot_SetBasePointOffsetCircle", StgStageScript::Func_ObjPatternShot_SetBasePointOffsetCircle, 3 },
@@ -6228,9 +6230,9 @@ gstd::value StgStageScript::Func_ObjPatternShot_Fire(gstd::script_machine* machi
 			script_block* subIvkFire = (fireCallback != NULL) ? (script_block*)(fireCallback & 0xffffffff) : nullptr;
 			script_block* subIvkTick = (tickCallback != NULL) ? (script_block*)(tickCallback & 0xffffffff) : nullptr;
 			
-			if (subIvkFire != nullptr && (subIvkFire->kind != block_kind::bk_fcall || subIvkFire->arguments > 3))
-				script->RaiseError("Fire callback must be an fcall with at most 3 arguments ("
-					"int pattern shot object id, int[] shot object ids fired including those waiting, int fire iteration).");
+			if (subIvkFire != nullptr && (subIvkFire->kind != block_kind::bk_fcall || subIvkFire->arguments > 4))
+				script->RaiseError("Fire callback must be an fcall with at most 4 arguments ("
+					"int fire iteration, int max iterations, int pattern shot object id, int[] shot object ids fired including those waiting).");
 
 			if (subIvkTick != nullptr && (subIvkFire->kind != block_kind::bk_fcall || subIvkTick->arguments > 2))
 				script->RaiseError("Tick callback must be an fcall with at most 2 arguments ("
@@ -6238,6 +6240,11 @@ gstd::value StgStageScript::Func_ObjPatternShot_Fire(gstd::script_machine* machi
 
 			obj->SetCaller(machine->data, stageController);
 			obj->SetRepeat(repeatWait, repeatTimes, machine, subIvkFire, subIvkTick);
+		}
+		else if (argc == 3) {
+			int repeatWait = argv[1].as_int();
+			int repeatTimes = argv[2].as_int();
+			obj->SetRepeat(repeatWait, repeatTimes, nullptr, nullptr, nullptr);
 		}
 		else
 			obj->FireSet(machine->data, stageController, nullptr);
@@ -6267,6 +6274,31 @@ gstd::value StgStageScript::Func_ObjPatternShot_ClearWaiting(gstd::script_machin
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
 	if (obj)
 		obj->ClearWaiting();
+	return value();
+}
+gstd::value StgStageScript::Func_ObjPatternShot_SetCallback(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	StgStageController* stageController = script->stageController_;
+
+	int id = argv[0].as_int();
+	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
+	if (obj) {
+		uint64_t fireCallback = (uint64_t)argv[1].as_int();
+		uint64_t tickCallback = (uint64_t)argv[2].as_int();
+		script_block* subIvkFire = (fireCallback != NULL) ? (script_block*)(fireCallback & 0xffffffff) : nullptr;
+		script_block* subIvkTick = (tickCallback != NULL) ? (script_block*)(tickCallback & 0xffffffff) : nullptr;
+
+		if (subIvkFire != nullptr && (subIvkFire->kind != block_kind::bk_fcall || subIvkFire->arguments > 4))
+			script->RaiseError("Fire callback must be an fcall with at most 4 arguments ("
+				"int fire iteration, int max iterations, int pattern shot object id, int[] shot object ids fired including those waiting).");
+
+		if (subIvkTick != nullptr && (subIvkFire->kind != block_kind::bk_fcall || subIvkTick->arguments > 2))
+			script->RaiseError("Tick callback must be an fcall with at most 2 arguments ("
+				"int pattern shot object id, int[] shot object ids that finished waiting this frame).");
+
+		obj->SetCaller(machine->data, stageController);
+		obj->SetRepeat(0, 0, machine, subIvkFire, subIvkTick);
+	}
 	return value();
 }
 gstd::value StgStageScript::Func_ObjPatternShot_SetParentObject(gstd::script_machine* machine, int argc, const gstd::value* argv) {
@@ -6398,8 +6430,9 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetAngle(gstd::script_machine* m
 	if (obj) {
 		float base = argv[1].as_int() == StgMovePattern::NO_CHANGE ? obj->GetAngleBase() : Math::DegreeToRadian(argv[1].as_float());
 		float arg = argv[2].as_int() == StgMovePattern::NO_CHANGE ? obj->GetAngleArgument() : Math::DegreeToRadian(argv[2].as_float());
-		float off = (argc == 4) ? (argv[3].as_int() == StgMovePattern::NO_CHANGE ? obj->GetAngleOff() : Math::DegreeToRadian(argv[3].as_float())) : 0;
-		obj->SetAngle(base, arg, off);
+		float off = (argc == 5) ? (argv[3].as_int() == StgMovePattern::NO_CHANGE ? obj->GetAngleOff() : Math::DegreeToRadian(argv[3].as_float())) : 0;
+		float range = (argc == 5) ? (argv[4].as_int() == StgMovePattern::NO_CHANGE ? obj->GetAngleRange() : Math::DegreeToRadian(argv[4].as_float())) : GM_PI_X2;
+		obj->SetAngle(base, arg, off, range);
 	}
 	return value();
 }

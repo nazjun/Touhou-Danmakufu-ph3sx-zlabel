@@ -2835,6 +2835,7 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	repeatNext_ = 0;
 	repeatWait_ = 0;
 	repeatTimes_ = 0;
+	repeatMax_ = 0;
 	repeatCount_ = 0;
 
 	fireRes_.reserve(128U);
@@ -2862,6 +2863,7 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	angleBase_ = 0;
 	angleArgument_ = 0;
 	angleOff_ = 0;
+	angleRange_ = GM_PI_X2;
 
 	angularVelocity_ = 0;
 	bFixedAngle_ = false;
@@ -2913,6 +2915,7 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 	repeatNext_ = src->repeatNext_;
 	repeatWait_ = src->repeatWait_;
 	repeatTimes_ = src->repeatTimes_;
+	repeatMax_ = src->repeatMax_;
 	repeatCount_ = src->repeatCount_;
 	fireCallback_ = src->fireCallback_;
 	tickCallback_ = src->tickCallback_;
@@ -2942,6 +2945,7 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 	angleBase_ = src->angleBase_;
 	angleArgument_ = src->angleArgument_;
 	angleOff_ = src->angleOff_;
+	angleRange_ = src->angleRange_;
 
 	angularVelocity_ = src->angularVelocity_;
 	bFixedAngle_ = src->bFixedAngle_;
@@ -2953,7 +2957,7 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 void StgShotPatternGeneratorObject::Work() {
 	if (repeatTimes_ != 0 && repeatNext_ <= frameExist_) {
 		if (fireCallback_.machine != nullptr && fireCallback_.block != nullptr) {
-			FireSet(scriptData_, controller_, &fireRes_);
+			FireSet(scriptData_, controller_, (fireCallback_.block->arguments == 4) ? &fireRes_ : nullptr);
 
 			fireCallback_.args.clear();
 
@@ -2961,9 +2965,10 @@ void StgShotPatternGeneratorObject::Work() {
 
 			for (int i = 0; i < fireCallback_.block->arguments; ++i) {
 				switch (i) {
-				case 0: fireCallback_.args.push_back(script->CreateIntValue(idObject_)); break;
-				case 1: fireCallback_.args.push_back(script->CreateIntArrayValue(fireRes_)); break;
-				case 2: fireCallback_.args.push_back(script->CreateIntValue(repeatCount_)); break;
+				case 0: fireCallback_.args.push_back(script->CreateIntValue(repeatCount_)); break;
+				case 1: fireCallback_.args.push_back(script->CreateIntValue(repeatMax_)); break;
+				case 2: fireCallback_.args.push_back(script->CreateIntValue(idObject_)); break;
+				case 3: fireCallback_.args.push_back(script->CreateIntArrayValue(fireRes_)); break;
 				}
 			}
 			
@@ -2990,7 +2995,8 @@ void StgShotPatternGeneratorObject::Work() {
 			if (itr->parent != nullptr)
 				itr->parent->AddChild(itr->parent, itr->shot);
 
-			tickRes_.push_back(itr->shot->GetObjectID());
+			if (bTick)
+				tickRes_.push_back(itr->shot->GetObjectID());
 
 			itr = shotsWaiting_.erase(itr);
 		}
@@ -2998,7 +3004,7 @@ void StgShotPatternGeneratorObject::Work() {
 			++itr;
 	}
 
-	if (bTick) {
+	if (bTick && !tickRes_.empty()) {
 		tickCallback_.args.clear();
 
 		DxScript* script = (DxScript*)(tickCallback_.machine->data);
@@ -3200,7 +3206,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 
 			for (size_t iWay = wayStart; iWay < wayEnd; ++iWay) {
 				size_t iw = bInterlace_ ? Math::Interlace(shotWay_ - iWay - 1, shotWay_) : iWay;
-				double sa_b = ini_angle + (GM_PI_X2 / (double)shotWay_) * iw;
+				double sa_b = ini_angle + (angleRange_ / (double)shotWay_) * iw;
 
 				size_t vee = Math::Vee(iw, shotWay_ + 1);
 				double lerp = bInterlace_ ? ((double)vee * 2 / shotWay_) : ((double)iWay / shotWay_);
@@ -3240,7 +3246,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 
 			for (size_t iWay = wayStart; iWay < wayEnd; ++iWay) {
 				size_t iw = bInterlace_ ? Math::Interlace(shotWay_ - iWay - 1, shotWay_) : iWay;
-				double w_angle = ini_angle + (GM_PI_X2 / (double)shotWay_) * iw;
+				double w_angle = ini_angle + (angleRange_ / (double)shotWay_) * iw;
 
 				size_t vee = Math::Vee(iw, shotWay_ + 1);
 				double lerp = bInterlace_ ? ((double)vee * 2 / shotWay_) : ((double)iWay / shotWay_);
@@ -3297,8 +3303,8 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 			size_t sendEnd = (bInterlace_ && shotWay_ % 2 == 0) ? (wayEnd + 1) : wayEnd;
 
 			for (size_t iEdge = wayStart; iEdge < wayEnd; ++iEdge) {
-				double from_ang = (GM_PI_X2 / numEdges) * (double)iEdge;
-				double to_ang = (GM_PI_X2 / numEdges) * (double)((int)iEdge + edgeSkip);
+				double from_ang = (angleRange_ / numEdges) * (double)iEdge;
+				double to_ang = (angleRange_ / numEdges) * (double)((int)iEdge + edgeSkip);
 				double from_pos[2] = { cos(from_ang), sin(from_ang) };
 				double to_pos[2] = { cos(to_ang), sin(to_ang) };
 
@@ -3366,9 +3372,9 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 				float angSample = Math::DegreeToRadian(radiiAngles[sampleIndex * 2 + 1]);
 
 				int t = std::floor((float)iShot / numShotPerEdge);
-				float angOff = (t % 2 == 1) ? ((GM_PI_X2 / numEdges) - angSample) : angSample;
+				float angOff = (t % 2 == 1) ? ((angleRange_ / numEdges) - angSample) : angSample;
 
-				float shotAngle = ini_angle + angOff + (GM_PI_X2 / numEdges) * std::floor((float)iShot / numShotPerEdge);
+				float shotAngle = ini_angle + angOff + (angleRange_ / numEdges) * std::floor((float)iShot / numShotPerEdge);
 
 				double lerp = 1.0 - (double)sampleIndex / numShotPerEdge;
 				float rad = fireRadiusOffset_ * (fireRadiusScale_ * lerpRadius_(0, 1, lerp) + 1);
@@ -3402,7 +3408,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 
 			for (size_t iWay = wayStart; iWay < wayEnd; ++iWay) {
 				size_t iw = bInterlace_ ? Math::Interlace(shotWay_ - iWay - 1, shotWay_) : iWay;
-				double angle_cur = GM_PI_X2 / (double)shotWay_ * iw + angleArgument_;
+				double angle_cur = angleRange_ / (double)shotWay_ * iw + angleArgument_;
 
 				double rpos[2] = { 1 * cos(angle_cur), r_eccentricity * sin(angle_cur) };
 				Math::Rotate2D(rpos, el_pointing_angle, 0, 0);
@@ -3448,7 +3454,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 				for (size_t iStack = 0; iStack < shotStack_; ++iStack) {
 					double ss = vss[iWay * shotStack_ + iStack];
 					double sa = ini_angle + ((typePattern_ == PATTERN_TYPE_SCATTER_SPEED) ?
-						(GM_PI_X2 / (double)shotWay_ * iWay) + angleArgument_ * iStack :
+						(angleRange_ / (double)shotWay_ * iWay) + angleArgument_ * iStack :
 						randGenerator->GetReal(-angleArgument_, angleArgument_));
 
 					float lerp = std::abs<double>(Math::AngleDifferenceRad(ini_angle, sa)) / GM_PI;
@@ -3525,8 +3531,8 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 			size_t numShotPerPetal = shotStack_;
 			int petalSkip = std::round(Math::RadianToDegree(angleArgument_));
 
-			double petalGap = GM_PI_X2 / numPetal;
-			double angGap = (GM_PI_X2 / (numPetal * numShotPerPetal) * petalSkip);
+			double petalGap = angleRange_ / numPetal;
+			double angGap = (angleRange_ / (numPetal * numShotPerPetal) * petalSkip);
 
 			size_t wayStart = (shotCutoff_ < 0) ? (numPetal + shotCutoff_) : 0;
 			size_t wayEnd = (shotCutoff_ >= 0) ? shotCutoff_ : numPetal;
@@ -3569,6 +3575,7 @@ void StgShotPatternGeneratorObject::ClearWaiting() {
 	repeatNext_ = 0;
 	repeatWait_ = 0;
 	repeatTimes_ = 0;
+	repeatMax_ = 0;
 	repeatCount_ = 0;
 	fireCallback_.block = nullptr;
 	tickCallback_.block = nullptr;
