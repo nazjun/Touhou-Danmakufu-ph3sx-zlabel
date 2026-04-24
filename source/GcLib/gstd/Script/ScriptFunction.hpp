@@ -77,6 +77,7 @@ namespace gstd {
 		//---------------------------------------------------------------------
 
 		DNH_FUNCAPI_DECL_(invoke);
+		DNH_FUNCAPI_DECL_(stop);
 
 		DNH_FUNCAPI_DECL_(cast_x);
 

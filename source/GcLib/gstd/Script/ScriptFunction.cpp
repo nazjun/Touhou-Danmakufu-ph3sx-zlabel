@@ -396,6 +396,18 @@ namespace gstd {
 		return value();
 	}
 
+	value BaseFunction::stop(script_machine* machine, int argc, const value* argv) {
+		_null_check(nullptr, argv, 1);
+
+		int64_t _val = argv[0].as_int();
+		uint64_t val = (uint64_t&)_val;
+
+		script_machine::environment* e = (script_machine::environment*)val;
+		e->ip = e->sub->codes.size();
+
+		return value();
+	}
+
 	value BaseFunction::cast_x(script_machine* machine, int argc, const value* argv) {
 		const value& src = argv[0];
 		int type = argv[1].as_int();

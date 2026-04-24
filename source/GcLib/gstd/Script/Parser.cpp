@@ -147,6 +147,7 @@ const std::vector<function> parser::base_operations = {
 	{ "power", BaseFunction::power, 2 },
 
 	{ "invoke", BaseFunction::invoke, -2 },	//1 fixed -> 1 minimum
+	{ "stop", BaseFunction::stop, 1 },
 
 	{ "as_x", BaseFunction::cast_x, 2 },
 
@@ -891,8 +892,8 @@ void parser::parse_clause(script_block* block, parser_state_t* state) {
 continue_as_variadic:
 		if (!s->bVariable) {
 			parse_arguments(block, state, &s->argData);
-			parser_assert(state, s->sub->kind == block_kind::bk_function,
-				"Only functions can return values.\r\n");
+			parser_assert(state, s->sub->kind == block_kind::bk_function || s->sub->kind == block_kind::bk_microthread,
+				"Only functions may return values. ps: Tasks return their environment (tenv).\r\n");
 			state->AddCode(block, code(command_kind::pc_call_and_push_result, (uint32_t)s->sub, argc));
 		}
 		else {

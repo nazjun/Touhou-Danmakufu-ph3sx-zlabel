@@ -592,8 +592,10 @@ void script_machine::run_code() {
 									_PassArgsFromStack(subIvk->arguments, stack, e->stack);
 									stack.pop_back();
 
-									if (bPushResult)
-										stack.push_back(value());
+									if (bPushResult) {
+										uint64_t val = (uint64_t)e;
+										stack.push_back(value(script_type_manager::get_int_type(), (int64_t&)val));
+									}
 								}
 								else {
 									environment* e = add_child_block(subIvk);
@@ -610,6 +612,11 @@ void script_machine::run_code() {
 						environment* e = add_thread(sub);
 
 						_PassArgsFromStack(c->arg1, stack, e->stack);
+
+						if (bPushResult) {
+							uint64_t val = (uint64_t)e;
+							stack.push_back(value(script_type_manager::get_int_type(), (int64_t&)val));
+						}
 					}
 					else {
 						//User-defined functions or internal blocks

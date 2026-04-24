@@ -503,6 +503,7 @@ std::unordered_map<std::string, token_kind> script_scanner::token_map = {
 	{ "object", token_kind::tk_decl_int },
 	{ "ptr", token_kind::tk_decl_int },
 	{ "fn", token_kind::tk_decl_int },
+	{ "tenv", token_kind::tk_decl_int },
 	{ "char", token_kind::tk_decl_char },
 	{ "string", token_kind::tk_decl_string },
 	{ "bool", token_kind::tk_decl_bool },
