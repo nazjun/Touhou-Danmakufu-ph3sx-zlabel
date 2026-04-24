@@ -491,6 +491,9 @@ static const std::vector<function> dxFunction = {
 	{ "ObjParticleList_SetAlpha", DxScript::Func_ObjParticleList_SetAlpha, 2 },
 	{ "ObjParticleList_SetExtraData", DxScript::Func_ObjParticleList_SetExtraData, 4 },
 	{ "ObjParticleList_AddInstance", DxScript::Func_ObjParticleList_AddInstance, 1 },
+	{ "ObjParticleList_Draw", DxScript::Func_ObjParticleList_Draw, 13 },
+	{ "ObjParticleList_Draw", DxScript::Func_ObjParticleList_Draw, 15 },
+	{ "ObjParticleList_Draw", DxScript::Func_ObjParticleList_Draw, 17 },
 	{ "ObjParticleList_ClearInstance", DxScript::Func_ObjParticleList_ClearInstance, 1 },
 	{ "ObjParticleList_SetAutoClearInstance", DxScript::Func_ObjParticleList_SetAutoClearInstance, 2 },
 
@@ -5275,6 +5278,55 @@ value DxScript::Func_ObjParticleList_AddInstance(script_machine* machine, int ar
 		ParticleRendererBase* objParticle = dynamic_cast<ParticleRendererBase*>(obj->GetRenderObject());
 		if (objParticle)
 			objParticle->AddInstance();
+	}
+	return value();
+}
+value DxScript::Func_ObjParticleList_Draw(script_machine* machine, int argc, const value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+
+	DxScriptPrimitiveObject* obj = script->GetObjectPointerAs<DxScriptPrimitiveObject>(id);
+	if (obj) {
+		ParticleRendererBase* objParticle = dynamic_cast<ParticleRendererBase*>(obj->GetRenderObject());
+		if (objParticle) {
+			switch (argc) {
+			case 13:
+			{
+				objParticle->SetInstancePosition(argv[1].as_float(), argv[2].as_float(), argv[3].as_float());
+				float scale = argv[4].as_float();
+				objParticle->SetInstanceScale(scale, scale, scale);
+				objParticle->SetInstanceAngle(argv[5].as_float(), argv[6].as_float(), argv[7].as_float());
+				D3DCOLOR color = argv[8].as_int();
+				objParticle->SetInstanceColorRGB(color);
+				objParticle->SetInstanceAlpha(argv[9].as_int());
+				objParticle->SetInstanceUserData(D3DXVECTOR3(argv[10].as_float(), argv[11].as_float(), argv[12].as_float()));
+				break;
+			}
+			case 15:
+			{
+				objParticle->SetInstancePosition(argv[1].as_float(), argv[2].as_float(), argv[3].as_float());
+				objParticle->SetInstanceScale(argv[4].as_float(), argv[5].as_float(), argv[6].as_float());
+				objParticle->SetInstanceAngle(argv[7].as_float(), argv[8].as_float(), argv[9].as_float());
+				D3DCOLOR color = argv[10].as_int();
+				objParticle->SetInstanceColorRGB(color);
+				objParticle->SetInstanceAlpha(argv[11].as_int());
+				objParticle->SetInstanceUserData(D3DXVECTOR3(argv[12].as_float(), argv[13].as_float(), argv[14].as_float()));
+				break;
+			}
+			case 17:
+			{
+				objParticle->SetInstancePosition(argv[1].as_float(), argv[2].as_float(), argv[3].as_float());
+				objParticle->SetInstanceScale(argv[4].as_float(), argv[5].as_float(), argv[6].as_float());
+				objParticle->SetInstanceAngle(argv[7].as_float(), argv[8].as_float(), argv[9].as_float());
+				objParticle->SetInstanceColorRGB(argv[10].as_int(), argv[11].as_int(), argv[12].as_int());
+				objParticle->SetInstanceAlpha(argv[13].as_int());
+				objParticle->SetInstanceUserData(D3DXVECTOR3(argv[14].as_float(), argv[15].as_float(), argv[16].as_float()));
+				break;
+			}
+			}
+
+			objParticle->AddInstance();
+		}
 	}
 	return value();
 }

@@ -464,6 +464,7 @@ namespace directx {
 		DNH_FUNCAPI_DECL_(Func_ObjParticleList_SetAlpha);
 		DNH_FUNCAPI_DECL_(Func_ObjParticleList_SetExtraData);
 		DNH_FUNCAPI_DECL_(Func_ObjParticleList_AddInstance);
+		DNH_FUNCAPI_DECL_(Func_ObjParticleList_Draw);
 		DNH_FUNCAPI_DECL_(Func_ObjParticleList_ClearInstance);
 		DNH_FUNCAPI_DECL_(Func_ObjParticleList_SetAutoClearInstance);
 
