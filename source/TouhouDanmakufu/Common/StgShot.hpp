@@ -755,6 +755,8 @@ public:
 		PATTERN_TYPE_FAN_AIMED,
 		PATTERN_TYPE_RING,
 		PATTERN_TYPE_RING_AIMED,
+		PATTERN_TYPE_WAVE,
+		PATTERN_TYPE_WAVE_AIMED,
 		PATTERN_TYPE_ARROW,
 		PATTERN_TYPE_ARROW_AIMED,
 		PATTERN_TYPE_POLYGON,
@@ -781,6 +783,20 @@ public:
 		uint32_t frame;
 
 		StgHoldShot(StgShotManager* m, ref_unsync_ptr<StgShotObject> s, ref_unsync_weak_ptr<StgMoveParent> p, uint32_t f) : manager(m), shot(s), parent(p), frame(f) {}
+	};
+
+	struct StgPropagate {
+		bool bPropagateSpeed;
+		D3DXVECTOR2 wayMul;
+		D3DXVECTOR2 stackMul;
+		Math::Lerp::funcLerp<float, float> lerpMul;
+
+		StgPropagate(bool s, D3DXVECTOR2 wm, D3DXVECTOR2 sm, Math::Lerp::funcLerp<float, float> l) :
+			bPropagateSpeed(s),
+			wayMul(D3DXVECTOR2(wm.x, wm.y)),
+			stackMul(D3DXVECTOR2(sm.x, sm.y)),
+			lerpMul(l)
+		{}
 	};
 private:
 	void* scriptData_;
@@ -830,7 +846,8 @@ private:
 	Math::Lerp::funcLerp<float, float> lerpRadius_;
 	//-----------------------------------------------------------------
 
-	bool bPropagateSpeed_;
+	std::vector<StgPropagate> patternMods_;
+
 	bool bPropagateWait_;
 
 	float safeRadiusSq_;
@@ -921,9 +938,10 @@ public:
 		lerpScale_ = Math::Lerp::GetFunc<float, float>(lerpType);
 	}
 
-	void SetWayStackWait(int wayWait, int stackWait) {
+	void SetWayStackWait(int wayWait, int stackWait, bool propagateWait) {
 		wayWait_ = wayWait;
 		stackWait_ = stackWait;
+		bPropagateWait_ = propagateWait;
 	}
 
 	void SetBasePoint(float bx, float by) {
@@ -942,9 +960,8 @@ public:
 		lerpRadius_ = Math::Lerp::GetFunc<float, float>(lerpType);
 	}
 
-	void SetPropagate(bool bPropagateSpeed, bool bPropagateWait) {
-		bPropagateSpeed_ = bPropagateSpeed;
-		bPropagateWait_ = bPropagateWait;
+	void SetPropagate(bool bPropagateSpeed, D3DXVECTOR2 wayMul, D3DXVECTOR2 stackMul, Math::Lerp::Type lerpType) {
+		patternMods_.emplace_back(bPropagateSpeed, wayMul, stackMul, Math::Lerp::GetFunc<float, float>(lerpType));
 	}
 
 	void SetSafeRadius(float r) { safeRadiusSq_ = r * r; }

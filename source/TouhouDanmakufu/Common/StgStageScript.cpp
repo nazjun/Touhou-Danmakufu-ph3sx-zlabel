@@ -604,7 +604,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjPatternShot_SetShotCount", StgStageScript::Func_ObjPatternShot_SetShotCount, 3 },
 	{ "ObjPatternShot_SetShotCount", StgStageScript::Func_ObjPatternShot_SetShotCount, 5 },
 	{ "ObjPatternShot_SetScale", StgStageScript::Func_ObjPatternShot_SetScale, 4 },
-	{ "ObjPatternShot_SetWait", StgStageScript::Func_ObjPatternShot_SetWait, 3 },
+	{ "ObjPatternShot_SetWait", StgStageScript::Func_ObjPatternShot_SetWait, 4 },
 	{ "ObjPatternShot_SetSpeed", StgStageScript::Func_ObjPatternShot_SetSpeed, 3 },
 	{ "ObjPatternShot_SetSpeed", StgStageScript::Func_ObjPatternShot_SetSpeed, 5 },
 	{ "ObjPatternShot_SetAngle", StgStageScript::Func_ObjPatternShot_SetAngle, 3 },
@@ -614,7 +614,8 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjPatternShot_SetBasePointOffsetCircle", StgStageScript::Func_ObjPatternShot_SetBasePointOffsetCircle, 3 },
 	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 2 },
 	{ "ObjPatternShot_SetShootRadius", StgStageScript::Func_ObjPatternShot_SetShootRadius, 4 },
-	{ "ObjPatternShot_SetPropagate", StgStageScript::Func_ObjPatternShot_SetPropagate, 3 },
+	{ "ObjPatternShot_ModifyPattern", StgStageScript::Func_ObjPatternShot_ModifyPattern, 1 },
+	{ "ObjPatternShot_ModifyPattern", StgStageScript::Func_ObjPatternShot_ModifyPattern, 6 },
 	{ "ObjPatternShot_SetSafeRadius", StgStageScript::Func_ObjPatternShot_SetSafeRadius, 2 },
 	{ "ObjPatternShot_SetSpinParameter", StgStageScript::Func_ObjPatternShot_SetSpinParameter, 3 },
 	{ "ObjPatternShot_SetLaserParameter", StgStageScript::Func_ObjPatternShot_SetLaserParameter, 3 },
@@ -677,6 +678,8 @@ static const std::vector<constant> stgStageConstant = {
 	constant("PATTERN_FAN_AIMED", StgShotPatternGeneratorObject::PATTERN_TYPE_FAN_AIMED),
 	constant("PATTERN_RING", StgShotPatternGeneratorObject::PATTERN_TYPE_RING),
 	constant("PATTERN_RING_AIMED", StgShotPatternGeneratorObject::PATTERN_TYPE_RING_AIMED),
+	constant("PATTERN_WAVE", StgShotPatternGeneratorObject::PATTERN_TYPE_WAVE),
+	constant("PATTERN_WAVE_AIMED", StgShotPatternGeneratorObject::PATTERN_TYPE_WAVE_AIMED),
 	constant("PATTERN_ARROW", StgShotPatternGeneratorObject::PATTERN_TYPE_ARROW),
 	constant("PATTERN_ARROW_AIMED", StgShotPatternGeneratorObject::PATTERN_TYPE_ARROW_AIMED),
 	constant("PATTERN_POLYGON", StgShotPatternGeneratorObject::PATTERN_TYPE_POLYGON),
@@ -6401,7 +6404,8 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetWait(gstd::script_machine* ma
 	if (obj) {
 		int wayWait = argv[1].as_int();
 		int stackWait = argv[2].as_int();
-		obj->SetWayStackWait(wayWait, stackWait);
+		bool propagateWait = argv[3].as_boolean();
+		obj->SetWayStackWait(wayWait, stackWait, propagateWait);
 	}
 	return value();
 }
@@ -6489,16 +6493,21 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetShootRadius(gstd::script_mach
 	}
 	return value();
 }
-gstd::value StgStageScript::Func_ObjPatternShot_SetPropagate(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+gstd::value StgStageScript::Func_ObjPatternShot_ModifyPattern(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;
 	StgStageController* stageController = script->stageController_;
 
 	int id = argv[0].as_int();
 	StgShotPatternGeneratorObject* obj = script->GetObjectPointerAs<StgShotPatternGeneratorObject>(id);
 	if (obj) {
-		bool bSpeed = argv[1].as_boolean();
-		bool bWait = argv[2].as_boolean();
-		obj->SetPropagate(bSpeed, bWait);
+		if (argc == 1)
+			obj->SetPropagate(false, D3DXVECTOR2(1, 1), D3DXVECTOR2(1, 1), Math::Lerp::LINEAR);
+		else {
+			D3DXVECTOR2 wayMul = D3DXVECTOR2(argv[1].as_float(), argv[2].as_float());
+			D3DXVECTOR2 stackMul = D3DXVECTOR2(argv[3].as_float(), argv[4].as_float());
+			Math::Lerp::Type type = (Math::Lerp::Type)argv[5].as_int();
+			obj->SetPropagate(true, wayMul, stackMul, type);
+		}
 	}
 	return value();
 }

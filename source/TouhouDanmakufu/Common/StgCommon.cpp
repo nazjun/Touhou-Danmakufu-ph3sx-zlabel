@@ -140,10 +140,7 @@ void StgMoveObject::AddPattern(uint32_t frameDelay, ref_unsync_ptr<StgMovePatter
 
 std::vector<StgMovePattern*> StgMoveObject::GetAllPatterns() {
 	std::vector<StgMovePattern*> res;
-	res.reserve(1 + mapPattern_.size()); // reasonable assumption, 1 pattern per frame is the typical use case
-
-	if (pattern_ != nullptr)
-		res.push_back(pattern_.get());
+	res.reserve(mapPattern_.size()); // reasonable assumption, 1 pattern per frame is the typical use case
 
 	for (auto& iPair : mapPattern_) {
 		for (auto& iPattern : iPair.second)

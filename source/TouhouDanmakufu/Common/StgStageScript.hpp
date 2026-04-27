@@ -548,7 +548,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetBasePointOffset);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetBasePointOffsetCircle);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetShootRadius);
-	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetPropagate);
+	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_ModifyPattern);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetSafeRadius);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetSpinParameter);
 	DNH_FUNCAPI_DECL_(Func_ObjPatternShot_SetLaserParameter);
