@@ -781,8 +781,15 @@ public:
 		ref_unsync_ptr<StgShotObject> shot;
 		ref_unsync_weak_ptr<StgMoveParent> parent;
 		uint32_t frame;
+		D3DXVECTOR2 spawn;
 
-		StgHoldShot(StgShotManager* m, ref_unsync_ptr<StgShotObject> s, ref_unsync_weak_ptr<StgMoveParent> p, uint32_t f) : manager(m), shot(s), parent(p), frame(f) {}
+		StgHoldShot(StgShotManager* m, ref_unsync_ptr<StgShotObject> s, ref_unsync_weak_ptr<StgMoveParent> p, uint32_t f, D3DXVECTOR2 q) :
+			manager(m),
+			shot(s),
+			parent(p),
+			frame(f),
+			spawn(D3DXVECTOR2(q.x, q.y))
+		{}
 	};
 
 	struct StgPropagate {
@@ -804,6 +811,8 @@ private:
 
 	ref_unsync_weak_ptr<StgMoveObject> parent_;
 	ref_unsync_weak_ptr<StgMoveParent> shotParent_;
+
+	bool bFollow_;
 
 	bool bAutoDeletePattern_;
 
@@ -879,7 +888,10 @@ public:
 	virtual void BeforeDelete();
 	virtual void RegistIntersectionTarget() {}
 
-	void SetParent(ref_unsync_ptr<StgMoveObject> obj) { parent_ = obj; }
+	void SetParent(ref_unsync_ptr<StgMoveObject> obj, bool bFollow) {
+		parent_ = obj;
+		bFollow_ = bFollow;
+	}
 	ref_unsync_weak_ptr<StgMoveObject> GetParent() { return parent_; }
 
 	void SetShotParent(ref_unsync_ptr<StgMoveParent> obj) { shotParent_ = obj; }

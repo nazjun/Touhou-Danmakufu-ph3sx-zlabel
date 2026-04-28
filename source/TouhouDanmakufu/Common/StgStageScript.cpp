@@ -597,6 +597,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjPatternShot_ClearWaiting", StgStageScript::Func_ObjPatternShot_ClearWaiting, 1 },
 	{ "ObjPatternShot_SetCallback", StgStageScript::Func_ObjPatternShot_SetCallback, 3 },
 	{ "ObjPatternShot_SetParentObject", StgStageScript::Func_ObjPatternShot_SetParentObject, 2 },
+	{ "ObjPatternShot_SetParentObject", StgStageScript::Func_ObjPatternShot_SetParentObject, 3 },
 	{ "ObjPatternShot_SetShotParent", StgStageScript::Func_ObjPatternShot_SetShotParent, 2 },
 	{ "ObjPatternShot_SetAutoDelete", StgStageScript::Func_ObjPatternShot_SetAutoDelete, 2 },
 	{ "ObjPatternShot_SetPatternType", StgStageScript::Func_ObjPatternShot_SetPatternType, 2 },
@@ -6313,8 +6314,10 @@ gstd::value StgStageScript::Func_ObjPatternShot_SetParentObject(gstd::script_mac
 	if (obj) {
 		int idParent = argv[1].as_int();
 		ref_unsync_ptr<StgMoveObject> objParent = ref_unsync_ptr<StgMoveObject>::Cast(script->GetObject(idParent));
-		if (objParent)
-			obj->SetParent(objParent);
+		if (objParent) {
+			bool bFollow = (argc == 3) ? argv[2].as_boolean() : false;
+			obj->SetParent(objParent, bFollow);
+		}
 	}
 	return value();
 }

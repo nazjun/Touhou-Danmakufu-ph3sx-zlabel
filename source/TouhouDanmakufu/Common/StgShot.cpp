@@ -2813,6 +2813,8 @@ StgShotPatternGeneratorObject::StgShotPatternGeneratorObject(StgStageController*
 	typeObject_ = TypeObject::ShotPattern;
 
 	bFreezePatterns_ = true;
+	
+	bFollow_ = false;
 
 	bAutoDeletePattern_ = false;
 
@@ -2894,6 +2896,8 @@ void StgShotPatternGeneratorObject::Clone(DxScriptObjectBase* _src, bool deepCop
 
 	parent_ = src->parent_;
 	shotParent_ = src->shotParent_;
+
+	bFollow_ = src->bFollow_;
 
 	bAutoDeletePattern_ = src->bAutoDeletePattern_;
 
@@ -2986,10 +2990,21 @@ void StgShotPatternGeneratorObject::Work() {
 
 	bool bTick = tickCallback_.machine != nullptr && tickCallback_.block != nullptr;
 
+	float baseX = 0, baseY = 0;
+	if (bFollow_ && !parent_.expired() && shotsWaiting_.size() > 0) {
+		baseX = parent_->GetPositionX();
+		baseY = parent_->GetPositionY();
+	}
+
 	for (auto itr = shotsWaiting_.begin(); itr != shotsWaiting_.end(); ) {
 		if (itr->frame <= frameExist_) {
 			if (bPropagateWait_)
 				itr->shot->SetFramePattern(itr->shot->GetPatternWait());
+
+			if (bFollow_) {
+				itr->shot->SetPositionX(itr->shot->GetPositionX() + baseX - itr->spawn.x);
+				itr->shot->SetPositionY(itr->shot->GetPositionY() + baseY - itr->spawn.y);
+			}
 
 			itr->shot->SetEnableMovement(bEnableMovement_);
 			itr->manager->AddShot(itr->shot);
@@ -3046,6 +3061,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 		if (basePointY_ == BASEPOINT_RESET)
 			basePosY = parent_->GetPositionY();
 	}
+	D3DXVECTOR2 basePos = { basePosX, basePosY };
 	basePosX += basePointOffsetX_;
 	basePosY += basePointOffsetY_;
 
@@ -3150,7 +3166,7 @@ void StgShotPatternGeneratorObject::FireSet(void* scriptData, StgStageController
 		if (totalWait > 0) {
 			objShot->SetEnableMovement(false);
 			objShot->SetPatternWait(totalWait);
-			shotsWaiting_.emplace_back(shotManager, objShot, shotParent_, frameExist_ + totalWait);
+			shotsWaiting_.emplace_back(shotManager, objShot, shotParent_, frameExist_ + totalWait, basePos);
 		}
 		else {
 			shotManager->AddShot(objShot);
