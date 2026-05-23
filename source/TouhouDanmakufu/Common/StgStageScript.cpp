@@ -862,6 +862,19 @@ StgStageScript::StgStageScript(StgStageController* stageController) : StgControl
 		definedMacro_[L"SCRIPT_STAGE"] = L"";
 	}
 
+	{
+		creators_.emplace(TypeObject::Enemy, Func_ObjEnemy_Create);
+		creators_.emplace(TypeObject::EnemyBoss, Func_ObjEnemy_Create);
+		creators_.emplace(TypeObject::EnemyBossScene, Func_ObjEnemyBossScene_Create);
+		creators_.emplace(TypeObject::Shot, Func_ObjShot_Create);
+		creators_.emplace(TypeObject::LooseLaser, Func_ObjShot_Create);
+		creators_.emplace(TypeObject::StraightLaser, Func_ObjShot_Create);
+		creators_.emplace(TypeObject::CurveLaser, Func_ObjShot_Create);
+		creators_.emplace(TypeObject::ShotPattern, Func_ObjPatternShot_Create);
+		creators_.emplace(TypeObject::Item, Func_ObjItem_Create);
+		creators_.emplace(TypeObject::MoveParent, Func_ObjMoveParent_Create);
+	}
+
 	ref_count_ptr<StgStageInformation> info = stageController_->GetStageInformation();
 	mt_ = info->GetRandProvider();
 
@@ -6573,7 +6586,8 @@ gstd::value StgStageScript::Func_ObjItem_Create(gstd::script_machine* machine, i
 	script->CheckRunInMainThread();
 	StgStageController* stageController = script->stageController_;
 
-	int type = argv[0].as_int();
+	// int type = argv[0].as_int();
+	int type = argv[std::max(0, argc - 1)].as_int();
 	ref_unsync_ptr<StgItemObject> obj;
 	if (type == StgItemObject::ITEM_USER) {
 		obj.reset(new StgItemObject_User(stageController));
@@ -6943,6 +6957,10 @@ StgStagePlayerScript::StgStagePlayerScript(StgStageController* stageController) 
 	typeScript_ = TYPE_PLAYER;
 	_AddFunction(&stgPlayerFunction);
 	_AddConstant(&stgPlayerConstant);
+
+	{
+		creators_.emplace(TypeObject::Spell, Func_ObjSpell_Create);
+	}
 }
 StgStagePlayerScript::~StgStagePlayerScript() {}
 

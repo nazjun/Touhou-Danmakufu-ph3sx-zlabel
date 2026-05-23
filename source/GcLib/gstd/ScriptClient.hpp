@@ -112,6 +112,8 @@ namespace gstd {
 		std::vector<gstd::constant> const_;
 		std::map<std::wstring, std::wstring> definedMacro_;
 
+		std::map<directx::TypeObject, dnh_func_callback_t> creators_;
+
 		shared_ptr<RandProvider> mt_;
 		shared_ptr<RandProvider> mtEffect_;
 
@@ -206,6 +208,9 @@ namespace gstd {
 		void CheckRunInMainThread();
 
 		//-------------------------------------------------------------------------
+
+		//Generic Creation
+		DNH_FUNCAPI_DECL_(Func_New);
 
 		//Script functions
 		static value Func_GetScriptArgument(script_machine* machine, int argc, const value* argv);

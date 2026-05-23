@@ -249,6 +249,8 @@ static const std::vector<function> dxFunction = {
 	{ "SetInvalidPositionReturn", DxScript::Func_SetInvalidPositionReturn, 2 },
 
 	//Base object functions
+	{ "del", DxScript::Func_Obj_Delete, 1 },
+
 	{ "Obj_Create", DxScript::Func_Obj_Create, 0 },
 	{ "Obj_Delete", DxScript::Func_Obj_Delete, 1 },
 	{ "Obj_IsDeleted", DxScript::Func_Obj_IsDeleted, 1 },
@@ -892,6 +894,25 @@ DxScript::DxScript() {
 			constant("SCREEN_HEIGHT", (int64_t)graphics->GetScreenHeight()),
 		};
 		_AddConstant(&dxConstant2);
+	}
+
+	{
+		creators_.emplace(TypeObject::Base, Func_Obj_Create);
+		creators_.emplace(TypeObject::Spline, Func_ObjSpline_Create);
+		creators_.emplace(TypeObject::SpringMassSystem, Func_ObjSpring_Create);
+		creators_.emplace(TypeObject::Primitive2D, Func_ObjPrimitive_Create);
+		creators_.emplace(TypeObject::Sprite2D, Func_ObjPrimitive_Create);
+		creators_.emplace(TypeObject::SpriteList2D, Func_ObjPrimitive_Create);
+		creators_.emplace(TypeObject::Primitive3D, Func_ObjPrimitive_Create);
+		creators_.emplace(TypeObject::Sprite3D, Func_ObjPrimitive_Create);
+		creators_.emplace(TypeObject::ParticleList2D, Func_ObjParticleList_Create);
+		creators_.emplace(TypeObject::ParticleList3D, Func_ObjParticleList_Create);
+		creators_.emplace(TypeObject::Shader, Func_ObjShader_Create);
+		creators_.emplace(TypeObject::Mesh, Func_ObjMesh_Create);
+		creators_.emplace(TypeObject::Text, Func_ObjText_Create);
+		creators_.emplace(TypeObject::Sound, Func_ObjSound_Create);
+		creators_.emplace(TypeObject::FileText, Func_ObjFile_Create);
+		creators_.emplace(TypeObject::FileBinary, Func_ObjFile_Create);
 	}
 
 	objManager_ = std::shared_ptr<DxScriptObjectManager>(new DxScriptObjectManager());

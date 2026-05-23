@@ -51,6 +51,9 @@ bool ScriptEngineCache::IsExists(const std::wstring& name) {
 //ScriptClientBase
 //****************************************************************************
 static const std::vector<function> commonFunction = {
+	//Generic creation
+	{ "new", ScriptClientBase::Func_New, -2 }, //1 fixed + ... -> 1 minimum
+
 	//Script functions
 	{ "GetScriptArgument", ScriptClientBase::Func_GetScriptArgument, 1 },
 	{ "GetScriptArgumentCount", ScriptClientBase::Func_GetScriptArgumentCount, 0 },
@@ -1367,6 +1370,24 @@ std::wstring ScriptClientBase::_ExtendPath(std::wstring path) {
 	path = StringUtility::ReplaceAll(path, L"./", pathScript);
 
 	return path;
+}
+
+//Generic New
+value ScriptClientBase::Func_New(gstd::script_machine* machine, int argc, const value* argv) {
+	ScriptClientBase* script = (ScriptClientBase*)machine->data;
+	script->CheckRunInMainThread();
+
+	TypeObject type = (TypeObject)argv[0].as_int();
+
+	value res;
+
+	auto it = script->creators_.find(type);
+	if (it != script->creators_.end())
+		res = it->second(machine, argc, argv);
+	else
+		res = CreateIntValue(DxScript::ID_INVALID);
+
+	return res;
 }
 
 //共通関数：スクリプト引数結果
