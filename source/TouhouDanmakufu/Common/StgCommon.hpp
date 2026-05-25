@@ -246,6 +246,8 @@ protected:
 
 	std::list<std::pair<int8_t, double>> listCommand_;
 
+	uint32_t frameRepeat_;
+
 	StgStageController* _GetStageController() { return target_->GetStageController(); }
 	ref_unsync_ptr<StgMoveObject> _GetMoveObject(int id);
 	void _RegisterShotDataID();
@@ -270,6 +272,8 @@ public:
 
 	virtual double GetSpeedX() { return c_; }
 	virtual double GetSpeedY() { return s_; }
+
+	void SetRepeat(uint32_t frameRepeat) { frameRepeat_ = frameRepeat; }
 };
 
 class StgMovePattern_XY;

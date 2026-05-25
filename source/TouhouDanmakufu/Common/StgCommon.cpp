@@ -92,8 +92,13 @@ void StgMoveObject::Move() {
 		if (mapPattern_.size() > 0 && !bFreezePatterns_) {
 			auto itr = mapPattern_.begin();
 			while (framePattern_ >= itr->first) {
-				for (auto& ipPattern : itr->second)
+				for (auto& ipPattern : itr->second) {
 					_AttachReservedPattern(ipPattern);
+					if (ipPattern->frameRepeat_ != 0) {
+						uint32_t frame = ipPattern->frameRepeat_ + framePattern_;
+						mapPattern_[frame].push_back(ipPattern);
+					}
+				}
 				itr = mapPattern_.erase(itr);
 				if (mapPattern_.size() == 0) break;
 			}
@@ -611,6 +616,7 @@ StgMovePattern::StgMovePattern(StgMoveObject* target) {
 	typeMove_ = TYPE_OTHER;
 	c_ = 1;
 	s_ = 0;
+	frameRepeat_ = 0;
 }
 
 void StgMovePattern::CopyFrom(StgMovePattern* src) {

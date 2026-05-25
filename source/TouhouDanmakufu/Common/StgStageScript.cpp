@@ -416,6 +416,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjMove_GetMoveFrame", StgStageScript::Func_ObjMove_GetMoveFrame, 1 },
 	{ "ObjMove_GetMovementType", StgStageScript::Func_ObjMove_GetMovementType, 1 },
 	{ "ObjMove_CancelMovement", StgStageScript::Func_ObjMove_CancelMovement, 1 },
+	{ "ObjMove_CancelMovement", StgStageScript::Func_ObjMove_CancelMovement, 2 }, //Overloaded
 	
 	// Move object + move parent
 	{ "ObjMove_GetParent", StgStageScript::Func_ObjMove_GetParent, 1 },
@@ -3347,6 +3348,8 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 	if (obj) {
 		int moveType = argv[1].as_int();
 		int frame = argv[2].as_int();
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
 		switch (moveType) {
 		case StgMovePattern::TYPE_ANGLE:
 		{
@@ -3404,6 +3407,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 				}
 				}
 			}
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3455,6 +3459,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 				}
 				}
 			}
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3524,6 +3529,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 				}
 				}
 			}
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3534,6 +3540,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 			ADD_CMD(StgMovePattern_Line::SET_DX, argv[3].as_float());
 			ADD_CMD(StgMovePattern_Line::SET_DY, argv[4].as_float());
 			ADD_CMD(StgMovePattern_Line::SET_SP, argv[5].as_float());
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3545,6 +3552,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 			ADD_CMD(StgMovePattern_Line::SET_DY, argv[4].as_float());
 			ADD_CMD(StgMovePattern_Line::SET_FR, argv[5].as_float());
 			ADD_CMD(StgMovePattern_Line::SET_LP, (argc == 7) ? argv[6].as_float() : Math::Lerp::LINEAR);
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3556,6 +3564,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 			ADD_CMD(StgMovePattern_Line::SET_DY, argv[4].as_float());
 			ADD_CMD(StgMovePattern_Line::SET_WG, argv[5].as_float());
 			ADD_CMD(StgMovePattern_Line::SET_MS, argv[6].as_float());
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3570,6 +3579,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 			ADD_CMD(StgMovePattern_Curve::SET_C2, argv[6].as_float());
 			ADD_CMD(StgMovePattern_Curve::SET_FR, argv[7].as_float());
 			ADD_CMD(StgMovePattern_Curve::SET_LP, argv[8].as_float());
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3586,6 +3596,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 			ADD_CMD(StgMovePattern_Curve::SET_C4, argv[8].as_float());
 			ADD_CMD(StgMovePattern_Curve::SET_FR, argv[9].as_float());
 			ADD_CMD(StgMovePattern_Curve::SET_LP, argv[10].as_float());
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3602,6 +3613,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 			ADD_CMD(StgMovePattern_Curve::SET_C4, argv[8].as_float());
 			ADD_CMD(StgMovePattern_Curve::SET_FR, argv[9].as_float());
 			ADD_CMD(StgMovePattern_Curve::SET_LP, argv[10].as_float());
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3614,6 +3626,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPattern(gstd::script_machine* machin
 			ADD_CMD(StgMovePattern_Spline::SET_FR, argv[4].as_float());
 			ADD_CMD(StgMovePattern_Spline::SET_LP, argv[5].as_float());
 			ADD_CMD(StgMovePattern_Spline::SET_ARC, argv[6].as_float());
+			pattern->SetRepeat(frameRepeat);
 			obj->AddPattern(frame, pattern);
 			break;
 		}
@@ -3630,12 +3643,16 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA1(gstd::script_machine* mach
 		double speed = argv[2].as_float();
 		double angle = argv[3].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Angle> pattern(new StgMovePattern_Angle(obj));
 		pattern->AddCommand(std::make_pair(StgMovePattern_Angle::SET_ZERO, 0));
 
 		ADD_CMD(StgMovePattern_Angle::SET_SPEED, speed);
 		ADD_CMD2(StgMovePattern_Angle::SET_ANGLE, angle, Math::DegreeToRadian(angle));
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3652,6 +3669,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA2(gstd::script_machine* mach
 		double maxsp = argv[5].as_float();
 		double agvel = argv[6].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Angle> pattern(new StgMovePattern_Angle(obj));
 
 		ADD_CMD(StgMovePattern_Angle::SET_SPEED, speed);
@@ -3660,6 +3680,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA2(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_Angle::SET_SPMAX, maxsp);
 		ADD_CMD2(StgMovePattern_Angle::SET_AGVEL, agvel, Math::DegreeToRadian(agvel));
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3677,6 +3698,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA3(gstd::script_machine* mach
 		double agvel = argv[6].as_float();
 		int idShot = argv[7].as_int();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Angle> pattern(new StgMovePattern_Angle(obj));
 
 		ADD_CMD(StgMovePattern_Angle::SET_SPEED, speed);
@@ -3686,6 +3710,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA3(gstd::script_machine* mach
 		ADD_CMD2(StgMovePattern_Angle::SET_AGVEL, agvel, Math::DegreeToRadian(agvel));
 
 		pattern->SetShotDataID(idShot);
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3704,6 +3729,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA4(gstd::script_machine* mach
 		int idGraphic = argv[7].as_int();
 		int idRelative = argv[8].as_int();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Angle> pattern(new StgMovePattern_Angle(obj));
 
 		ADD_CMD(StgMovePattern_Angle::SET_SPEED, speed);
@@ -3714,7 +3742,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA4(gstd::script_machine* mach
 
 		pattern->SetShotDataID(idGraphic);
 		pattern->SetRelativeObject(idRelative);
-
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3735,6 +3763,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA5(gstd::script_machine* mach
 		int idGraphic = argv[9].as_int();
 		int idRelative = argv[10].as_int();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Angle> pattern(new StgMovePattern_Angle(obj));
 
 		ADD_CMD(StgMovePattern_Angle::SET_SPEED, speed);
@@ -3747,7 +3778,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternA5(gstd::script_machine* mach
 
 		pattern->SetShotDataID(idGraphic);
 		pattern->SetRelativeObject(idRelative);
-
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3761,12 +3792,16 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternB1(gstd::script_machine* mach
 		double speedX = argv[2].as_float();
 		double speedY = argv[3].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_XY> pattern(new StgMovePattern_XY(obj));
 		pattern->AddCommand(std::make_pair(StgMovePattern_XY::SET_ZERO, 0));
 
 		ADD_CMD(StgMovePattern_XY::SET_S_X, speedX);
 		ADD_CMD(StgMovePattern_XY::SET_S_Y, speedY);
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3784,6 +3819,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternB2(gstd::script_machine* mach
 		double maxspX = argv[6].as_float();
 		double maxspY = argv[7].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_XY> pattern(new StgMovePattern_XY(obj));
 
 		ADD_CMD(StgMovePattern_XY::SET_S_X, speedX);
@@ -3793,6 +3831,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternB2(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_XY::SET_M_X, maxspX);
 		ADD_CMD(StgMovePattern_XY::SET_M_Y, maxspY);
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3811,6 +3850,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternB3(gstd::script_machine* mach
 		double maxspY = argv[7].as_float();
 		int idGraphic = argv[8].as_int();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_XY> pattern(new StgMovePattern_XY(obj));
 
 		ADD_CMD(StgMovePattern_XY::SET_S_X, speedX);
@@ -3821,7 +3863,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternB3(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_XY::SET_M_Y, maxspY);
 
 		pattern->SetShotDataID(idGraphic);
-
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3836,6 +3878,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternC1(gstd::script_machine* mach
 		double speedY = argv[3].as_float();
 		double angOff = argv[4].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_XY_Angle> pattern(new StgMovePattern_XY_Angle(obj));
 		pattern->AddCommand(std::make_pair(StgMovePattern_XY_Angle::SET_ZERO, 0));
 
@@ -3843,6 +3888,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternC1(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_XY_Angle::SET_S_Y, speedY);
 		ADD_CMD2(StgMovePattern_XY_Angle::SET_ANGLE, angOff, Math::DegreeToRadian(angOff));
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3862,6 +3908,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternC2(gstd::script_machine* mach
 		double angOff = argv[8].as_float();
 		double angVel = argv[9].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_XY_Angle> pattern(new StgMovePattern_XY_Angle(obj));
 
 		ADD_CMD(StgMovePattern_XY_Angle::SET_S_X, speedX);
@@ -3873,6 +3922,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternC2(gstd::script_machine* mach
 		ADD_CMD2(StgMovePattern_XY_Angle::SET_ANGLE, angOff, Math::DegreeToRadian(angOff));
 		ADD_CMD2(StgMovePattern_XY_Angle::SET_AGVEL, angVel, Math::DegreeToRadian(angVel));
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3893,6 +3943,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternC3(gstd::script_machine* mach
 		double angVel = argv[9].as_float();
 		int idShot = argv[10].as_int();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_XY_Angle> pattern(new StgMovePattern_XY_Angle(obj));
 
 		ADD_CMD(StgMovePattern_XY_Angle::SET_S_X, speedX);
@@ -3905,7 +3958,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternC3(gstd::script_machine* mach
 		ADD_CMD2(StgMovePattern_XY_Angle::SET_AGVEL, angVel, Math::DegreeToRadian(angVel));
 
 		pattern->SetShotDataID(idShot);
-
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3928,6 +3981,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternC4(gstd::script_machine* mach
 		double angMax = argv[11].as_float();
 		int idShot = argv[12].as_int();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_XY_Angle> pattern(new StgMovePattern_XY_Angle(obj));
 
 		ADD_CMD(StgMovePattern_XY_Angle::SET_S_X, speedX);
@@ -3942,7 +3998,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternC4(gstd::script_machine* mach
 		ADD_CMD2(StgMovePattern_XY_Angle::SET_AGMAX, angMax, Math::DegreeToRadian(angMax));
 
 		pattern->SetShotDataID(idShot);
-
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3957,12 +4013,16 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternD1(gstd::script_machine* mach
 		double ty = argv[3].as_float();
 		double speed = argv[4].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Line_Speed> pattern(new StgMovePattern_Line_Speed(obj));
 
 		ADD_CMD(StgMovePattern_Line::SET_DX, tx);
 		ADD_CMD(StgMovePattern_Line::SET_DY, ty);
 		ADD_CMD(StgMovePattern_Line::SET_SP, speed);
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -3979,6 +4039,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternD2(gstd::script_machine* mach
 		double frameEnd = argv[4].as_float();
 		double lerpMode = (argc == 6) ? argv[5].as_float() : Math::Lerp::LINEAR;
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Line_Frame> pattern(new StgMovePattern_Line_Frame(obj));
 
 		ADD_CMD(StgMovePattern_Line::SET_DX, tx);
@@ -3986,6 +4049,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternD2(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_Line::SET_FR, frameEnd);
 		ADD_CMD(StgMovePattern_Line::SET_LP, lerpMode);
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -4001,6 +4065,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternD3(gstd::script_machine* mach
 		double weight = argv[4].as_float();
 		double maxSpeed = argv[5].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Line_Weight> pattern(new StgMovePattern_Line_Weight(obj));
 
 		ADD_CMD(StgMovePattern_Line::SET_DX, tx);
@@ -4008,6 +4075,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternD3(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_Line::SET_WG, weight);
 		ADD_CMD(StgMovePattern_Line::SET_MS, maxSpeed);
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -4028,6 +4096,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternE1(gstd::script_machine* mach
 		double frameEnd = argv[bCubic ? 8 : 6].as_float();
 		double lerpMode = argv[bCubic ? 9 : 7].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Curve> pattern(new StgMovePattern_Curve(obj));
 		pattern->SetCurve(bCubic ? StgMovePattern_Curve::TYPE_CUBIC_BEZIER : StgMovePattern_Curve::TYPE_QUADRATIC_BEZIER);
 
@@ -4042,6 +4113,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternE1(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_Curve::SET_FR, frameEnd);
 		ADD_CMD(StgMovePattern_Curve::SET_LP, lerpMode);
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -4061,6 +4133,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternE2(gstd::script_machine* mach
 		double frameEnd = argv[8].as_float();
 		double lerpMode = argv[9].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Curve> pattern(new StgMovePattern_Curve(obj));
 		pattern->SetCurve(StgMovePattern_Curve::TYPE_HERMITE);
 
@@ -4073,6 +4148,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternE2(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_Curve::SET_FR, frameEnd);
 		ADD_CMD(StgMovePattern_Curve::SET_LP, lerpMode);
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -4090,6 +4166,9 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternE3(gstd::script_machine* mach
 		double lerpMode = argv[4].as_float();
 		double arc = argv[5].as_float();
 
+		uint32_t frameRepeat = frame < 0 ? std::abs<int>(frame) : 0;
+		frame = std::abs<int>(frame);
+
 		ref_unsync_ptr<StgMovePattern_Spline> pattern(new StgMovePattern_Spline(obj));
 		pattern->SetSpline(sp);
 
@@ -4097,6 +4176,7 @@ gstd::value StgStageScript::Func_ObjMove_AddPatternE3(gstd::script_machine* mach
 		ADD_CMD(StgMovePattern_Spline::SET_LP, lerpMode);
 		ADD_CMD(StgMovePattern_Spline::SET_ARC, arc);
 
+		pattern->SetRepeat(frameRepeat);
 		obj->AddPattern(frame, pattern);
 	}
 	return value();
@@ -4142,9 +4222,13 @@ gstd::value StgStageScript::Func_ObjMove_GetMovementType(gstd::script_machine* m
 gstd::value StgStageScript::Func_ObjMove_CancelMovement(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;
 	int id = argv[0].as_int();
+	bool bCancelAll = argc == 2 ? argv[1].as_boolean() : false;
 	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
-	if (obj)
+	if (obj) {
 		obj->SetPattern(nullptr);
+		if (bCancelAll)
+			obj->GetMapPattern()->clear();
+	}
 	return value();
 }
 
